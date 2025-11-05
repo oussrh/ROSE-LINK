@@ -73,7 +73,7 @@ ROSE Link crée une solution VPN complète qui :
 
 ```bash
 # Télécharger l'archive
-wget https://github.com/USERNAME/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
 
 # Extraire
 tar -xzf rose-link-pro.tar.gz
@@ -87,7 +87,7 @@ sudo bash install.sh
 
 ```bash
 # Télécharger le paquet
-wget https://github.com/USERNAME/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
 
 # Installer
 sudo apt-get install ./rose-link-pro_0.1.0-1_all.deb
@@ -97,18 +97,18 @@ sudo apt-get install ./rose-link-pro_0.1.0-1_all.deb
 
 ```bash
 # Installation en une ligne
-curl -fsSL https://USERNAME.github.io/roselink-repo/install.sh | sudo bash
+curl -fsSL https://oussrh.github.io/roselink-repo/install.sh | sudo bash
 ```
 
 Ou manuellement :
 
 ```bash
 # Ajouter la clé GPG
-curl -fsSL https://USERNAME.github.io/roselink-repo/ROSELINK-REPO.gpg \
+curl -fsSL https://oussrh.github.io/roselink-repo/ROSELINK-REPO.gpg \
   | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/roselink.gpg
 
 # Ajouter le dépôt
-echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] https://USERNAME.github.io/roselink-repo bookworm main" \
+echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] https://oussrh.github.io/roselink-repo bookworm main" \
   | sudo tee /etc/apt/sources.list.d/roselink.list
 
 # Installer
@@ -545,7 +545,7 @@ Les contributions sont les bienvenues !
 
 ```bash
 # Clone
-git clone https://github.com/USERNAME/ROSE-LINK.git
+git clone https://github.com/oussrh/ROSE-LINK.git
 cd ROSE-LINK
 
 # Backend
@@ -578,9 +578,9 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 📞 Support
 
-- **Documentation** : [GitHub Wiki](https://github.com/USERNAME/ROSE-LINK/wiki)
-- **Issues** : [GitHub Issues](https://github.com/USERNAME/ROSE-LINK/issues)
-- **Discussions** : [GitHub Discussions](https://github.com/USERNAME/ROSE-LINK/discussions)
+- **Documentation** : [GitHub Wiki](https://github.com/oussrh/ROSE-LINK/wiki)
+- **Issues** : [GitHub Issues](https://github.com/oussrh/ROSE-LINK/issues)
+- **Discussions** : [GitHub Discussions](https://github.com/oussrh/ROSE-LINK/discussions)
 
 ---
 
@@ -588,6 +588,6 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 **🌹 Made with love for secure remote access**
 
-[⭐ Star ce projet](https://github.com/USERNAME/ROSE-LINK) | [🐛 Reporter un bug](https://github.com/USERNAME/ROSE-LINK/issues) | [💡 Suggérer une feature](https://github.com/USERNAME/ROSE-LINK/issues)
+[⭐ Star ce projet](https://github.com/oussrh/ROSE-LINK) | [🐛 Reporter un bug](https://github.com/oussrh/ROSE-LINK/issues) | [💡 Suggérer une feature](https://github.com/oussrh/ROSE-LINK/issues)
 
 </div>
