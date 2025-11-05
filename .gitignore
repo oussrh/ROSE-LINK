@@ -30,6 +30,8 @@ roselink-repo/
 
 # Sensitive files
 *.conf
+!system/*.conf
+!system/**/*.conf
 *.key
 *.crt
 *.pem
