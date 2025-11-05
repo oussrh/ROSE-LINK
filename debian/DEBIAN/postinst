@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# ROSE Link Post-installation script
+#
+
+set -e
+
+USER="rose"
+GROUP="rose"
+INSTALL_DIR="/opt/rose-link"
+
+echo "🌹 Configuration de ROSE Link..."
+
+# Create user if doesn't exist
+if ! id -u "$USER" &>/dev/null; then
+    useradd -r -s /bin/bash -d "$INSTALL_DIR" -m "$USER"
+fi
+
+# Create directories
+mkdir -p /etc/wireguard/profiles
+mkdir -p /etc/nginx/ssl
+
+# Set permissions
+chown -R "$USER:$GROUP" "$INSTALL_DIR"
+chmod +x "$INSTALL_DIR/system/rose-watchdog.sh"
+
+# Setup Python virtual environment
+if [ ! -d "$INSTALL_DIR/venv" ]; then
+    python3 -m venv "$INSTALL_DIR/venv"
+    "$INSTALL_DIR/venv/bin/pip" install --upgrade pip
+    "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt"
+fi
+
+# Configure hostapd
+if [ ! -f /etc/hostapd/hostapd.conf ]; then
+    cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
+fi
+sed -i 's|#DAEMON_CONF=""|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+
+# Configure dnsmasq
+if [ ! -f /etc/dnsmasq.conf.backup ]; then
+    mv /etc/dnsmasq.conf /etc/dnsmasq.conf.backup 2>/dev/null || true
+fi
+cp "$INSTALL_DIR/system/dnsmasq.conf" /etc/dnsmasq.conf
+
+# Configure dhcpcd
+if ! grep -q "interface wlan1" /etc/dhcpcd.conf 2>/dev/null; then
+    cat "$INSTALL_DIR/system/dhcpcd.conf.append" >> /etc/dhcpcd.conf
+fi
+
+# Install sudoers
+cp "$INSTALL_DIR/system/rose-sudoers" /etc/sudoers.d/rose
+chmod 440 /etc/sudoers.d/rose
+
+# Generate SSL certificate if not exists
+if [ ! -f /etc/nginx/ssl/roselink.crt ]; then
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/roselink.key \
+        -out /etc/nginx/ssl/roselink.crt \
+        -subj "/C=BE/ST=Brussels/L=Brussels/O=ROSE Link/OU=VPN/CN=roselink.local" 2>/dev/null
+    chmod 600 /etc/nginx/ssl/roselink.key
+fi
+
+# Enable IP forwarding
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sysctl -p >/dev/null 2>&1 || true
+
+# Configure iptables
+iptables -t nat -F
+iptables -F FORWARD
+iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE
+iptables -A FORWARD -i wlan1 -o wg0 -j ACCEPT
+iptables -A FORWARD -i wg0 -o wlan1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i wlan1 ! -o wg0 -j REJECT
+iptables -A FORWARD -i eth0 -o wg0 -j ACCEPT
+iptables -A FORWARD -i wlan0 -o wg0 -j ACCEPT
+iptables -A FORWARD -i wg0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+
+# Reload systemd
+systemctl daemon-reload
+
+# Enable services
+systemctl enable rose-backend >/dev/null 2>&1 || true
+systemctl enable rose-watchdog >/dev/null 2>&1 || true
+systemctl enable hostapd >/dev/null 2>&1 || true
+systemctl enable dnsmasq >/dev/null 2>&1 || true
+systemctl enable nginx >/dev/null 2>&1 || true
+
+# Restart services
+systemctl restart nginx >/dev/null 2>&1 || true
+systemctl restart dhcpcd >/dev/null 2>&1 || true
+systemctl restart dnsmasq >/dev/null 2>&1 || true
+systemctl restart hostapd >/dev/null 2>&1 || true
+systemctl restart rose-backend >/dev/null 2>&1 || true
+
+echo ""
+echo "✅ ROSE Link installé avec succès !"
+echo ""
+echo "📱 Accès: https://roselink.local ou https://192.168.50.1"
+echo "📶 Hotspot par défaut: ROSE-Link / RoseLink2024"
+echo ""
+
+exit 0
