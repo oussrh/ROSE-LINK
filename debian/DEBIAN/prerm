@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# ROSE Link Pre-removal script
+#
+
+set -e
+
+echo "🌹 Arrêt des services ROSE Link..."
+
+# Stop services
+systemctl stop rose-backend >/dev/null 2>&1 || true
+systemctl stop rose-watchdog >/dev/null 2>&1 || true
+systemctl stop wg-quick@wg0 >/dev/null 2>&1 || true
+
+# Disable services
+systemctl disable rose-backend >/dev/null 2>&1 || true
+systemctl disable rose-watchdog >/dev/null 2>&1 || true
+
+exit 0

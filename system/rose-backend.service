@@ -1,0 +1,21 @@
+[Unit]
+Description=ROSE Link Backend API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rose
+Group=rose
+WorkingDirectory=/opt/rose-link/backend
+Environment="PATH=/opt/rose-link/venv/bin"
+ExecStart=/opt/rose-link/venv/bin/python /opt/rose-link/backend/main.py
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

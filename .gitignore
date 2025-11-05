@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.deb
+*.tar.gz
+*.zip
+roselink-repo/
+
+# Sensitive files
+*.conf
+*.key
+*.crt
+*.pem
+
+# Temporary files
+*.log
+*.tmp
+temp/
+tmp/
+
+# Debian packaging
+debian/opt/
+debian/etc/

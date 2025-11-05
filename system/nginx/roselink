@@ -1,0 +1,68 @@
+# ROSE Link Nginx Configuration
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name roselink.local _;
+
+    # Redirect HTTP to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name roselink.local _;
+
+    # SSL Certificate (self-signed, generated during installation)
+    ssl_certificate /etc/nginx/ssl/roselink.crt;
+    ssl_certificate_key /etc/nginx/ssl/roselink.key;
+
+    # SSL Configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Security Headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Root directory
+    root /opt/rose-link/web;
+    index index.html;
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Increase timeout for long operations
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+    }
+
+    # Static files
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Favicon
+    location /favicon.svg {
+        access_log off;
+        log_not_found off;
+    }
+
+    # Disable logging for common static files
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 1d;
+        access_log off;
+    }
+}
