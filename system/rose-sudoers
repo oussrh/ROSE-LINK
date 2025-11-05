@@ -1,0 +1,17 @@
+# ROSE Link sudoers configuration
+# This file should be installed to /etc/sudoers.d/rose
+
+# Allow rose user to manage network and VPN without password
+rose ALL=(ALL) NOPASSWD: /usr/bin/nmcli
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg-quick
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart wg-quick@wg0
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start wg-quick@wg0
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop wg-quick@wg0
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status wg-quick@wg0
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl reboot
+rose ALL=(ALL) NOPASSWD: /usr/bin/journalctl
+rose ALL=(ALL) NOPASSWD: /usr/sbin/iw
+rose ALL=(ALL) NOPASSWD: /usr/sbin/ip
