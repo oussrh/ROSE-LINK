@@ -316,6 +316,9 @@ SERVICE
 configure_wifi_setup() {
     log_info "Configuring setup WiFi hotspot..."
 
+    # Ensure hostapd directory exists (may not exist until hostapd is installed)
+    mkdir -p "${WORK_DIR}/mnt/etc/hostapd"
+
     # Configure hostapd for initial setup hotspot
     cat > "${WORK_DIR}/mnt/etc/hostapd/hostapd.conf.setup" << 'HOSTAPD'
 # ROSE Link Setup Hotspot
