@@ -13,6 +13,10 @@ This package contains the FastAPI routes organized by domain:
 - metrics: Prometheus metrics endpoint
 - speedtest: Internet speed testing
 - ssl: SSL certificate management
+- adguard: AdGuard Home DNS ad blocking
+- clients: Connected clients management
+- qos: Quality of Service traffic prioritization
+- setup: First-time setup wizard
 
 Each module contains related endpoints grouped together.
 The main router aggregates all sub-routers.
@@ -23,7 +27,22 @@ License: MIT
 
 from fastapi import APIRouter
 
-from api.routes import auth, wifi, vpn, hotspot, system, websocket, backup, metrics, speedtest, ssl
+from api.routes import (
+    auth,
+    wifi,
+    vpn,
+    hotspot,
+    system,
+    websocket,
+    backup,
+    metrics,
+    speedtest,
+    ssl,
+    adguard,
+    clients,
+    qos,
+    setup,
+)
 
 # Create the main API router
 api_router = APIRouter()
@@ -39,5 +58,9 @@ api_router.include_router(backup.router, tags=["Backup"])
 api_router.include_router(metrics.router, tags=["Metrics"])
 api_router.include_router(speedtest.router, tags=["SpeedTest"])
 api_router.include_router(ssl.router, tags=["SSL"])
+api_router.include_router(adguard.router, tags=["AdGuard"])
+api_router.include_router(clients.router, tags=["Clients"])
+api_router.include_router(qos.router, tags=["QoS"])
+api_router.include_router(setup.router, tags=["Setup"])
 
 __all__ = ["api_router"]
