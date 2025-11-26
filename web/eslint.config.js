@@ -72,9 +72,9 @@ export default [
         },
     },
 
-    // TypeScript files configuration
+    // TypeScript declaration files - minimal linting
     {
-        files: ['js/**/*.ts', 'js/types/**/*.d.ts'],
+        files: ['js/types/**/*.d.ts'],
         languageOptions: {
             parser: tsparser,
             parserOptions: {
@@ -92,14 +92,40 @@ export default [
             '@typescript-eslint': tseslint,
         },
         rules: {
-            // TypeScript specific rules
+            // Minimal rules for .d.ts files (no type-aware rules)
+            '@typescript-eslint/no-unused-vars': 'off',
+            'no-unused-vars': 'off',
+        },
+    },
+
+    // TypeScript files configuration
+    {
+        files: ['js/**/*.ts'],
+        ignores: ['js/types/**/*.d.ts'],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+            },
+            globals: {
+                ...globals.browser,
+                ...globals.es2021,
+                htmx: 'readonly',
+                lucide: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint,
+        },
+        rules: {
+            // TypeScript specific rules (no type-aware rules without project config)
             '@typescript-eslint/no-unused-vars': ['warn', {
                 argsIgnorePattern: '^_',
                 varsIgnorePattern: '^_',
             }],
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/no-explicit-any': 'warn',
-            '@typescript-eslint/prefer-optional-chain': 'warn',
 
             // Disable base rules that conflict with TypeScript
             'no-unused-vars': 'off',

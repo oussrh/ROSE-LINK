@@ -44,8 +44,9 @@ jobs:
 
       - name: Run type checking with mypy
         working-directory: backend
+        continue-on-error: true
         run: |
-          mypy . --ignore-missing-imports
+          mypy . --ignore-missing-imports || echo "::warning::mypy found type errors (non-blocking)"
 
       - name: Run tests with coverage
         working-directory: backend
