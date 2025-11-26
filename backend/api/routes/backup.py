@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -69,7 +69,7 @@ async def list_backups() -> Dict[str, Any]:
     }
 
 
-@router.post("/backup/create", dependencies=[require_auth])
+@router.post("/backup/create", dependencies=[Depends(require_auth)])
 async def create_backup(request: CreateBackupRequest) -> Dict[str, Any]:
     """
     Create a new configuration backup.
@@ -96,7 +96,7 @@ async def create_backup(request: CreateBackupRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail="Failed to create backup")
 
 
-@router.post("/backup/restore/{filename}", dependencies=[require_auth])
+@router.post("/backup/restore/{filename}", dependencies=[Depends(require_auth)])
 async def restore_backup(
     filename: str,
     request: RestoreBackupRequest
@@ -153,7 +153,7 @@ async def download_backup(filename: str) -> Response:
         raise HTTPException(status_code=404, detail="Backup not found")
 
 
-@router.post("/backup/upload", dependencies=[require_auth])
+@router.post("/backup/upload", dependencies=[Depends(require_auth)])
 async def upload_backup(file: UploadFile = File(...)) -> Dict[str, Any]:
     """
     Upload and import a backup file.
@@ -194,7 +194,7 @@ async def upload_backup(file: UploadFile = File(...)) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/backup/{filename}", dependencies=[require_auth])
+@router.delete("/backup/{filename}", dependencies=[Depends(require_auth)])
 async def delete_backup(filename: str) -> Dict[str, bool]:
     """
     Delete a backup file.

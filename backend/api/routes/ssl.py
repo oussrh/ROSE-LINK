@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, EmailStr
 
 from api.dependencies import require_auth
@@ -85,7 +85,7 @@ async def get_ssl_status() -> Dict[str, Any]:
     }
 
 
-@router.post("/ssl/request", dependencies=[require_auth])
+@router.post("/ssl/request", dependencies=[Depends(require_auth)])
 async def request_certificate(request: CertificateRequest) -> Dict[str, Any]:
     """
     Request a new Let's Encrypt certificate.
@@ -130,7 +130,7 @@ async def request_certificate(request: CertificateRequest) -> Dict[str, Any]:
         )
 
 
-@router.post("/ssl/renew", dependencies=[require_auth])
+@router.post("/ssl/renew", dependencies=[Depends(require_auth)])
 async def renew_certificates(request: RenewRequest) -> Dict[str, Any]:
     """
     Renew all Let's Encrypt certificates.
@@ -166,7 +166,7 @@ async def renew_certificates(request: RenewRequest) -> Dict[str, Any]:
         )
 
 
-@router.post("/ssl/self-signed", dependencies=[require_auth])
+@router.post("/ssl/self-signed", dependencies=[Depends(require_auth)])
 async def generate_self_signed(request: SelfSignedRequest) -> Dict[str, Any]:
     """
     Generate a new self-signed certificate.
