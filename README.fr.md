@@ -584,30 +584,39 @@ sudo nmcli device wifi connect "SSID" password "PASSWORD"
 - `GET /api/status` - Statut global (WAN, VPN, AP)
 
 #### WiFi WAN
-- `POST /api/wifi/scan` - Scanner les réseaux WiFi
-- `POST /api/wifi/connect` - Se connecter à un réseau
-- `POST /api/wifi/disconnect` - Se déconnecter
+- `POST /api/wifi/scan` - Scanner les réseaux WiFi *(requiert auth)*
+- `POST /api/wifi/connect` - Se connecter à un réseau *(requiert auth)*
+- `POST /api/wifi/disconnect` - Se déconnecter *(requiert auth)*
 
 #### VPN
 - `GET /api/vpn/status` - Statut du VPN
-- `GET /api/vpn/profiles` - Liste des profils
-- `POST /api/vpn/upload` - Upload un profil (sans activer)
-- `POST /api/vpn/import` - Import et activation
-- `POST /api/vpn/activate` - Activer un profil existant
-- `POST /api/vpn/start` - Démarrer le VPN
-- `POST /api/vpn/stop` - Arrêter le VPN
-- `POST /api/vpn/restart` - Redémarrer le VPN
+- `GET /api/vpn/profiles` - Liste des profils *(requiert auth)*
+- `POST /api/vpn/upload` - Upload un profil (sans activer) *(requiert auth)*
+- `POST /api/vpn/import` - Import et activation *(requiert auth)*
+- `POST /api/vpn/activate` - Activer un profil existant *(requiert auth)*
+- `POST /api/vpn/start` - Démarrer le VPN *(requiert auth)*
+- `POST /api/vpn/stop` - Arrêter le VPN *(requiert auth)*
+- `POST /api/vpn/restart` - Redémarrer le VPN *(requiert auth)*
 
 #### Hotspot
 - `GET /api/hotspot/status` - Statut du hotspot
-- `POST /api/hotspot/apply` - Appliquer une config
-- `POST /api/hotspot/restart` - Redémarrer le hotspot
+- `GET /api/hotspot/clients` - Liste des clients connectés *(requiert auth)*
+- `POST /api/hotspot/apply` - Appliquer une config *(requiert auth)*
+- `POST /api/hotspot/restart` - Redémarrer le hotspot *(requiert auth)*
+
+#### Paramètres
+- `GET /api/settings/vpn` - Paramètres watchdog VPN *(requiert auth)*
+- `POST /api/settings/vpn` - Mettre à jour paramètres watchdog VPN *(requiert auth)*
 
 #### Système
 - `GET /api/system/info` - Informations système (modèle Pi, RAM, CPU, WiFi)
 - `GET /api/system/interfaces` - Liste des interfaces réseau détectées
-- `GET /api/system/logs?service=xxx` - Logs d'un service
-- `POST /api/system/reboot` - Redémarrer le système
+- `GET /api/system/logs?service=xxx` - Logs d'un service *(requiert auth)*
+- `POST /api/system/reboot` - Redémarrer le système *(requiert auth)*
+
+#### Métriques
+- `GET /api/metrics` - Métriques Prometheus
+- `GET /api/metrics/performance` - Métriques de performance (latence, erreurs, requêtes)
 
 ### Exemple d'utilisation
 
