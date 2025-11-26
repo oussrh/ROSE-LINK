@@ -24,7 +24,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
 from config import Limits
 from models import VPNProfile, VPNSettings
@@ -39,10 +39,12 @@ from exceptions import (
 )
 from utils.validators import validate_ping_host
 from api.dependencies import require_auth
+from api.routes.auth import get_limiter
 
 logger = logging.getLogger("rose-link.api.vpn")
 
 router = APIRouter()
+limiter = get_limiter()
 
 
 @router.get("/status")
@@ -58,9 +60,13 @@ async def get_status() -> dict[str, Any]:
 
 
 @router.get("/profiles")
-async def list_profiles() -> dict[str, list]:
+async def list_profiles(
+    authenticated: bool = Depends(require_auth),
+) -> dict[str, list]:
     """
     List all available VPN profiles.
+
+    Requires authentication.
 
     Returns:
         List of VPN profiles with their activation status
@@ -70,7 +76,9 @@ async def list_profiles() -> dict[str, list]:
 
 
 @router.post("/upload")
+@limiter.limit("10/minute")
 async def upload_profile(
+    request: Request,
     file: UploadFile = File(...),
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
@@ -112,7 +120,9 @@ async def upload_profile(
 
 
 @router.post("/import")
+@limiter.limit("10/minute")
 async def import_profile(
+    request: Request,
     file: UploadFile = File(...),
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
@@ -154,7 +164,9 @@ async def import_profile(
 
 
 @router.post("/activate")
+@limiter.limit("10/minute")
 async def activate_profile(
+    request: Request,
     profile: VPNProfile,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
@@ -226,7 +238,9 @@ async def delete_profile(
 
 
 @router.post("/start")
+@limiter.limit("10/minute")
 async def start_vpn(
+    request: Request,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
     """
@@ -252,7 +266,9 @@ async def start_vpn(
 
 
 @router.post("/stop")
+@limiter.limit("10/minute")
 async def stop_vpn(
+    request: Request,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
     """
@@ -278,7 +294,9 @@ async def stop_vpn(
 
 
 @router.post("/restart")
+@limiter.limit("10/minute")
 async def restart_vpn(
+    request: Request,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
     """
