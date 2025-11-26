@@ -173,24 +173,6 @@ def strip_ansi_codes(text: str) -> str:
     return ansi_pattern.sub('', text)
 
 
-def truncate_string(value: str, max_length: int, suffix: str = "...") -> str:
-    """
-    Truncate a string to a maximum length.
-
-    Args:
-        value: String to truncate
-        max_length: Maximum length including suffix
-        suffix: Suffix to add when truncating
-
-    Returns:
-        Truncated string with suffix if needed
-    """
-    if len(value) <= max_length:
-        return value
-
-    return value[:max_length - len(suffix)] + suffix
-
-
 def normalize_mac_address(mac: str) -> str:
     """
     Normalize a MAC address to lowercase with colons.

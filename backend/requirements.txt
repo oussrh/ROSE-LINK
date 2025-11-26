@@ -17,6 +17,10 @@ pydantic>=2.10.0
 # https://github.com/Kludex/python-multipart
 python-multipart>=0.0.17
 
+# SlowAPI - Rate limiting for FastAPI
+# https://github.com/laurentS/slowapi
+slowapi>=0.1.9
+
 # Optional performance enhancements (automatically installed with uvicorn[standard]):
 # - uvloop: Fast drop-in replacement for asyncio event loop
 # - httptools: Fast HTTP parsing
