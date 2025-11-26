@@ -64,10 +64,10 @@ sudo bash install.sh --ssid "MyRouter" --country FR
 
 ```bash
 # Download the package
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.2.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.1.0-1_all.deb
 
 # Install with apt (handles dependencies automatically)
-sudo apt install ./rose-link-pro_0.2.0-1_all.deb
+sudo apt install ./rose-link-pro_1.1.0-1_all.deb
 ```
 
 ### Installation Options

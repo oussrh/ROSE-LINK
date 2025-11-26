@@ -119,10 +119,10 @@ sudo bash install.sh --ssid "MonVPN" --country FR
 
 ```bash
 # Télécharger le paquet
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.2.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.1.0-1_all.deb
 
 # Installer avec apt (gère les dépendances)
-sudo apt install ./rose-link-pro_0.2.0-1_all.deb
+sudo apt install ./rose-link-pro_1.1.0-1_all.deb
 ```
 
 ### Options d'installation
@@ -674,39 +674,27 @@ curl -k https://roselink.local/api/system/interfaces | jq
 
 ## 🛣️ Roadmap
 
-### Version 0.2.x (Publiée)
-- [x] Support i18n complet (anglais & français)
-- [x] Design mobile-first responsive pour tous les écrans
-- [x] Optimisation du code avec docstrings et type hints complets
-- [x] Détection dynamique des interfaces (correction du wlan0 codé en dur)
-- [x] Mise à jour vers les dernières versions des packages (FastAPI 0.115+, Pydantic 2.10+, htmx 2.0.3)
-- [x] Notifications toast et indicateurs de chargement
-- [x] Améliorations d'accessibilité (labels ARIA, HTML sémantique)
-- [x] Points d'accès documentation API (/api/docs, /api/redoc)
+### Version 1.1.0 (Version Actuelle)
+- [x] Intégration AdGuard Home (blocage DNS + pubs)
+- [x] Support OpenVPN en plus de WireGuard
+- [x] Gestion des clients connectés (historique, blocage, kick)
+- [x] QoS simple (priorisation trafic VPN)
+- [x] Image SD flashable prête à l'emploi
+- [x] Assistant de configuration première installation
+- [x] Suite de tests complète (80%+ couverture)
+- [x] WebSocket pour mises à jour temps réel
+- [x] Sauvegarde/restauration configuration
+- [x] Certificats SSL Let's Encrypt
+- [x] Test de vitesse intégré
+- [x] Métriques Prometheus
 
-### Version 0.3.0 (Publiée)
-- [x] WebSocket pour mises à jour statut temps réel (remplace le polling)
-- [x] Sauvegarde/restauration configuration (profils VPN, config hotspot)
-- [x] Option certificat SSL Let's Encrypt (+ génération auto-signé)
-- [x] Intégration test de vitesse (speedtest-cli, Ookla)
-- [x] Point d'accès métriques Prometheus (/api/metrics)
-- [x] Statistiques bande passante (par interface, temps réel)
-
-### Version 0.4.0 (En cours)
+### Version 1.2.x (Future)
 - [ ] Notifications email pour pannes VPN
-- [ ] QoS simple (priorisation trafic)
-- [ ] AdGuard Home intégré (DNS + blocage pubs)
-- [ ] Support OpenVPN en plus de WireGuard
-- [ ] Dashboard métriques Grafana
-- [ ] Gestion des clients connectés
-
-### Version 1.0.0 (Future)
-- [ ] Image SD flashable prête à l'emploi
-- [ ] Assistant de configuration première installation
+- [ ] Profils QoS complets (Gaming, Streaming, Travail)
+- [ ] Dashboard Grafana pré-configuré
 - [ ] Support multi-WAN (load balancing)
-- [ ] Application mobile iOS/Android
 - [ ] Mises à jour automatiques
-- [ ] Suite de tests complète
+- [ ] Application mobile iOS/Android
 
 ---
 
