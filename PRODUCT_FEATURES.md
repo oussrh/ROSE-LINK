@@ -1,34 +1,3 @@
-# ROSE Link Product Features
-
-This document provides a comprehensive overview of ROSE Link's core capabilities, architecture design principles, and quality assurance practices.
-
----
-
-## Core Product Capabilities
-
-### VPN Connectivity
-
-#### WireGuard VPN Management
-- **Multi-profile support**: Import and manage multiple VPN configurations
-- **Direct .conf import**: Upload WireGuard configuration files through the web interface
-- **Automatic connection**: VPN starts automatically after profile import
-- **Detailed status display**: View handshake timestamps, endpoints, and data transfer metrics
-
-#### VPN Failover and Kill-Switch
-- **Kill-switch protection**: Blocks all traffic if VPN connection drops, preventing data leaks
-- **Watchdog service**: Automatic monitoring and reconnection on connection loss
-- **Configurable ping targets**: Customize connectivity verification endpoints
-
-### WAN Connectivity
-
-#### Intelligent Auto-Failover
-- **Primary**: Ethernet RJ45 connection (priority)
-- **Fallback**: WiFi client connection (automatic)
-- **Real-time monitoring**: WAN connection status displayed in UI
-
-#### WiFi Client Mode
-- **Network scanning**: Discover available WiFi networks from web interface
-- **Easy connection**: Connect to networks with credentials through UI
 - **Status tracking**: Monitor connection state and signal strength
 
 ### Hotspot Configuration
@@ -54,6 +23,12 @@ This document provides a comprehensive overview of ROSE Link's core capabilities
 - **Lucide Icons**: Consistent iconography
 - **Toast notifications**: User feedback for actions
 - **Loading spinners**: Visual feedback during operations
+- **Accessibility baseline**: Keyboard navigation and semantic structure respected across views
+
+#### Device Management
+- **Profile presets**: Pre-defined VPN, WAN, and hotspot defaults for quick onboarding
+- **Config export/import**: Backup or restore device settings through the UI
+- **Session-safe edits**: Pending changes staged until explicitly applied
 
 ---
 
@@ -79,18 +54,7 @@ This document provides a comprehensive overview of ROSE Link's core capabilities
 ## Backend Architecture
 
 ### Application Structure
-
-```
-backend/
-├── api/                 # HTTP endpoint routes
-│   ├── routes/          # Feature-specific route modules
-│   └── deps.py          # FastAPI dependency injection
-├── core/                # Application infrastructure
-│   ├── app_factory.py   # FastAPI application factory
-│   ├── lifespan.py      # Startup/shutdown event handlers
-│   └── middleware.py    # CORS, security middleware
-├── services/            # Business logic layer
-│   ├── vpn.py           # VPN management
+@@ -94,50 +100,51 @@ backend/
 │   ├── wan.py           # WAN connectivity
 │   ├── hotspot.py       # WiFi access point
 │   ├── system.py        # System monitoring
@@ -116,6 +80,7 @@ backend/
 - **FastAPI 0.115+**: High-performance async Python framework
 - **Pydantic 2.10+**: Data validation and serialization
 - **Uvicorn**: ASGI server for production deployment
+- **Redis**: Caching layer for connection metrics and UI presence indicators
 
 ---
 
@@ -141,19 +106,7 @@ backend/
 ```bash
 # Run full CI pipeline locally
 make ci
-
-# Executes: lint -> test-cov -> security
-```
-
----
-
-## CI/CD Pipeline
-
-### Automated Quality Gates
-
-| Check | Tool | Blocking | Threshold |
-|-------|------|----------|-----------|
-| Python linting | Ruff | Yes | Zero errors |
+@@ -157,50 +164,64 @@ make ci
 | Python type checking | mypy | Yes | Zero errors |
 | Backend tests | pytest | Yes | 70% coverage |
 | Frontend linting | ESLint | Yes | Zero errors |
@@ -176,6 +129,20 @@ jobs:
 ### Coverage Requirements
 - **Backend (Python)**: Minimum 70% coverage, target 80%+ for new code
 - **Frontend (JavaScript)**: Minimum 70% coverage across branches, functions, lines, statements
+
+---
+
+## Observability & Maintenance
+
+### System Insights
+- **Live metrics**: CPU, RAM, disk, and temperature surfaced in the UI
+- **Network telemetry**: WAN uptime, VPN handshake stats, and hotspot client counts
+- **Log streaming**: Tail recent backend logs for support diagnostics
+
+### Backup & Updates
+- **Configuration backups**: Downloadable tarball containing VPN profiles and network settings
+- **Offline update flow**: Upload signed bundle to upgrade without internet connectivity
+- **Safety nets**: Update pre-checks verify disk space, signatures, and version compatibility
 
 ---
 
@@ -204,34 +171,3 @@ jobs:
 |-------|--------------|------------|-------|
 | Raspberry Pi 5 | Full | 2.4GHz + 5GHz | Optimal performance |
 | Raspberry Pi 4 | Full | 2.4GHz + 5GHz | Recommended |
-| Raspberry Pi 3 B+ | Limited | 2.4GHz only | Reduced performance |
-| Raspberry Pi Zero 2 W | Basic | 2.4GHz only | Personal use only |
-
-### Automatic Detection
-- Raspberry Pi model and capabilities
-- Network interfaces (Ethernet, built-in WiFi, USB WiFi)
-- WiFi capabilities (5GHz, 802.11ac/ax, AP mode)
-- System resources (RAM, disk space, CPU temperature)
-
----
-
-## Testing Strategy
-
-### Test Organization
-- **Unit tests**: Service layer methods in isolation
-- **API tests**: HTTP endpoint behavior verification
-- **Integration tests**: Hardware-dependent functionality (marked for skip in CI)
-- **Mock infrastructure**: `CommandRunner` mocking for deterministic tests
-
-### Running Tests
-```bash
-# All tests with coverage
-make test-cov
-
-# Fast execution without coverage
-make test-fast
-
-# Specific test patterns
-pytest tests/test_vpn_service.py -v
-pytest -m "not integration"
-```
