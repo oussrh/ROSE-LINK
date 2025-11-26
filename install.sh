@@ -11,7 +11,7 @@ set -euo pipefail
 trap 'handle_error $? $LINENO' ERR
 
 # ===== Configuration =====
-readonly VERSION="2.0.0"
+readonly VERSION="1.1.0"
 readonly INSTALL_DIR="/opt/rose-link"
 readonly USER="rose"
 readonly GROUP="rose"
