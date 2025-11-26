@@ -14,7 +14,12 @@ Features:
 - VPN watchdog settings
 
 Architecture:
-This module is the application entry point. Business logic is organized in:
+This module is the application entry point. It uses the application factory
+pattern for better testability and separation of concerns:
+
+- core/app_factory.py: Application creation and configuration
+- core/lifespan.py: Startup/shutdown event handling
+- core/middleware.py: CORS and security middleware
 - config.py: Centralized configuration constants
 - models.py: Pydantic models and dataclasses
 - exceptions.py: Custom exception hierarchy
@@ -30,23 +35,9 @@ Version: 0.2.1
 from __future__ import annotations
 
 import logging
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-
-from config import (
-    APP_NAME,
-    APP_VERSION,
-    APP_DESCRIPTION,
-    Paths,
-    Security,
-    Server,
-)
-from api import api_router
-from services.auth_service import AuthService
+from config import Server
+from core import create_app
 
 # =============================================================================
 # Logging Configuration
@@ -57,137 +48,14 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
-logger = logging.getLogger("rose-link")
-
 
 # =============================================================================
-# Lifespan Handler (Startup/Shutdown)
+# Application Instance
 # =============================================================================
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """
-    Application lifespan handler for startup and shutdown events.
-
-    Startup:
-    - Creates required directories with proper permissions
-    - Initializes or retrieves API key for authentication
-
-    This approach ensures initialization happens explicitly at startup
-    rather than at module import time, improving testability and
-    deployability in various environments.
-    """
-    # === STARTUP ===
-    logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
-
-    # Create required directories with error handling
-    try:
-        Paths.WG_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"Ensured WireGuard profiles directory exists: {Paths.WG_PROFILES_DIR}")
-    except PermissionError as e:
-        logger.error(f"Permission denied creating directory {Paths.WG_PROFILES_DIR}: {e}")
-        logger.warning("Application may have limited functionality without write access")
-    except OSError as e:
-        logger.error(f"Failed to create directory {Paths.WG_PROFILES_DIR}: {e}")
-
-    # Initialize API key with error handling
-    try:
-        api_key = AuthService.get_or_create_api_key()
-        if api_key:
-            logger.info(f"API key available at {Paths.API_KEY_FILE}")
-        else:
-            logger.warning("API key initialization returned empty key")
-    except PermissionError as e:
-        logger.error(f"Permission denied accessing API key files: {e}")
-        logger.warning("Authentication may not work correctly")
-    except OSError as e:
-        logger.error(f"Failed to initialize API key: {e}")
-
-    logger.info("Startup complete")
-
-    yield  # Application runs here
-
-    # === SHUTDOWN ===
-    logger.info(f"Shutting down {APP_NAME}")
-
-
-# =============================================================================
-# Application Setup
-# =============================================================================
-
-app = FastAPI(
-    title=f"{APP_NAME} API",
-    description=APP_DESCRIPTION,
-    version=APP_VERSION,
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    lifespan=lifespan,
-)
-
-# =============================================================================
-# Middleware Configuration
-# =============================================================================
-
-# CORS - Restricted to local network only (security)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=Security.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=Security.ALLOWED_METHODS,
-    allow_headers=Security.ALLOWED_HEADERS,
-)
-
-# =============================================================================
-# Route Registration
-# =============================================================================
-
-# Mount API routes under /api prefix
-app.include_router(api_router, prefix="/api")
-
-
-# Health check endpoint (at root API level)
-@app.get("/api/health", tags=["Health"])
-async def health_check() -> dict[str, str]:
-    """
-    Health check endpoint for monitoring.
-
-    Returns:
-        Status information for the ROSE Link service
-    """
-    return {
-        "status": "ok",
-        "service": APP_NAME,
-        "version": APP_VERSION,
-    }
-
-
-# Combined status endpoint (at root API level for backward compatibility)
-@app.get("/api/status", tags=["Status"])
-async def get_status() -> dict:
-    """
-    Get overall system status including WAN, VPN, and hotspot.
-
-    Returns:
-        Combined status of all major components
-    """
-    from services.wan_service import WANService
-    from services.vpn_service import VPNService
-    from services.hotspot_service import HotspotService
-
-    return {
-        "wan": WANService.get_status().to_dict(),
-        "vpn": VPNService.get_status().to_dict(),
-        "ap": HotspotService.get_status().to_dict(),
-    }
-
-
-# =============================================================================
-# Static Files
-# =============================================================================
-
-# Serve web UI - must be last to not override API routes
-app.mount("/", StaticFiles(directory=str(Paths.WEB_DIR), html=True), name="static")
+# Create the application using the factory pattern
+# This allows for easy testing with different configurations
+app = create_app()
 
 
 # =============================================================================
