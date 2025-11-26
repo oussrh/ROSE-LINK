@@ -1,547 +1,284 @@
-# 🌹 ROSE Link
+# ROSE Link
 
-**Routeur VPN domestique sur Raspberry Pi 4**
+**Home VPN Router on Raspberry Pi**
 
-Transformez votre Raspberry Pi 4 en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau en Belgique, vous permettant d'accéder à vos ressources locales et d'avoir une IP publique belge depuis n'importe où dans le monde.
+Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%204-red)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
+
+**[Version Francaise](README.fr.md)**
 
 ---
 
-## 🎯 Objectif
+## Objective
 
-ROSE Link crée une solution VPN complète qui :
+ROSE Link creates a complete VPN solution that:
 
-- 📡 **Se connecte à Internet** via Ethernet RJ45 (priorité) ou WiFi client (fallback automatique)
-- 🔐 **Établit un tunnel WireGuard** vers votre Fritz!Box en Belgique (ou tout autre serveur VPN)
-- 📶 **Crée un hotspot Wi-Fi local** pour vos appareils (PC, smartphone, tablette)
-- 🌍 **Route tout le trafic** par la Belgique pour accès réseau local + IP publique BE
-- 🎨 **Interface Web moderne** pour configurer WAN, VPN et Hotspot facilement
+- **Connects to Internet** via Ethernet RJ45 (priority) or WiFi client (automatic fallback)
+- **Establishes a WireGuard tunnel** to your VPN server (Fritz!Box, pfSense, OpenWrt, VPS...)
+- **Creates a local WiFi hotspot** for your devices (PC, smartphone, tablet)
+- **Routes all traffic** through VPN for remote network access + server's public IP
+- **Modern Web interface** to configure WAN, VPN and Hotspot easily
+- **Flexible configuration** via web interface (country, WiFi channels, VPN settings)
 
 ```
-[PC/Smartphone] ~~~Wi-Fi~~~> Raspberry Pi 4 (ROSE Link Hotspot)
-                                    │
+[PC/Smartphone] ~~~WiFi~~~> Raspberry Pi (ROSE Link Hotspot)
+                                    |
                               WireGuard (wg0)
-                                    │
-                              Fritz!Box 🇧🇪
-                                    │
-                          Réseau Belgique + Internet
+                                    |
+                              Remote VPN Server
+                              (Fritz!Box, VPS, etc.)
+                                    |
+                          Remote Network + Internet
 ```
 
 ---
 
-## ✨ Fonctionnalités Pro
+## Features
 
-### 🌐 Connectivité WAN Intelligente
-- ✅ **Auto-basculement** : Ethernet RJ45 prioritaire → WiFi client en fallback
-- ✅ **Configuration facile** : Scanner et connexion WiFi depuis l'interface Web
-- ✅ **Surveillance** : Statut en temps réel de la connexion WAN
+### Intelligent WAN Connectivity
+- Auto-failover: Ethernet RJ45 priority -> WiFi client fallback
+- Easy configuration: Scan and connect to WiFi from web interface
+- Real-time monitoring: WAN connection status
 
-### 🔒 VPN WireGuard Avancé
-- ✅ **Multi-profils** : Importez et gérez plusieurs configurations VPN
-- ✅ **Import .conf** : Upload direct de fichiers WireGuard depuis Fritz!Box
-- ✅ **Kill-switch** : Bloque tout trafic si le VPN tombe (pas de fuite)
-- ✅ **Watchdog** : Surveillance et reconnexion automatique du tunnel
-- ✅ **Statut détaillé** : Handshake, endpoint, transfert de données
+### Advanced WireGuard VPN
+- Multi-profile: Import and manage multiple VPN configurations
+- .conf import: Direct upload of WireGuard files
+- Kill-switch: Blocks all traffic if VPN drops (no leaks)
+- Watchdog: Automatic monitoring and reconnection
+- Detailed status: Handshake, endpoint, data transfer
 
-### 📶 Hotspot WiFi Configurable
-- ✅ **SSID personnalisable** : Choisissez votre nom de réseau
-- ✅ **Sécurité WPA2/WPA3** : WPA3 si matériel compatible
-- ✅ **Configuration pays** : Canaux et puissance conformes à la réglementation
-- ✅ **Sélection canal** : Optimisez les performances
-- ✅ **Clients connectés** : Compteur en temps réel
+### Configurable WiFi Hotspot
+- Custom SSID: Choose your network name
+- WPA2/WPA3 security: WPA3 if hardware supports it
+- Country configuration: Channels and power compliant with regulations
+- Channel selection: Optimize performance (2.4GHz and 5GHz)
+- Connected clients: Real-time counter
 
-### 🎨 Interface Utilisateur Moderne
-- ✅ **Dark mode** : Interface élégante et agréable pour les yeux
-- ✅ **Responsive** : Fonctionne sur desktop, tablette et mobile
-- ✅ **Temps réel** : Rafraîchissement automatique des statuts
-- ✅ **HTTPS** : Connexion sécurisée (certificat auto-signé)
+### Modern User Interface
+- Dark mode: Elegant and eye-friendly interface
+- Responsive: Works on desktop, tablet and mobile
+- Real-time: Automatic status refresh
+- HTTPS: Secure connection (self-signed certificate)
+- Bilingual: English and French support
 
-### 🛡️ Sécurité Renforcée
-- ✅ **Isolation backend** : API accessible uniquement via Nginx
-- ✅ **Sudoers restreint** : Accès minimal aux commandes système
-- ✅ **Fichiers protégés** : Configurations VPN en mode 600
-- ✅ **Kill-switch iptables** : Protection contre les fuites
+### Enhanced Security
+- Backend isolation: API accessible only via Nginx
+- Restricted sudoers: Minimal system command access
+- Protected files: VPN configurations in mode 600
+- iptables kill-switch: Leak protection
 
 ---
 
-## 📦 Installation
+## Installation
 
-### Méthode 1 : Archive (recommandé pour test)
+### Method 1: Archive (recommended for testing)
 
 ```bash
-# Télécharger l'archive
+# Download archive
 wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
 
-# Extraire
+# Extract
 tar -xzf rose-link-pro.tar.gz
 cd rose-link
 
-# Installer
+# Install
 sudo bash install.sh
 ```
 
-### Méthode 2 : Paquet Debian (propre)
+### Method 2: Debian Package (clean)
 
 ```bash
-# Télécharger le paquet
+# Download package
 wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
 
-# Installer
+# Install
 sudo apt-get install ./rose-link-pro_0.1.0-1_all.deb
 ```
 
-### Méthode 3 : Dépôt APT (production)
+### Method 3: APT Repository (production)
 
 ```bash
-# Installation en une ligne
+# One-line installation
 curl -fsSL https://oussrh.github.io/roselink-repo/install.sh | sudo bash
 ```
 
-Ou manuellement :
+---
 
-```bash
-# Ajouter la clé GPG
-curl -fsSL https://oussrh.github.io/roselink-repo/ROSELINK-REPO.gpg \
-  | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/roselink.gpg
+## Quick Configuration
 
-# Ajouter le dépôt
-echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] https://oussrh.github.io/roselink-repo bookworm main" \
-  | sudo tee /etc/apt/sources.list.d/roselink.list
+### 1. Access the Web Interface
 
-# Installer
-sudo apt update
-sudo apt install -y rose-link-pro
-```
+After installation, connect to the default hotspot:
+- **SSID**: `ROSE-Link`
+- **Password**: `RoseLink2024`
+
+Then open your browser:
+- **URL**: `https://roselink.local` or `https://192.168.50.1`
+
+> **Note**: Accept the self-signed certificate warning
+
+### 2. Configure WireGuard VPN
+
+1. Go to the **VPN** tab
+2. Click **"Import WireGuard profile (.conf)"**
+3. Select your `.conf` file from your VPN server
+4. The VPN starts automatically!
+
+### 3. Customize the Hotspot
+
+1. Go to the **Hotspot** tab
+2. Configure:
+   - SSID (network name)
+   - Password (min. 8 characters)
+   - Country (regulatory settings)
+   - Channel (1, 6 or 11 recommended for 2.4GHz)
+   - Band (2.4GHz or 5GHz)
+   - WPA3 (check if supported)
+3. Click **"Apply"**
+
+### 4. Configure VPN Watchdog
+
+1. Go to the **System** tab
+2. Set the ping IP to verify VPN connectivity
+3. Adjust check interval if needed
+4. Save settings
 
 ---
 
-## 🚀 Configuration Rapide
+## Supported Hardware
 
-### 1️⃣ Accès à l'interface Web
+### Compatible Raspberry Pi Models
 
-Après installation, connectez-vous au hotspot par défaut :
-- **SSID** : `ROSE-Link`
-- **Mot de passe** : `RoseLink2024`
+| Model | Support | WiFi | Notes |
+|-------|---------|------|-------|
+| **Raspberry Pi 5** | Full | 2.4GHz + 5GHz | Optimal performance, WiFi 802.11ac |
+| **Raspberry Pi 4** | Full | 2.4GHz + 5GHz | Recommended, good price/performance |
+| **Raspberry Pi 3 B+** | Limited | 2.4GHz only | Reduced performance, suitable for light use |
+| **Raspberry Pi Zero 2 W** | Basic | 2.4GHz only | Limited resources, personal use only |
 
-Puis ouvrez votre navigateur :
-- **URL** : `https://roselink.local` ou `https://192.168.50.1`
+### Recommended Configuration
 
-⚠️ **Note** : Acceptez l'avertissement du certificat auto-signé
+#### Raspberry Pi 5 / Pi 4 (Recommended)
+- **RAM**: 2 GB minimum, 4 GB recommended
+- **Power**: 5V 3A USB-C (5V 5A for Pi 5)
+- **microSD card**: Class A2, 32-64 GB
+- **Case with fan** (active cooling recommended)
 
-### 2️⃣ Configurer le VPN WireGuard
+### Connectivity
 
-1. Allez dans l'onglet **🔐 VPN**
-2. Cliquez sur **"Importer un profil WireGuard (.conf)"**
-3. Sélectionnez votre fichier `.conf` depuis la Fritz!Box
-4. Le VPN démarre automatiquement !
+| Interface | Usage | Pi 5 | Pi 4 | Pi 3 | Zero 2W |
+|-----------|-------|------|------|------|---------|
+| **Ethernet RJ45** | WAN priority | Gigabit | Gigabit | 100Mbps | - |
+| **Built-in WiFi** | Hotspot AP | 5GHz/ac | 5GHz/ac | 2.4GHz | 2.4GHz |
+| **USB WiFi Dongle** | WAN + AP separate | Yes | Yes | Yes | Yes |
 
-### 3️⃣ Personnaliser le Hotspot
+### Automatic Hardware Detection
 
-1. Allez dans l'onglet **📶 Hotspot**
-2. Configurez :
-   - SSID (nom du réseau)
-   - Mot de passe (min. 8 caractères)
-   - Pays (BE, MA, FR, etc.)
-   - Canal (1, 6 ou 11 recommandés)
-   - WPA3 (cochez si supporté)
-3. Cliquez sur **"Appliquer"**
-
-### 4️⃣ Configurer la connexion WAN (optionnel)
-
-Si vous voulez utiliser WiFi comme WAN (au lieu d'Ethernet) :
-
-1. Allez dans l'onglet **📡 WiFi WAN**
-2. Cliquez sur **"Scanner les réseaux"**
-3. Connectez-vous au réseau souhaité
-4. Le basculement se fait automatiquement si l'Ethernet est déconnecté
+ROSE Link automatically detects:
+- **Raspberry Pi model** and capabilities
+- **Network interfaces** (Ethernet, built-in WiFi, USB WiFi)
+- **WiFi capabilities** (5GHz, 802.11ac/ax, AP mode)
+- **System resources** (RAM, disk space, CPU temperature)
 
 ---
 
-## 🧪 Tests et Validation
+## REST API
 
-### Vérifier l'IP publique
+### Available Endpoints
 
-```bash
-# Depuis un appareil connecté au hotspot ROSE Link
-curl ifconfig.me
-# Devrait afficher une IP belge
-```
-
-### Accéder au réseau local belge
-
-```bash
-# Ping la Fritz!Box
-ping 192.168.178.1
-
-# Accéder à l'interface Fritz!Box
-# Ouvrir http://192.168.178.1 dans le navigateur
-```
-
-### Vérifier les services
-
-```bash
-# Sur la Raspberry Pi
-sudo systemctl status rose-backend
-sudo systemctl status rose-watchdog
-sudo systemctl status wg-quick@wg0
-sudo systemctl status hostapd
-
-# Statut VPN
-sudo wg show
-```
-
----
-
-## 🛠️ Administration
-
-### Redémarrer le VPN
-
-```bash
-sudo systemctl restart wg-quick@wg0
-```
-
-### Voir les logs
-
-```bash
-# Backend API
-journalctl -u rose-backend -f
-
-# VPN Watchdog
-journalctl -u rose-watchdog -f
-
-# Hotspot
-journalctl -u hostapd -f
-```
-
-### Règles iptables (NAT + Kill-switch)
-
-```bash
-# Voir les règles NAT
-sudo iptables -t nat -S
-
-# Voir les règles de forwarding
-sudo iptables -S FORWARD
-```
-
-### Changer le mot de passe du hotspot
-
-Via l'interface Web (onglet Hotspot) ou manuellement :
-
-```bash
-# Éditer /etc/hostapd/hostapd.conf
-sudo nano /etc/hostapd/hostapd.conf
-
-# Redémarrer hostapd
-sudo systemctl restart hostapd
-```
-
----
-
-## 🔌 Matériel Recommandé
-
-### Configuration Standard
-- **Raspberry Pi 4** (2 Go minimum, 4 Go recommandé)
-- **Alimentation officielle** 5V 3A USB-C
-- **Carte microSD** classe A2, 32-64 Go
-- **Boîtier avec ventilateur** (refroidissement actif recommandé)
-
-### Connectivité
-- **Ethernet RJ45** : Connexion WAN prioritaire
-- **WiFi intégré** : Utilisé pour le hotspot (AP)
-- **Dongle WiFi USB** (optionnel) : Pour WiFi WAN + AP simultanés
-
-### Notes
-- Le WiFi intégré du Pi 4 peut gérer AP + client, mais performances limitées
-- Un second dongle WiFi USB améliore la stabilité si vous utilisez WiFi WAN + AP
-- Pour un usage Ethernet WAN + Hotspot WiFi : le WiFi intégré suffit
-
----
-
-## 📁 Architecture Technique
-
-### Structure des fichiers
-
-```
-/opt/rose-link/
-├── backend/
-│   ├── main.py              # API FastAPI
-│   ├── requirements.txt
-│   └── venv/                # Environnement Python
-├── web/
-│   ├── index.html           # Interface Web
-│   └── favicon.svg
-└── system/
-    ├── hostapd.conf         # Config hotspot
-    ├── dnsmasq.conf         # DHCP/DNS local
-    ├── rose-watchdog.sh     # Watchdog VPN
-    └── nginx/roselink       # Config Nginx
-
-/etc/
-├── wireguard/
-│   ├── wg0.conf -> profiles/xxx.conf  # Symlink actif
-│   └── profiles/            # Profils VPN
-├── systemd/system/
-│   ├── rose-backend.service
-│   ├── rose-watchdog.service
-│   └── wg-quick@wg0.service
-└── nginx/
-    └── sites-enabled/roselink
-```
-
-### Services systemd
-
-- **rose-backend** : API FastAPI (port 8000, local)
-- **rose-watchdog** : Surveillance du VPN et reconnexion auto
-- **wg-quick@wg0** : Tunnel WireGuard
-- **hostapd** : Point d'accès WiFi
-- **dnsmasq** : DHCP + DNS local
-- **nginx** : Reverse proxy HTTPS
-
-### Réseau
-
-- **eth0** : WAN Ethernet (prioritaire)
-- **wlan0** : WAN WiFi (fallback) ou inutilisé
-- **wlan1** : Hotspot AP (192.168.50.1/24)
-- **wg0** : Interface VPN WireGuard
-
-### Routage
-
-```
-Clients (192.168.50.0/24)
-    ↓
-wlan1 (AP) → iptables NAT → wg0 → Internet via Fritz!Box
-                         ↓
-                   Kill-switch si wg0 down
-```
-
----
-
-## 🔒 Sécurité
-
-### Mesures implémentées
-
-1. **Isolation du backend** : API accessible uniquement via Nginx (127.0.0.1)
-2. **HTTPS obligatoire** : Certificat auto-signé (remplaçable par Let's Encrypt)
-3. **Sudoers restreint** : Utilisateur `rose` avec accès minimal aux commandes
-4. **Kill-switch iptables** : Pas de trafic si wg0 tombe
-5. **Permissions fichiers** : Configurations VPN en mode 600
-6. **Pas de root** : Services tournent avec utilisateur dédié `rose`
-
-### Améliorer la sécurité
-
-#### Remplacer le certificat auto-signé (optionnel)
-
-```bash
-# Avec Let's Encrypt (nécessite domaine public)
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d votre-domaine.com
-```
-
-#### Changer le mot de passe par défaut
-
-Via l'interface Web, onglet **Hotspot**, ou :
-
-```bash
-sudo nano /etc/hostapd/hostapd.conf
-# Modifier wpa_passphrase
-sudo systemctl restart hostapd
-```
-
----
-
-## 🌍 Cas d'usage
-
-### 1. Accès réseau domestique à distance
-
-Vous êtes au Maroc, votre réseau principal est en Belgique :
-- Accédez à votre Fritz!Box (192.168.178.1)
-- Accédez à votre NAS, imprimante, etc.
-- Gérez votre réseau comme si vous étiez sur place
-
-### 2. IP publique belge
-
-Pour contourner les restrictions géographiques :
-- Services bancaires belges
-- Streaming vidéo géo-restreint
-- Services web nécessitant IP belge
-
-### 3. Connexion sécurisée en déplacement
-
-- Hôtel, café, coworking : VPN automatique
-- Pas besoin de configurer chaque appareil
-- Un seul hotspot ROSE Link protège tout
-
-### 4. Partage VPN familial/équipe
-
-- Plusieurs appareils connectés au hotspot
-- Tous passent par le VPN automatiquement
-- Configuration centralisée
-
----
-
-## 🐛 Dépannage
-
-### Le VPN ne démarre pas
-
-```bash
-# Vérifier les logs
-journalctl -u wg-quick@wg0 -n 50
-
-# Vérifier la config
-sudo wg show
-
-# Tester manuellement
-sudo wg-quick up wg0
-```
-
-### Le hotspot ne fonctionne pas
-
-```bash
-# Vérifier hostapd
-systemctl status hostapd
-journalctl -u hostapd -n 50
-
-# Vérifier l'interface
-ip addr show wlan1
-
-# Tester hostapd manuellement
-sudo hostapd -dd /etc/hostapd/hostapd.conf
-```
-
-### Pas d'Internet sur les clients
-
-```bash
-# Vérifier le forwarding IP
-cat /proc/sys/net/ipv4/ip_forward
-# Devrait afficher 1
-
-# Vérifier iptables
-sudo iptables -t nat -L POSTROUTING -v
-sudo iptables -L FORWARD -v
-
-# Vérifier wg0
-sudo wg show
-ping -I wg0 8.8.8.8
-```
-
-### L'interface Web est inaccessible
-
-```bash
-# Vérifier Nginx
-systemctl status nginx
-sudo nginx -t
-
-# Vérifier le backend
-systemctl status rose-backend
-journalctl -u rose-backend -n 50
-
-# Tester le backend directement
-curl http://127.0.0.1:8000/api/health
-```
-
-### WiFi WAN ne se connecte pas
-
-```bash
-# Lister les réseaux
-sudo nmcli device wifi list
-
-# Vérifier NetworkManager
-systemctl status NetworkManager
-
-# Se connecter manuellement
-sudo nmcli device wifi connect "SSID" password "PASSWORD"
-```
-
----
-
-## 📊 API REST
-
-### Endpoints disponibles
-
-#### Santé et statut
+#### Health and Status
 - `GET /api/health` - Health check
-- `GET /api/status` - Statut global (WAN, VPN, AP)
+- `GET /api/status` - Global status (WAN, VPN, AP)
 
 #### WiFi WAN
-- `POST /api/wifi/scan` - Scanner les réseaux WiFi
-- `POST /api/wifi/connect` - Se connecter à un réseau
-- `POST /api/wifi/disconnect` - Se déconnecter
+- `POST /api/wifi/scan` - Scan WiFi networks
+- `POST /api/wifi/connect` - Connect to network
+- `POST /api/wifi/disconnect` - Disconnect
 
 #### VPN
-- `GET /api/vpn/status` - Statut du VPN
-- `GET /api/vpn/profiles` - Liste des profils
-- `POST /api/vpn/upload` - Upload un profil (sans activer)
-- `POST /api/vpn/import` - Import et activation
-- `POST /api/vpn/activate` - Activer un profil existant
-- `POST /api/vpn/start` - Démarrer le VPN
-- `POST /api/vpn/stop` - Arrêter le VPN
-- `POST /api/vpn/restart` - Redémarrer le VPN
+- `GET /api/vpn/status` - VPN status
+- `GET /api/vpn/profiles` - List profiles
+- `POST /api/vpn/upload` - Upload profile (without activating)
+- `POST /api/vpn/import` - Import and activate
+- `POST /api/vpn/activate` - Activate existing profile
+- `POST /api/vpn/start` - Start VPN
+- `POST /api/vpn/stop` - Stop VPN
+- `POST /api/vpn/restart` - Restart VPN
 
 #### Hotspot
-- `GET /api/hotspot/status` - Statut du hotspot
-- `POST /api/hotspot/apply` - Appliquer une config
-- `POST /api/hotspot/restart` - Redémarrer le hotspot
+- `GET /api/hotspot/status` - Hotspot status
+- `POST /api/hotspot/apply` - Apply configuration
+- `POST /api/hotspot/restart` - Restart hotspot
 
-#### Système
-- `GET /api/system/logs?service=xxx` - Logs d'un service
-- `POST /api/system/reboot` - Redémarrer le système
+#### Settings
+- `GET /api/settings/vpn` - Get VPN watchdog settings
+- `POST /api/settings/vpn` - Update VPN watchdog settings
 
-### Exemple d'utilisation
+#### System
+- `GET /api/system/info` - System information (Pi model, RAM, CPU, WiFi)
+- `GET /api/system/interfaces` - Detected network interfaces
+- `GET /api/system/logs?service=xxx` - Service logs
+- `POST /api/system/reboot` - Reboot system
+
+### Usage Example
 
 ```bash
 # Health check
 curl -k https://roselink.local/api/health
 
-# Statut global
+# Global status
 curl -k https://roselink.local/api/status | jq
 
-# Scanner WiFi
+# Scan WiFi
 curl -k -X POST https://roselink.local/api/wifi/scan | jq
 
-# Statut VPN
+# VPN status
 curl -k https://roselink.local/api/vpn/status | jq
+
+# System information
+curl -k https://roselink.local/api/system/info | jq
 ```
 
 ---
 
-## 🛣️ Roadmap
+## Roadmap
 
-### Version 0.2.0 (Q2 2025)
-- [ ] Interface Web SPA Next.js avec animations
-- [ ] WebSocket pour statut temps réel
-- [ ] Support i18n (FR, EN, NL)
-- [ ] Sauvegarde/restauration configuration
+### Version 0.2.0
+- [ ] Next.js SPA interface with animations
+- [ ] WebSocket for real-time status
+- [ ] i18n support (FR, EN, NL)
+- [ ] Configuration backup/restore
 
-### Version 0.3.0 (Q3 2025)
-- [ ] QoS simple (priorisation trafic)
-- [ ] AdGuard Home intégré (DNS + blocage pubs)
-- [ ] Support OpenVPN en plus de WireGuard
-- [ ] Dashboard metrics (Grafana)
+### Version 0.3.0
+- [ ] Simple QoS (traffic prioritization)
+- [ ] Integrated AdGuard Home (DNS + ad blocking)
+- [ ] OpenVPN support in addition to WireGuard
+- [ ] Metrics dashboard (Grafana)
 
-### Version 1.0.0 (Q4 2025)
-- [ ] Image SD flashable prête à l'emploi
-- [ ] Assistant de configuration première installation
-- [ ] Support multi-WAN (load balancing)
-- [ ] Application mobile iOS/Android
+### Version 1.0.0
+- [ ] Ready-to-flash SD image
+- [ ] First-time setup wizard
+- [ ] Multi-WAN support (load balancing)
+- [ ] iOS/Android mobile app
 
 ---
 
-## 🤝 Contribution
+## Contributing
 
-Les contributions sont les bienvenues !
+Contributions are welcome!
 
-### Comment contribuer
+### How to Contribute
 
-1. Fork le projet
-2. Créez une branche (`git checkout -b feature/AmazingFeature`)
-3. Committez vos changements (`git commit -m 'Add AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
+1. Fork the project
+2. Create a branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Développement local
+### Local Development
 
 ```bash
 # Clone
@@ -555,39 +292,39 @@ source venv/bin/activate
 pip install -r requirements.txt
 python main.py
 
-# Web : ouvrir web/index.html dans un navigateur
+# Web: open web/index.html in a browser
 ```
 
 ---
 
-## 📄 Licence
+## License
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
----
-
-## 🙏 Remerciements
-
-- **WireGuard** : VPN moderne et performant
-- **FastAPI** : Framework Python rapide et élégant
-- **Tailwind CSS** : Framework CSS utility-first
-- **htmx** : Interactivité HTML moderne
-- **Raspberry Pi Foundation** : Matériel extraordinaire
+This project is under MIT License. See the `LICENSE` file for details.
 
 ---
 
-## 📞 Support
+## Acknowledgments
 
-- **Documentation** : [GitHub Wiki](https://github.com/oussrh/ROSE-LINK/wiki)
-- **Issues** : [GitHub Issues](https://github.com/oussrh/ROSE-LINK/issues)
-- **Discussions** : [GitHub Discussions](https://github.com/oussrh/ROSE-LINK/discussions)
+- **WireGuard**: Modern and performant VPN
+- **FastAPI**: Fast and elegant Python framework
+- **Tailwind CSS**: Utility-first CSS framework
+- **htmx**: Modern HTML interactivity
+- **Raspberry Pi Foundation**: Extraordinary hardware
+
+---
+
+## Support
+
+- **Documentation**: [GitHub Wiki](https://github.com/oussrh/ROSE-LINK/wiki)
+- **Issues**: [GitHub Issues](https://github.com/oussrh/ROSE-LINK/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/oussrh/ROSE-LINK/discussions)
 
 ---
 
 <div align="center">
 
-**🌹 Made with love for secure remote access**
+**Made with love for secure remote access**
 
-[⭐ Star ce projet](https://github.com/oussrh/ROSE-LINK) | [🐛 Reporter un bug](https://github.com/oussrh/ROSE-LINK/issues) | [💡 Suggérer une feature](https://github.com/oussrh/ROSE-LINK/issues)
+[Star this project](https://github.com/oussrh/ROSE-LINK) | [Report a bug](https://github.com/oussrh/ROSE-LINK/issues) | [Suggest a feature](https://github.com/oussrh/ROSE-LINK/issues)
 
 </div>
