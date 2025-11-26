@@ -102,7 +102,9 @@ export function initVPNSettingsForm() {
                 showToast(t('vpn_settings_saved'), 'success');
             })
             .catch((err) => {
-                const msg = err.detail || t('settings_save_failed');
+                // Escape error message from server to prevent XSS
+                const serverMsg = err.detail ? escapeHtml(String(err.detail)) : null;
+                const msg = serverMsg || t('settings_save_failed');
                 showToast(msg, 'error');
             })
             .finally(() => setButtonLoading(btn, false));

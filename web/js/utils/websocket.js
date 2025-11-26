@@ -223,6 +223,36 @@ class WebSocketManager {
 const wsManager = new WebSocketManager();
 
 /**
+ * Update the status badge in the header
+ * @param {boolean} online - Whether the connection is online
+ */
+function updateStatusBadge(online) {
+    const badge = document.getElementById('status-badge');
+    if (!badge) return;
+
+    const indicator = badge.querySelector('div');
+    const text = badge.querySelector('span');
+
+    if (online) {
+        if (indicator) {
+            indicator.className = 'w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full pulse-slow';
+        }
+        if (text) {
+            text.setAttribute('data-i18n', 'online');
+            text.textContent = window.t ? window.t('online') : 'Online';
+        }
+    } else {
+        if (indicator) {
+            indicator.className = 'w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full';
+        }
+        if (text) {
+            text.setAttribute('data-i18n', 'offline');
+            text.textContent = window.t ? window.t('offline') : 'Offline';
+        }
+    }
+}
+
+/**
  * Initialize WebSocket connection
  * Call this from main.js during app initialization
  */
@@ -248,11 +278,17 @@ export function initWebSocket() {
 
     // Handle connection events
     wsManager.on('connected', () => {
+        updateStatusBadge(true);
         // Request initial status
         setTimeout(() => {
             wsManager.requestStatus();
             wsManager.requestBandwidth();
         }, 100);
+    });
+
+    // Handle disconnection events
+    wsManager.on('disconnected', () => {
+        updateStatusBadge(false);
     });
 
     return wsManager;
