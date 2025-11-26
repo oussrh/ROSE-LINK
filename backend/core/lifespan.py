@@ -18,6 +18,7 @@ License: MIT
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, AsyncGenerator
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 
 from config import APP_NAME, APP_VERSION, Paths
 from services.auth_service import AuthService
+from core.websocket import manager as ws_manager
 
 logger = logging.getLogger("rose-link.lifespan")
 
@@ -38,6 +40,7 @@ async def startup_tasks() -> None:
     Tasks:
     1. Create required directories (WireGuard profiles, etc.)
     2. Initialize or retrieve the API key
+    3. Start WebSocket broadcast loop
 
     Each task handles its own errors gracefully to allow partial
     functionality even if some initialization fails.
@@ -50,6 +53,9 @@ async def startup_tasks() -> None:
     # Initialize authentication
     await _initialize_auth()
 
+    # Start WebSocket broadcast loop for real-time updates
+    await _start_websocket_broadcast()
+
     logger.info("Startup complete")
 
 
@@ -58,10 +64,14 @@ async def shutdown_tasks() -> None:
     Execute all shutdown tasks.
 
     Tasks:
-    1. Log shutdown event
-    2. Clean up any resources (future: close connections, etc.)
+    1. Close all WebSocket connections
+    2. Log shutdown event
     """
     logger.info(f"Shutting down {APP_NAME}")
+
+    # Close all WebSocket connections gracefully
+    await ws_manager.close_all()
+    logger.info("All WebSocket connections closed")
 
 
 async def _ensure_directories() -> None:
@@ -102,6 +112,21 @@ async def _initialize_auth() -> None:
         logger.warning("Authentication may not work correctly")
     except OSError as e:
         logger.error(f"Failed to initialize API key: {e}")
+
+
+async def _start_websocket_broadcast() -> None:
+    """
+    Start the WebSocket broadcast loop.
+
+    The broadcast loop sends periodic status updates to all
+    connected WebSocket clients. It runs as a background task.
+    """
+    try:
+        # Start the broadcast loop as a background task
+        asyncio.create_task(ws_manager.start_broadcast_loop(interval=2.0))
+        logger.info("WebSocket broadcast loop started")
+    except Exception as e:
+        logger.error(f"Failed to start WebSocket broadcast loop: {e}")
 
 
 @asynccontextmanager
