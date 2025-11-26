@@ -84,4 +84,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[0.1.0]: https://github.com/USERNAME/ROSE-LINK/releases/tag/v0.1.0
+[0.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.1.0

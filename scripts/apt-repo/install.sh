@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 # Quick install script for ROSE Link from APT repository
-# Usage: curl -fsSL https://raw.githubusercontent.com/USERNAME/roselink-repo/main/install.sh | sudo bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/oussrh/roselink-repo/main/install.sh | sudo bash
 #
 
 set -e
 
-GITHUB_USER="YOUR-USERNAME"  # Change this!
+GITHUB_USER="oussrh"  # Your GitHub username
 REPO_URL="https://$GITHUB_USER.github.io/roselink-repo"
 
 echo "🌹 ROSE Link Quick Installer"
