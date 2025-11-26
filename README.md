@@ -280,25 +280,26 @@ ROSE Link automatically detects:
 - `GET /api/health` - Health check
 - `GET /api/status` - Global status (WAN, VPN, AP)
 - `GET /api/metrics` - Prometheus metrics endpoint
+- `GET /api/metrics/performance` - Request latency and performance metrics (JSON)
 
 #### WebSocket
 - `WS /api/ws` - Real-time status updates
 - `GET /api/ws/status` - WebSocket connection info
 
 #### WiFi WAN
-- `POST /api/wifi/scan` - Scan WiFi networks
-- `POST /api/wifi/connect` - Connect to network
-- `POST /api/wifi/disconnect` - Disconnect
+- `POST /api/wifi/scan` - Scan WiFi networks *(requires auth)*
+- `POST /api/wifi/connect` - Connect to network *(requires auth)*
+- `POST /api/wifi/disconnect` - Disconnect *(requires auth)*
 
 #### VPN (WireGuard + OpenVPN)
 - `GET /api/vpn/status` - VPN status
-- `GET /api/vpn/profiles` - List profiles (both .conf and .ovpn)
-- `POST /api/vpn/upload` - Upload profile (without activating)
-- `POST /api/vpn/import` - Import and activate
-- `POST /api/vpn/activate` - Activate existing profile
-- `POST /api/vpn/start` - Start VPN
-- `POST /api/vpn/stop` - Stop VPN
-- `POST /api/vpn/restart` - Restart VPN
+- `GET /api/vpn/profiles` - List profiles *(requires auth)*
+- `POST /api/vpn/upload` - Upload profile *(requires auth)*
+- `POST /api/vpn/import` - Import and activate *(requires auth)*
+- `POST /api/vpn/activate` - Activate existing profile *(requires auth)*
+- `POST /api/vpn/start` - Start VPN *(requires auth)*
+- `POST /api/vpn/stop` - Stop VPN *(requires auth)*
+- `POST /api/vpn/restart` - Restart VPN *(requires auth)*
 
 #### AdGuard Home (v1.0.0+)
 - `GET /api/adguard/status` - AdGuard status and stats
@@ -332,8 +333,9 @@ ROSE Link automatically detects:
 
 #### Hotspot
 - `GET /api/hotspot/status` - Hotspot status
-- `POST /api/hotspot/apply` - Apply configuration
-- `POST /api/hotspot/restart` - Restart hotspot
+- `GET /api/hotspot/clients` - List connected clients *(requires auth)*
+- `POST /api/hotspot/apply` - Apply configuration *(requires auth)*
+- `POST /api/hotspot/restart` - Restart hotspot *(requires auth)*
 
 #### Backup/Restore
 - `GET /api/backup/list` - List available backups
@@ -356,14 +358,14 @@ ROSE Link automatically detects:
 - `POST /api/ssl/self-signed` - Generate self-signed certificate
 
 #### Settings
-- `GET /api/settings/vpn` - Get VPN watchdog settings
-- `POST /api/settings/vpn` - Update VPN watchdog settings
+- `GET /api/settings/vpn` - Get VPN watchdog settings *(requires auth)*
+- `POST /api/settings/vpn` - Update VPN watchdog settings *(requires auth)*
 
 #### System
 - `GET /api/system/info` - System information (Pi model, RAM, CPU, WiFi)
 - `GET /api/system/interfaces` - Detected network interfaces
-- `GET /api/system/logs?service=xxx` - Service logs
-- `POST /api/system/reboot` - Reboot system
+- `GET /api/system/logs?service=xxx` - Service logs *(requires auth)*
+- `POST /api/system/reboot` - Reboot system *(requires auth)*
 
 ### Usage Example
 
