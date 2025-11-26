@@ -55,18 +55,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simultaneous WiFi WAN + AP on single radio may reduce throughput
 - Fritz!Box-specific VPN endpoint (configurable)
 
+## [0.2.0] - 2025-11-26
+
+### Added
+- Complete i18n support (English & French) with localStorage persistence
+- Mobile-first responsive design for all screen sizes
+- Toast notification system for user feedback
+- Tab state persistence across page reloads
+- Loading spinner indicators for async operations
+- Accessibility improvements (ARIA labels, roles, semantic HTML)
+- CORS middleware for external API access
+- API documentation endpoints (/api/docs, /api/redoc)
+
+### Changed
+- **Backend**: Complete code refactoring with comprehensive docstrings
+- **Backend**: Fixed hardcoded `wlan0` interface - now uses dynamic interface detection
+- **Backend**: Updated deprecated `model.dict()` to `model_dump()` (Pydantic v2)
+- **Backend**: Added command timeout and improved error handling
+- **Backend**: Enhanced input validation with Pydantic Field constraints
+- **Frontend**: Upgraded htmx from 1.9.10 to 2.0.3 (latest stable)
+- **Frontend**: All text now uses i18n system (no more hardcoded French text)
+- **Frontend**: Improved touch targets for mobile devices (touch-manipulation)
+- **Frontend**: Sticky header for better mobile navigation
+- **Frontend**: Optimized status cards for 3-column mobile layout
+- **Dependencies**: Updated to cutting-edge package versions:
+  - FastAPI >= 0.115.0 (was 0.109.0)
+  - Uvicorn >= 0.32.0 (was 0.27.0)
+  - Pydantic >= 2.10.0 (was 2.5.3)
+  - python-multipart >= 0.0.17 (was 0.0.6)
+
+### Fixed
+- WiFi disconnect endpoint now uses configured interface instead of hardcoded `wlan0`
+- VPN transfer stats parsing for edge cases
+- Symlink handling for VPN profile activation
+- Error handling for missing configuration files
+
+### Improved
+- Code organization with clear section separators
+- Type hints throughout the codebase
+- Error messages with more context
+- UI/UX with consistent spacing and responsive breakpoints
+- Performance with optimized re-renders and lazy loading
+
 ## [Unreleased]
 
-### Planned for 0.2.0
-- [ ] Next.js SPA web interface with animations
+### Planned for 0.3.0
 - [ ] WebSocket real-time status updates
-- [ ] i18n support (FR, EN, NL, AR)
 - [ ] Configuration backup/restore
 - [ ] Let's Encrypt SSL certificate option
 - [ ] Speed test integration
 - [ ] Email notifications for VPN failures
-
-### Planned for 0.3.0
 - [ ] QoS (Quality of Service) traffic prioritization
 - [ ] AdGuard Home integration (DNS filtering + ad blocking)
 - [ ] OpenVPN support (in addition to WireGuard)
@@ -84,4 +122,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.2.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.0
 [0.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.1.0
