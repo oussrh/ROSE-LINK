@@ -1,0 +1,112 @@
+/**
+ * ROSE Link - Custom Styles
+ * Custom animations, utilities, and component styles
+ */
+
+/* =================================================================
+   Custom Animations
+   ================================================================= */
+@keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.pulse-slow {
+    animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.spin-slow {
+    animation: spin-slow 2s linear infinite;
+}
+
+/* =================================================================
+   Mobile-first Responsive Utilities
+   ================================================================= */
+.touch-manipulation {
+    touch-action: manipulation;
+}
+
+/* =================================================================
+   Accessibility: Focus States
+   ================================================================= */
+.focus-ring:focus {
+    outline: 2px solid #f43f5e;
+    outline-offset: 2px;
+}
+
+/* =================================================================
+   Status Indicators
+   ================================================================= */
+.status-glow {
+    box-shadow: 0 0 10px currentColor;
+}
+
+/* =================================================================
+   Smooth Transitions
+   ================================================================= */
+.transition-smooth {
+    transition: all 0.2s ease-in-out;
+}
+
+/* =================================================================
+   Scrollbar Utilities
+   ================================================================= */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* =================================================================
+   Lucide Icon Styles
+   ================================================================= */
+.lucide {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.icon-md {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.icon-lg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.icon-xl {
+    width: 2rem;
+    height: 2rem;
+}
+
+.icon-2xl {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+/* =================================================================
+   Toast Notifications
+   ================================================================= */
+.toast-enter {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-exit {
+    transform: translateY(0.5rem);
+    opacity: 0;
+}
