@@ -6,15 +6,50 @@ Centralized configuration for all paths, constants, and settings.
 This module provides a single source of truth for configuration values,
 making the codebase easier to maintain and debug.
 
+Configuration can be customized via environment variables:
+- ROSE_LINK_DIR: Base installation directory (default: /opt/rose-link)
+- ROSE_WG_DIR: WireGuard configuration directory (default: /etc/wireguard)
+- ROSE_HOSTAPD_CONF: hostapd config path (default: /etc/hostapd/hostapd.conf)
+- ROSE_DNSMASQ_LEASES: dnsmasq leases path (default: /var/lib/misc/dnsmasq.leases)
+- ROSE_DEFAULT_ETH_INTERFACE: Default ethernet interface (default: eth0)
+- ROSE_DEFAULT_WIFI_WAN_INTERFACE: Default WiFi WAN interface (default: wlan0)
+- ROSE_DEFAULT_WIFI_AP_INTERFACE: Default WiFi AP interface (default: wlan0)
+- ROSE_SERVER_HOST: API server bind host (default: 127.0.0.1)
+- ROSE_SERVER_PORT: API server bind port (default: 8000)
+- ROSE_LOG_LEVEL: Logging level (default: info)
+- ROSE_COMMAND_TIMEOUT: Default command timeout in seconds (default: 30)
+
 Author: ROSE Link Team
 License: MIT
 """
 
 from __future__ import annotations
 
+import os
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
+
+
+def _get_env_path(key: str, default: str) -> Path:
+    """Get a path from environment variable or use default."""
+    return Path(os.environ.get(key, default))
+
+
+def _get_env_str(key: str, default: str) -> str:
+    """Get a string from environment variable or use default."""
+    return os.environ.get(key, default)
+
+
+def _get_env_int(key: str, default: int) -> int:
+    """Get an integer from environment variable or use default."""
+    value = os.environ.get(key)
+    if value is not None:
+        try:
+            return int(value)
+        except ValueError:
+            pass
+    return default
 
 
 # =============================================================================
@@ -36,10 +71,16 @@ class Paths:
 
     All paths are defined as Path objects for type safety and
     cross-platform compatibility.
+
+    Paths can be customized via environment variables:
+    - ROSE_LINK_DIR: Base installation directory
+    - ROSE_WG_DIR: WireGuard directory
+    - ROSE_HOSTAPD_CONF: hostapd configuration file
+    - ROSE_DNSMASQ_LEASES: dnsmasq leases file
     """
 
-    # Base directories
-    ROSE_LINK_DIR: Final[Path] = Path("/opt/rose-link")
+    # Base directories (configurable via environment)
+    ROSE_LINK_DIR: Final[Path] = _get_env_path("ROSE_LINK_DIR", "/opt/rose-link")
     SYSTEM_DIR: Final[Path] = ROSE_LINK_DIR / "system"
     WEB_DIR: Final[Path] = ROSE_LINK_DIR / "web"
 
@@ -47,14 +88,18 @@ class Paths:
     API_KEY_FILE: Final[Path] = SYSTEM_DIR / ".api_key"
     API_KEY_HASH_FILE: Final[Path] = SYSTEM_DIR / ".api_key_hash"
 
-    # WireGuard VPN paths
-    WG_DIR: Final[Path] = Path("/etc/wireguard")
+    # WireGuard VPN paths (configurable via environment)
+    WG_DIR: Final[Path] = _get_env_path("ROSE_WG_DIR", "/etc/wireguard")
     WG_PROFILES_DIR: Final[Path] = WG_DIR / "profiles"
     WG_ACTIVE_CONF: Final[Path] = WG_DIR / "wg0.conf"
 
-    # Network service configuration files
-    HOSTAPD_CONF: Final[Path] = Path("/etc/hostapd/hostapd.conf")
-    DNSMASQ_LEASES: Final[Path] = Path("/var/lib/misc/dnsmasq.leases")
+    # Network service configuration files (configurable via environment)
+    HOSTAPD_CONF: Final[Path] = _get_env_path(
+        "ROSE_HOSTAPD_CONF", "/etc/hostapd/hostapd.conf"
+    )
+    DNSMASQ_LEASES: Final[Path] = _get_env_path(
+        "ROSE_DNSMASQ_LEASES", "/var/lib/misc/dnsmasq.leases"
+    )
 
     # ROSE Link configuration files
     INTERFACES_CONF: Final[Path] = SYSTEM_DIR / "interfaces.conf"
@@ -115,7 +160,12 @@ class Security:
 # =============================================================================
 
 class Limits:
-    """Application limits and constraints."""
+    """
+    Application limits and constraints.
+
+    Configurable via environment variables:
+    - ROSE_COMMAND_TIMEOUT: Default command timeout in seconds
+    """
 
     # File size limits
     MAX_VPN_PROFILE_SIZE: Final[int] = 1024 * 1024  # 1 MB
@@ -132,8 +182,8 @@ class Limits:
     DEFAULT_CHECK_INTERVAL: Final[int] = 60
     DEFAULT_PING_HOST: Final[str] = "8.8.8.8"
 
-    # Command execution
-    DEFAULT_COMMAND_TIMEOUT: Final[int] = 30  # seconds
+    # Command execution (configurable via environment)
+    DEFAULT_COMMAND_TIMEOUT: Final[int] = _get_env_int("ROSE_COMMAND_TIMEOUT", 30)
 
     # Log retrieval
     DEFAULT_LOG_LINES: Final[int] = 100
@@ -144,12 +194,25 @@ class Limits:
 # =============================================================================
 
 class Network:
-    """Network-related configuration."""
+    """
+    Network-related configuration.
 
-    # Default interface names
-    DEFAULT_ETH_INTERFACE: Final[str] = "eth0"
-    DEFAULT_WIFI_WAN_INTERFACE: Final[str] = "wlan0"
-    DEFAULT_WIFI_AP_INTERFACE: Final[str] = "wlan0"
+    Configurable via environment variables:
+    - ROSE_DEFAULT_ETH_INTERFACE: Default ethernet interface
+    - ROSE_DEFAULT_WIFI_WAN_INTERFACE: Default WiFi WAN interface
+    - ROSE_DEFAULT_WIFI_AP_INTERFACE: Default WiFi AP interface
+    """
+
+    # Default interface names (configurable via environment)
+    DEFAULT_ETH_INTERFACE: Final[str] = _get_env_str(
+        "ROSE_DEFAULT_ETH_INTERFACE", "eth0"
+    )
+    DEFAULT_WIFI_WAN_INTERFACE: Final[str] = _get_env_str(
+        "ROSE_DEFAULT_WIFI_WAN_INTERFACE", "wlan0"
+    )
+    DEFAULT_WIFI_AP_INTERFACE: Final[str] = _get_env_str(
+        "ROSE_DEFAULT_WIFI_AP_INTERFACE", "wlan0"
+    )
 
     # Alternative interface names (for different Pi models)
     ALT_ETH_INTERFACES: Final[tuple[str, ...]] = ("eth0", "end0", "enp1s0")
@@ -228,8 +291,15 @@ class Patterns:
 # =============================================================================
 
 class Server:
-    """Server configuration for uvicorn."""
+    """
+    Server configuration for uvicorn.
 
-    HOST: Final[str] = "127.0.0.1"
-    PORT: Final[int] = 8000
-    LOG_LEVEL: Final[str] = "info"
+    Configurable via environment variables:
+    - ROSE_SERVER_HOST: API server bind host
+    - ROSE_SERVER_PORT: API server bind port
+    - ROSE_LOG_LEVEL: Logging level
+    """
+
+    HOST: Final[str] = _get_env_str("ROSE_SERVER_HOST", "127.0.0.1")
+    PORT: Final[int] = _get_env_int("ROSE_SERVER_PORT", 8000)
+    LOG_LEVEL: Final[str] = _get_env_str("ROSE_LOG_LEVEL", "info")
