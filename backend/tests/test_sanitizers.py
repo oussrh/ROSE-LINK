@@ -85,10 +85,10 @@ class TestSanitizeFilename:
             sanitize_filename(None)  # type: ignore
 
     def test_only_dots_returns_underscores(self) -> None:
-        """Dots get replaced with underscores, resulting in valid filename."""
-        # "..." gets sanitized to "___" which is a valid filename
+        """Leading dot gets replaced with underscore."""
+        # "..." has leading dot replaced, resulting in "_.."
         result = sanitize_filename("...")
-        assert result == "___"
+        assert result == "_.."
 
     def test_only_path_separator_raises_error(self) -> None:
         """Should raise ValueError for path separator only."""
