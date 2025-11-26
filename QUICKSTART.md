@@ -2,7 +2,19 @@
 
 Get up and running with ROSE Link in 10 minutes!
 
+> 🧭 **Tip:** Run through the pre-flight checklist below before starting the installer to avoid common setup hiccups.
+
 ## 📋 Prerequisites
+
+### Quick Pre-Flight Checklist
+
+- Update your Pi so the installer can fetch dependencies:
+  ```bash
+  sudo apt update && sudo apt upgrade -y
+  ```
+- Make sure your Raspberry Pi has Internet access (Ethernet is easiest for first-time setup).
+- Enable SSH if you plan to manage the device headlessly (`sudo raspi-config` → Interface Options → SSH).
+- Have your WireGuard `.conf` file ready on your laptop or phone for the import step.
 
 ### Hardware Requirements
 - **Raspberry Pi** (one of the following):
