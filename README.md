@@ -4,7 +4,7 @@
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -92,10 +92,10 @@ sudo bash install.sh
 
 ```bash
 # Download package
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.2.0-1_all.deb
 
 # Install
-sudo apt-get install ./rose-link-pro_0.1.0-1_all.deb
+sudo apt-get install ./rose-link-pro_0.2.0-1_all.deb
 ```
 
 ### Method 3: APT Repository (production)
@@ -246,23 +246,34 @@ curl -k https://roselink.local/api/system/info | jq
 
 ## Roadmap
 
-### Version 0.2.0
-- [ ] Next.js SPA interface with animations
-- [ ] WebSocket for real-time status
-- [ ] i18n support (FR, EN, NL)
-- [ ] Configuration backup/restore
+### Version 0.2.0 (Released)
+- [x] Complete i18n support (English & French)
+- [x] Mobile-first responsive design for all screen sizes
+- [x] Code optimization with comprehensive docstrings and type hints
+- [x] Dynamic interface detection (fixed hardcoded wlan0)
+- [x] Upgraded to cutting-edge package versions (FastAPI 0.115+, Pydantic 2.10+, htmx 2.0.3)
+- [x] Toast notifications and loading spinners
+- [x] Accessibility improvements (ARIA labels, semantic HTML)
+- [x] API documentation endpoints (/api/docs, /api/redoc)
 
-### Version 0.3.0
+### Version 0.3.0 (In Progress)
+- [ ] WebSocket for real-time status updates
+- [ ] Configuration backup/restore
+- [ ] Let's Encrypt SSL certificate option
+- [ ] Speed test integration
 - [ ] Simple QoS (traffic prioritization)
 - [ ] Integrated AdGuard Home (DNS + ad blocking)
 - [ ] OpenVPN support in addition to WireGuard
 - [ ] Metrics dashboard (Grafana)
+- [ ] Bandwidth usage statistics
 
-### Version 1.0.0
+### Version 1.0.0 (Future)
 - [ ] Ready-to-flash SD image
 - [ ] First-time setup wizard
 - [ ] Multi-WAN support (load balancing)
 - [ ] iOS/Android mobile app
+- [ ] Automatic updates
+- [ ] Full test suite
 
 ---
 

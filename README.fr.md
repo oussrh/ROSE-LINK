@@ -4,7 +4,7 @@
 
 Transformez votre Raspberry Pi en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau distant, vous permettant d'accéder à vos ressources locales et d'obtenir l'IP publique de votre serveur VPN depuis n'importe où dans le monde.
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -91,10 +91,10 @@ sudo bash install.sh
 
 ```bash
 # Télécharger le paquet
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.2.0-1_all.deb
 
 # Installer
-sudo apt-get install ./rose-link-pro_0.1.0-1_all.deb
+sudo apt-get install ./rose-link-pro_0.2.0-1_all.deb
 ```
 
 ### Méthode 3 : Dépôt APT (production)
@@ -585,23 +585,34 @@ curl -k https://roselink.local/api/system/interfaces | jq
 
 ## 🛣️ Roadmap
 
-### Version 0.2.0 (Q2 2025)
-- [ ] Interface Web SPA Next.js avec animations
-- [ ] WebSocket pour statut temps réel
-- [ ] Support i18n (FR, EN, NL)
-- [ ] Sauvegarde/restauration configuration
+### Version 0.2.0 (Publiée)
+- [x] Support i18n complet (anglais & français)
+- [x] Design mobile-first responsive pour tous les écrans
+- [x] Optimisation du code avec docstrings et type hints complets
+- [x] Détection dynamique des interfaces (correction du wlan0 codé en dur)
+- [x] Mise à jour vers les dernières versions des packages (FastAPI 0.115+, Pydantic 2.10+, htmx 2.0.3)
+- [x] Notifications toast et indicateurs de chargement
+- [x] Améliorations d'accessibilité (labels ARIA, HTML sémantique)
+- [x] Points d'accès documentation API (/api/docs, /api/redoc)
 
-### Version 0.3.0 (Q3 2025)
+### Version 0.3.0 (En cours)
+- [ ] WebSocket pour mises à jour statut temps réel
+- [ ] Sauvegarde/restauration configuration
+- [ ] Option certificat SSL Let's Encrypt
+- [ ] Intégration test de vitesse
 - [ ] QoS simple (priorisation trafic)
 - [ ] AdGuard Home intégré (DNS + blocage pubs)
 - [ ] Support OpenVPN en plus de WireGuard
-- [ ] Dashboard metrics (Grafana)
+- [ ] Dashboard métriques (Grafana)
+- [ ] Statistiques d'utilisation bande passante
 
-### Version 1.0.0 (Q4 2025)
+### Version 1.0.0 (Future)
 - [ ] Image SD flashable prête à l'emploi
 - [ ] Assistant de configuration première installation
 - [ ] Support multi-WAN (load balancing)
 - [ ] Application mobile iOS/Android
+- [ ] Mises à jour automatiques
+- [ ] Suite de tests complète
 
 ---
 
