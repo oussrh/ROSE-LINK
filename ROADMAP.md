@@ -6,542 +6,452 @@ This document outlines planned features, implementation details, and priorities 
 
 | Version | Theme | Status |
 |---------|-------|--------|
-| 0.2.x | Stability & Polish | Current |
-| 0.3.0 | Real-time & Monitoring | Planned |
-| 0.4.0 | Extended VPN & DNS | Planned |
-| 1.0.0 | Production Ready | Future |
+| 0.3.0 | Real-time & Monitoring | ✅ Released |
+| 1.0.0 | Production Ready | 🚧 In Development |
+| 1.x | Extended Features | Future |
 
 ---
 
-## Version 0.3.0 - Real-time & Monitoring
+## v1.0.0 Target Scope
 
-### WebSocket Real-time Updates
+**Product Identity**: "VPN Router + Ad Blocking on Raspberry Pi"
 
-**Priority**: High
-**Complexity**: Medium
-**Dependencies**: None (websockets already in uvicorn[standard])
+### Core Features for v1.0.0
 
-**Current State**: Frontend polls `/api/status` periodically via htmx.
+| Feature | Priority | Status |
+|---------|----------|--------|
+| AdGuard Home Integration | High | 🚧 In Progress |
+| OpenVPN Support | High | 🚧 In Progress |
+| Connected Clients Management | High | 🚧 In Progress |
+| Simple QoS | Medium | 🚧 In Progress |
+| Ready-to-Flash SD Image | High | 🚧 In Progress |
+| First-Time Setup Wizard | High | 🚧 In Progress |
+| Full Test Suite (90%+) | High | 🚧 In Progress |
 
-**Implementation Plan**:
+### Features Deferred to v1.x
 
-1. **Backend WebSocket Endpoint** (`backend/api/routes/websocket.py`)
-   ```python
-   @router.websocket("/ws/status")
-   async def websocket_status(websocket: WebSocket):
-       await websocket.accept()
-       while True:
-           status = await get_combined_status()
-           await websocket.send_json(status)
-           await asyncio.sleep(2)
-   ```
-
-2. **Connection Manager** (`backend/core/websocket.py`)
-   - Track active connections
-   - Broadcast to all clients on state changes
-   - Handle reconnection gracefully
-
-3. **Frontend Integration** (`web/js/utils/websocket.js`)
-   - WebSocket client with auto-reconnect
-   - Fall back to polling if WebSocket fails
-   - Update UI components on message receive
-
-4. **Events to Broadcast**:
-   - VPN status changes (connect/disconnect)
-   - WAN connectivity changes
-   - Hotspot client join/leave
-   - System metrics (every 5s)
-
-**Files to Create/Modify**:
-- `backend/api/routes/websocket.py` (new)
-- `backend/core/websocket.py` (new)
-- `backend/core/lifespan.py` (add connection manager)
-- `web/js/utils/websocket.js` (new)
-- `web/js/app.js` (integrate WebSocket)
+| Feature | Reason |
+|---------|--------|
+| Email Notifications | Nice-to-have, WebSocket/API provides monitoring |
+| iOS/Android App | Web UI is responsive, works on mobile |
+| Grafana Dashboard | `/api/metrics` endpoint lets users bring their own Grafana |
+| Multi-WAN Load Balancing | Complex, edge case for most home users |
+| Automatic Updates | Can be risky, manual APT repo updates work fine |
 
 ---
 
-### Configuration Backup/Restore
-
-**Priority**: High
-**Complexity**: Low
-**Dependencies**: None
-
-**Current State**: No backup functionality exists.
-
-**Implementation Plan**:
-
-1. **Backup Endpoint** (`GET /api/backup`)
-   - Collect all configuration:
-     - VPN profiles (`/etc/wireguard/profiles/*.conf`)
-     - Hotspot config (`/etc/hostapd/hostapd.conf`)
-     - Watchdog settings (JSON config)
-     - API key hash (optional)
-   - Create encrypted ZIP archive
-   - Return as downloadable file
-
-2. **Restore Endpoint** (`POST /api/restore`)
-   - Accept uploaded backup archive
-   - Validate archive structure
-   - Verify checksums
-   - Restore files to correct locations
-   - Restart affected services
-
-3. **Backup Format**:
-   ```
-   rose-link-backup-YYYYMMDD.zip
-   ├── manifest.json          # Version, timestamp, checksum
-   ├── vpn/
-   │   └── *.conf             # VPN profiles
-   ├── hotspot/
-   │   └── hostapd.conf       # Hotspot config
-   └── settings/
-       └── watchdog.json      # Watchdog settings
-   ```
-
-**Files to Create/Modify**:
-- `backend/api/routes/backup.py` (new)
-- `backend/services/backup.py` (new)
-- `web/js/components/backup.js` (new)
-- `web/index.html` (add backup/restore UI)
-
----
-
-### Bandwidth Statistics
-
-**Priority**: Medium
-**Complexity**: Medium
-**Dependencies**: None
-
-**Current State**: Real-time VPN transfer stats only, no history.
-
-**Implementation Plan**:
-
-1. **Data Collection**:
-   - Read from `/sys/class/net/<iface>/statistics/`
-   - Collect every minute: rx_bytes, tx_bytes per interface
-   - Store in SQLite database (optional) or JSON log
-
-2. **API Endpoints**:
-   - `GET /api/stats/bandwidth?period=24h` - Historical data
-   - `GET /api/stats/current` - Current rates
-
-3. **Storage** (lightweight, no external DB):
-   ```python
-   # /opt/rose-link/data/bandwidth.json
-   {
-       "2024-11-26T10:00:00Z": {
-           "wg0": {"rx": 1234567, "tx": 987654},
-           "eth0": {"rx": 5678901, "tx": 2345678}
-       }
-   }
-   ```
-
-4. **Data Retention**:
-   - Keep 1-minute resolution for 24h
-   - Aggregate to 1-hour resolution for 7 days
-   - Aggregate to daily for 30 days
-
-5. **Frontend Visualization**:
-   - Line chart using lightweight library (Chart.js or similar)
-   - Interface selector
-   - Time period selector
-
-**Files to Create/Modify**:
-- `backend/api/routes/stats.py` (new)
-- `backend/services/stats.py` (new)
-- `backend/utils/bandwidth_collector.py` (new)
-- `web/js/components/stats.js` (new)
-- `web/vendor/chart.min.js` (new, ~200KB)
-
----
-
-### Let's Encrypt SSL Certificates
-
-**Priority**: Medium
-**Complexity**: Medium
-**Dependencies**: Port 80 accessible, domain name
-
-**Current State**: Self-signed certificates via Nginx.
-
-**Implementation Plan**:
-
-1. **Certificate Management Service**:
-   - Use `certbot` or `acme.sh` for certificate issuance
-   - Support both DNS and HTTP validation
-   - Auto-renewal via systemd timer
-
-2. **API Endpoints**:
-   - `POST /api/ssl/request` - Request new certificate
-   - `GET /api/ssl/status` - Certificate status and expiry
-   - `POST /api/ssl/renew` - Force renewal
-
-3. **Configuration**:
-   ```yaml
-   ssl:
-     mode: "self-signed" | "letsencrypt"
-     domain: "rose.example.com"
-     email: "admin@example.com"
-   ```
-
-4. **Nginx Integration**:
-   - Update ssl_certificate paths
-   - Reload after certificate renewal
-
-**Files to Create/Modify**:
-- `backend/api/routes/ssl.py` (new)
-- `backend/services/ssl.py` (new)
-- `system/rose-ssl-renew.service` (new)
-- `system/rose-ssl-renew.timer` (new)
-- `system/nginx/rose-link-ssl.conf` (modify)
-
----
-
-### Speed Test Integration
-
-**Priority**: Low
-**Complexity**: Low
-**Dependencies**: `speedtest-cli` package
-
-**Implementation Plan**:
-
-1. **API Endpoint**:
-   - `POST /api/speedtest/run` - Start speed test (async)
-   - `GET /api/speedtest/result` - Get latest result
-
-2. **Implementation**:
-   ```python
-   async def run_speedtest():
-       result = await run_command("speedtest-cli --json")
-       return json.loads(result)
-   ```
-
-3. **Frontend**:
-   - "Run Speed Test" button
-   - Progress indicator (tests take 30-60s)
-   - Display: Download, Upload, Ping, Server
-
-**Files to Create/Modify**:
-- `backend/api/routes/speedtest.py` (new)
-- `web/js/components/speedtest.js` (new)
-
----
-
-### Prometheus Metrics Endpoint
-
-**Priority**: Medium
-**Complexity**: Low
-**Dependencies**: None (optional prometheus_client)
-
-**Implementation Plan**:
-
-1. **Metrics Endpoint** (`GET /metrics`):
-   ```prometheus
-   # HELP rose_vpn_connected VPN connection status
-   # TYPE rose_vpn_connected gauge
-   rose_vpn_connected 1
-
-   # HELP rose_vpn_bytes_received Total bytes received via VPN
-   # TYPE rose_vpn_bytes_received counter
-   rose_vpn_bytes_received 1234567
-
-   # HELP rose_hotspot_clients Number of connected hotspot clients
-   # TYPE rose_hotspot_clients gauge
-   rose_hotspot_clients 3
-
-   # HELP rose_system_cpu_temp CPU temperature in Celsius
-   # TYPE rose_system_cpu_temp gauge
-   rose_system_cpu_temp 52.5
-   ```
-
-2. **Grafana Dashboard** (JSON template):
-   - Pre-built dashboard for common metrics
-   - Documentation for Grafana setup
-
-**Files to Create/Modify**:
-- `backend/api/routes/metrics.py` (new)
-- `docs/grafana-dashboard.json` (new)
-- `docs/MONITORING.md` (new)
-
----
-
-## Version 0.4.0 - Extended VPN & DNS
-
-### OpenVPN Support
-
-**Priority**: Medium
-**Complexity**: High
-**Dependencies**: `openvpn` package
-
-**Current State**: WireGuard only.
-
-**Implementation Plan**:
-
-1. **Profile Detection**:
-   - Detect `.ovpn` files vs `.conf` files
-   - Parse OpenVPN configuration format
-
-2. **Service Abstraction**:
-   - Create `VPNProvider` interface
-   - `WireGuardProvider` and `OpenVPNProvider` implementations
-   - Factory to select provider based on profile type
-
-3. **API Changes**:
-   - `/api/vpn/upload` accepts both formats
-   - `/api/vpn/status` returns provider-agnostic status
-
-4. **Challenges**:
-   - OpenVPN requires username/password for some configs
-   - Certificate handling differs
-   - Status parsing is different
-
-**Files to Create/Modify**:
-- `backend/services/vpn/base.py` (new, interface)
-- `backend/services/vpn/wireguard.py` (refactor from vpn.py)
-- `backend/services/vpn/openvpn.py` (new)
-- `backend/services/vpn/factory.py` (new)
-
----
+## v1.0.0 Feature Details
 
 ### AdGuard Home Integration
 
-**Priority**: Medium
+**Priority**: High
 **Complexity**: Medium
-**Dependencies**: AdGuard Home installation
+**Status**: 🚧 In Progress
+
+**Description**: Integrates AdGuard Home for DNS-level ad blocking, turning ROSE Link into a Pi-hole alternative with VPN routing.
 
 **Implementation Plan**:
 
-1. **Integration Options**:
-   - Option A: Replace dnsmasq with AdGuard Home
-   - Option B: Run alongside, AdGuard as upstream DNS
+1. **AdGuard Home Service** (`backend/services/adguard_service.py`)
+   - Install/manage AdGuard Home binary
+   - Health check via AdGuard API
+   - Enable/disable filtering
+   - Get blocking statistics
 
-2. **API Endpoints**:
-   - `GET /api/adguard/status` - AdGuard status
-   - `POST /api/adguard/enable` - Enable/disable
-   - `GET /api/adguard/stats` - Blocking statistics
+2. **API Endpoints** (`backend/api/routes/adguard.py`)
+   ```
+   GET  /api/adguard/status     - AdGuard status and stats
+   POST /api/adguard/enable     - Enable ad blocking
+   POST /api/adguard/disable    - Disable ad blocking
+   GET  /api/adguard/stats      - Blocking statistics (queries, blocked, etc.)
+   POST /api/adguard/install    - Install AdGuard Home (first-time setup)
+   ```
 
-3. **Installation**:
-   - Optional during ROSE Link install
-   - Download and configure AdGuard Home
-   - Update dnsmasq to forward to AdGuard
+3. **DNS Configuration**:
+   - Option A: AdGuard replaces dnsmasq for DNS (recommended)
+   - Option B: dnsmasq forwards to AdGuard (fallback)
+   - Automatic configuration during install
 
-4. **Frontend**:
-   - AdGuard status card
+4. **Frontend Integration** (`web/js/components/adguard.js`)
+   - Status card with blocking stats
+   - Enable/disable toggle
    - Link to AdGuard web UI (port 3000)
-   - Basic stats display
+   - Quick stats: queries today, blocked %, top blocked domains
 
 **Files to Create/Modify**:
 - `backend/api/routes/adguard.py` (new)
-- `backend/services/adguard.py` (new)
-- `install.sh` (add optional AdGuard installation)
+- `backend/services/adguard_service.py` (new)
 - `web/js/components/adguard.js` (new)
+- `install.sh` (add AdGuard installation)
+- `web/index.html` (add AdGuard tab/section)
 
 ---
 
-### QoS Traffic Prioritization
+### OpenVPN Support
 
-**Priority**: Low
+**Priority**: High
 **Complexity**: High
-**Dependencies**: tc, iptables knowledge
+**Status**: 🚧 In Progress
+
+**Description**: Many VPN providers only offer OpenVPN configs. Adding OpenVPN support expands compatibility significantly.
 
 **Implementation Plan**:
 
-1. **Traffic Classes**:
-   - High Priority: VoIP, Video conferencing
-   - Normal: Web browsing, General
-   - Low Priority: Downloads, Torrents
+1. **VPN Provider Abstraction** (`backend/services/vpn/`)
+   ```python
+   # base.py - Interface
+   class VPNProvider(ABC):
+       async def connect() -> bool
+       async def disconnect() -> bool
+       async def get_status() -> VPNStatus
+       async def import_config(file_path: Path) -> bool
+
+   # wireguard.py - WireGuard implementation
+   class WireGuardProvider(VPNProvider): ...
+
+   # openvpn.py - OpenVPN implementation
+   class OpenVPNProvider(VPNProvider): ...
+   ```
+
+2. **Profile Detection**:
+   - `.conf` files → WireGuard
+   - `.ovpn` files → OpenVPN
+   - Auto-detect on upload
+
+3. **OpenVPN Features**:
+   - Support for `.ovpn` with embedded certificates
+   - Support for separate cert/key files
+   - Username/password authentication support
+   - Connection status parsing from logs
+
+4. **API Changes**:
+   - `/api/vpn/upload` accepts both `.conf` and `.ovpn`
+   - `/api/vpn/status` returns provider-agnostic status
+   - New: `/api/vpn/providers` lists available providers
+
+5. **Kill-Switch Adaptation**:
+   - iptables rules work for both WireGuard and OpenVPN
+   - Interface detection (`wg0` vs `tun0`)
+
+**Files to Create/Modify**:
+- `backend/services/vpn/base.py` (new - interface)
+- `backend/services/vpn/wireguard.py` (refactor from vpn_service.py)
+- `backend/services/vpn/openvpn.py` (new)
+- `backend/services/vpn/__init__.py` (factory)
+- `backend/api/routes/vpn.py` (modify)
+- `system/rose-openvpn@.service` (new)
+
+---
+
+### Connected Clients Management
+
+**Priority**: High
+**Complexity**: Low-Medium
+**Status**: 🚧 In Progress
+
+**Description**: Essential router feature - users expect to see and manage devices connected to their hotspot.
+
+**Current State**: Basic client list exists at `GET /api/hotspot/clients`
+
+**Enhancements**:
+
+1. **Persistent Client Tracking**:
+   - Store client history in JSON file
+   - Track: MAC, IP, hostname, first seen, last seen, total traffic
+
+2. **Client Information**:
+   - Device type detection (via MAC OUI lookup)
+   - Custom device naming/labels
+   - Connection history
+
+3. **Client Management**:
+   - Block/unblock clients (MAC filtering)
+   - Per-client bandwidth stats
+   - Kick client (force disconnect)
+
+4. **API Endpoints**:
+   ```
+   GET  /api/clients              - List all clients (current + historical)
+   GET  /api/clients/{mac}        - Get client details
+   PUT  /api/clients/{mac}        - Update client (name, blocked status)
+   POST /api/clients/{mac}/block  - Block client
+   POST /api/clients/{mac}/unblock- Unblock client
+   POST /api/clients/{mac}/kick   - Kick connected client
+   ```
+
+5. **Frontend**:
+   - Clients tab with sortable table
+   - Device icons by type
+   - Quick actions (block, kick, rename)
+   - Traffic graphs per client
+
+**Files to Create/Modify**:
+- `backend/api/routes/clients.py` (new)
+- `backend/services/clients_service.py` (new)
+- `web/js/components/clients.js` (new)
+- `data/clients.json` (runtime data)
+
+---
+
+### Simple QoS (Traffic Prioritization)
+
+**Priority**: Medium
+**Complexity**: Medium-High
+**Status**: 🚧 In Progress
+
+**Description**: Simple "prioritize VPN traffic" toggle. Full QoS with port/app prioritization deferred to v1.1.
+
+**Simplified Approach for v1.0**:
+
+1. **Single Toggle**: "Prioritize VPN Traffic"
+   - When enabled: VPN traffic gets priority over local traffic
+   - Uses `tc` (traffic control) with simple HTB queueing
 
 2. **Implementation**:
-   - Use `tc` (traffic control) for queuing
-   - `iptables` for packet marking
-   - Pre-defined profiles (Gaming, Streaming, Work)
+   ```bash
+   # Enable QoS
+   tc qdisc add dev eth0 root handle 1: htb default 20
+   tc class add dev eth0 parent 1: classid 1:1 htb rate 100mbit
+   tc class add dev eth0 parent 1:1 classid 1:10 htb rate 80mbit prio 1  # VPN
+   tc class add dev eth0 parent 1:1 classid 1:20 htb rate 20mbit prio 2  # Other
+
+   # Mark VPN packets
+   iptables -t mangle -A OUTPUT -o wg0 -j MARK --set-mark 10
+   tc filter add dev eth0 parent 1: prio 1 handle 10 fw flowid 1:10
+   ```
 
 3. **API Endpoints**:
-   - `GET /api/qos/status` - Current QoS settings
-   - `POST /api/qos/profile` - Apply QoS profile
-   - `POST /api/qos/custom` - Custom rules
+   ```
+   GET  /api/qos/status   - QoS enabled/disabled, current settings
+   POST /api/qos/enable   - Enable VPN traffic prioritization
+   POST /api/qos/disable  - Disable QoS (default behavior)
+   ```
 
-4. **Challenges**:
-   - Complex tc syntax
-   - Testing difficult without traffic
-   - May impact overall throughput
+4. **Future (v1.1)**:
+   - Pre-defined profiles (Gaming, Streaming, Work)
+   - Port-based prioritization
+   - Application detection
 
 **Files to Create/Modify**:
 - `backend/api/routes/qos.py` (new)
-- `backend/services/qos.py` (new)
-- `system/qos-profiles/` (new directory with tc scripts)
+- `backend/services/qos_service.py` (new)
+- `web/js/components/qos.js` (new)
 
 ---
 
-## Version 1.0.0 - Production Ready
+### Ready-to-Flash SD Card Image
 
-### Flashable SD Card Image
-
-**Priority**: High (for 1.0)
+**Priority**: High
 **Complexity**: High
-**Dependencies**: Build infrastructure
+**Status**: 🚧 In Progress
+
+**Description**: Critical for ease of use - biggest barrier to adoption is installation complexity.
 
 **Implementation Plan**:
 
-1. **Image Creation**:
-   - Base: Raspberry Pi OS Lite (64-bit)
+1. **Image Contents**:
+   - Base: Raspberry Pi OS Lite (64-bit, Bookworm)
    - Pre-installed: ROSE Link + all dependencies
-   - First-boot configuration script
+   - First-boot: Expand filesystem, run setup wizard
+   - Configured: SSH enabled, default credentials
 
-2. **Build Process**:
-   - GitHub Actions workflow
-   - Use `pi-gen` or custom script
-   - Compress with xz
+2. **Build Process** (GitHub Actions):
+   ```yaml
+   - Download official Raspberry Pi OS image
+   - Mount and customize with pi-gen or direct modification
+   - Install ROSE Link packages
+   - Configure first-boot scripts
+   - Compress with xz for smaller download
+   - Generate checksums (SHA256)
+   ```
 
-3. **Distribution**:
-   - GitHub Releases
-   - Separate download page
-   - Checksum verification
+3. **Build Script** (`scripts/build-image.sh`):
+   - Uses `qemu-user-static` for ARM emulation
+   - Customization via chroot
+   - Automated testing in emulated environment
+
+4. **Distribution**:
+   - GitHub Releases (compressed .img.xz)
+   - Checksum file for verification
+   - Clear flashing instructions (Balena Etcher, Raspberry Pi Imager)
+
+5. **First Boot Experience**:
+   - Auto-expand filesystem
+   - Generate unique SSH keys
+   - Start setup wizard
+   - Connect to `ROSE-Link-Setup` hotspot for initial config
+
+**Files to Create**:
+- `scripts/build-image.sh` (main build script)
+- `scripts/image/first-boot.sh` (first boot customization)
+- `scripts/image/customize.sh` (image customization)
+- `.github/workflows/build-image.yml` (CI/CD for image builds)
 
 ---
 
-### First-Run Setup Wizard
+### First-Time Setup Wizard
 
-**Priority**: High (for 1.0)
+**Priority**: High
 **Complexity**: Medium
-**Dependencies**: None
+**Status**: 🚧 In Progress
 
-**Implementation Plan**:
+**Description**: Essential UX - without it, v1.0 doesn't feel "production ready".
 
-1. **Wizard Flow**:
-   - Welcome screen
-   - Network configuration (Ethernet/WiFi WAN)
-   - VPN profile import
-   - Hotspot configuration
-   - Admin password setup
-   - Summary and apply
+**Wizard Flow**:
 
-2. **Detection**:
-   - Check if first run (`/opt/rose-link/.initialized`)
-   - Redirect to wizard if not initialized
+```
+Step 1: Welcome
+  → Language selection (EN/FR)
+  → Quick intro to ROSE Link
 
-3. **Implementation**:
-   - Dedicated wizard routes
-   - Step-by-step frontend
+Step 2: Network (WAN)
+  → Auto-detect Ethernet
+  → Or scan and connect to WiFi
+  → Connection test
+
+Step 3: VPN Configuration
+  → Upload WireGuard .conf or OpenVPN .ovpn
+  → Or skip for later
+  → Connection test (if configured)
+
+Step 4: Hotspot Setup
+  → SSID name
+  → Password (with strength indicator)
+  → Country (regulatory)
+  → Channel selection
+
+Step 5: Security
+  → Set admin password
+  → Optional: Enable 2FA (future)
+
+Step 6: AdGuard Home (Optional)
+  → Enable DNS ad blocking?
+  → Basic filter selection
+
+Step 7: Summary
+  → Review all settings
+  → Apply and restart services
+  → Show connection instructions
+```
+
+**Implementation**:
+
+1. **First-Run Detection**:
+   ```python
+   # Check if setup completed
+   INITIALIZED_FILE = "/opt/rose-link/.initialized"
+
+   def is_first_run() -> bool:
+       return not Path(INITIALIZED_FILE).exists()
+   ```
+
+2. **API Endpoints**:
+   ```
+   GET  /api/setup/status        - Check if setup needed
+   GET  /api/setup/step/{n}      - Get step data
+   POST /api/setup/step/{n}      - Submit step data
+   POST /api/setup/complete      - Finalize setup
+   POST /api/setup/skip          - Skip setup (advanced users)
+   ```
+
+3. **Frontend**:
+   - Dedicated `/setup` route
+   - Step indicators (progress bar)
    - Validation at each step
+   - Back/Next navigation
+   - Skip option for advanced users
+
+**Files to Create/Modify**:
+- `backend/api/routes/setup.py` (new)
+- `backend/services/setup_service.py` (new)
+- `web/setup.html` (new - standalone wizard page)
+- `web/js/setup.js` (new - wizard logic)
+- `web/css/setup.css` (new - wizard styles)
 
 ---
 
-### Multi-WAN Load Balancing
+### Full Test Suite (90%+ Coverage)
 
-**Priority**: Low
-**Complexity**: Very High
-**Dependencies**: Multiple network interfaces
-
-**Implementation Plan**:
-
-1. **Modes**:
-   - Failover (current behavior, enhanced)
-   - Load Balancing (round-robin)
-   - Weighted (bandwidth-based)
-
-2. **Technical Approach**:
-   - Multiple default routes with different metrics
-   - Connection tracking for session persistence
-   - Health checks for failover
-
-3. **Challenges**:
-   - Complex routing rules
-   - Source NAT considerations
-   - VPN tunnel over specific WAN
-
----
-
-### Mobile Applications
-
-**Priority**: Low
-**Complexity**: Very High
-**Dependencies**: Mobile development resources
-
-**Options**:
-
-1. **Progressive Web App (PWA)**:
-   - Lower complexity
-   - Works on both platforms
-   - Limited native features
-
-2. **React Native / Flutter**:
-   - Better native experience
-   - Requires mobile dev expertise
-   - Separate codebase to maintain
-
-**Recommendation**: Start with PWA, evaluate native later.
-
----
-
-### Automatic Updates
-
-**Priority**: Medium
+**Priority**: High
 **Complexity**: Medium
-**Dependencies**: APT repository
+**Status**: 🚧 In Progress
 
-**Implementation Plan**:
+**Description**: Non-negotiable for a "1.0" release - stability matters.
 
-1. **Update Check**:
-   - Daily check against APT repository
-   - Compare installed vs available version
+**Current State**:
+- Backend: ~75% coverage (10 test files, 2841 lines)
+- Frontend: ~70% coverage (Jest tests)
 
-2. **Update Process**:
-   - Notification in UI
-   - One-click update button
-   - Automatic backup before update
-   - Service restart after update
+**Target**: 90%+ line coverage for backend, 80%+ for frontend
 
-3. **Rollback**:
-   - Keep previous version
-   - Rollback option if update fails
+**Test Additions Needed**:
 
----
+1. **Backend Tests**:
+   - `test_adguard_service.py` - AdGuard integration
+   - `test_openvpn_service.py` - OpenVPN provider
+   - `test_clients_service.py` - Client management
+   - `test_qos_service.py` - QoS functionality
+   - `test_setup_service.py` - Setup wizard
+   - `test_backup_service.py` - Backup/restore (expand)
+   - `test_api_routes_*.py` - Route-level tests for new endpoints
 
-## Test Suite Completion
+2. **Frontend Tests**:
+   - Component tests for new features
+   - Setup wizard flow tests
+   - WebSocket integration tests
 
-### Current Coverage
+3. **Integration Tests**:
+   - End-to-end API tests
+   - Service interaction tests
+   - Full wizard flow test
 
-| Component | Coverage | Status |
-|-----------|----------|--------|
-| Services | ~75% | Good |
-| API Routes | ~70% | Good |
-| Core | ~65% | Needs work |
-| Frontend | 0% | Not started |
+4. **Test Infrastructure**:
+   - Coverage threshold enforcement in CI (fail if < 90%)
+   - Coverage badges in README
+   - Test reports as CI artifacts
 
-### Targets
-
-| Version | Backend | Frontend | Integration |
-|---------|---------|----------|-------------|
-| 0.3.0 | 80% | 30% | Basic |
-| 0.4.0 | 85% | 50% | Expanded |
-| 1.0.0 | 90% | 70% | Full |
-
-### Test Infrastructure Improvements
-
-1. **Code Coverage Reporting**:
-   - pytest-cov integration (done)
-   - Codecov badge in README
-   - Coverage reports in CI
-
-2. **Frontend Testing**:
-   - Jest/Vitest for JavaScript
-   - Component unit tests
-   - E2E tests with Playwright (future)
-
-3. **Integration Testing**:
-   - Docker-based test environment
-   - Mock hardware interfaces
-   - API contract testing
-
-4. **Performance Testing**:
-   - Load testing for API
-   - Memory leak detection
-   - Long-running stability tests
+**Files to Create**:
+- `backend/tests/test_adguard_service.py`
+- `backend/tests/test_openvpn_service.py`
+- `backend/tests/test_clients_service.py`
+- `backend/tests/test_qos_service.py`
+- `backend/tests/test_setup_service.py`
+- `web/__tests__/setup.test.js`
+- `web/__tests__/adguard.test.js`
+- `web/__tests__/clients.test.js`
 
 ---
 
-## Contributing to Roadmap Features
+## Completed Features (v0.3.0)
+
+### ✅ WebSocket Real-time Updates
+- Backend WebSocket endpoint (`/api/ws`)
+- Connection manager for multiple clients
+- Auto-reconnect with exponential backoff
+- Real-time status broadcasting
+
+### ✅ Configuration Backup/Restore
+- Full backup API (create, restore, download, upload)
+- Selective component backup
+- ZIP format with manifest
+
+### ✅ Prometheus Metrics Endpoint
+- `/api/metrics` with standard Prometheus format
+- VPN, WAN, Hotspot, System metrics
+
+### ✅ Speed Test Integration
+- Async speed test execution
+- History tracking
+- Support for speedtest-cli and Ookla
+
+### ✅ SSL Certificate Management
+- Self-signed certificate generation
+- Let's Encrypt integration ready
+- Certificate status monitoring
+
+---
+
+## Contributing to v1.0.0
 
 ### Claiming a Feature
 
@@ -553,20 +463,53 @@ This document outlines planned features, implementation details, and priorities 
 ### Feature Development Checklist
 
 - [ ] API design documented
-- [ ] Backend implementation
+- [ ] Backend implementation with type hints
+- [ ] Service layer with business logic
+- [ ] Unit tests (min 90% coverage)
 - [ ] Frontend integration
-- [ ] Unit tests (min 80% coverage)
-- [ ] Integration tests
+- [ ] i18n strings (EN + FR)
 - [ ] Documentation updated
 - [ ] CHANGELOG entry
 
-### Priority Legend
+### Code Quality Requirements
 
-| Priority | Meaning |
-|----------|---------|
-| High | Core functionality, blocks other features |
-| Medium | Important but not blocking |
-| Low | Nice to have, can be deferred |
+- All code must pass CI checks:
+  - `ruff` linting
+  - `mypy` type checking
+  - `bandit` security scan
+  - `pytest` with 90%+ coverage
+  - `eslint` for JavaScript
+  - `jest` for frontend tests
+
+---
+
+## Release Timeline
+
+**v1.0.0 Target**: Feature-complete, production-ready release
+
+**Milestones**:
+1. All core features implemented
+2. Test coverage ≥ 90%
+3. Documentation complete
+4. SD card image builds successfully
+5. Setup wizard functional
+6. Beta testing period
+7. Final release
+
+---
+
+## Post-1.0 Roadmap (v1.x)
+
+Features deferred from v1.0.0 for future releases:
+
+| Feature | Version | Notes |
+|---------|---------|-------|
+| Email Notifications | v1.1 | VPN failure alerts via SMTP |
+| Full QoS Profiles | v1.1 | Gaming, Streaming, Work profiles |
+| Grafana Dashboard | v1.1 | Pre-built dashboard JSON |
+| Multi-WAN Load Balancing | v1.2 | Round-robin, weighted, failover |
+| Automatic Updates | v1.2 | APT-based with rollback |
+| iOS/Android App | v2.0 | Native mobile experience |
 
 ---
 
