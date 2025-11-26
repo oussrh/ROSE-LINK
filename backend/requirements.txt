@@ -11,7 +11,7 @@ uvicorn[standard]>=0.32.0
 
 # Pydantic - Data validation using Python type hints
 # https://docs.pydantic.dev/
-pydantic>=2.10.0
+pydantic[email]>=2.10.0
 
 # Python-multipart - Streaming multipart parser for file uploads
 # https://github.com/Kludex/python-multipart
