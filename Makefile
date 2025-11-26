@@ -132,6 +132,7 @@ chmod: ## Fix script permissions
 version: ## Show version
 	@echo "ROSE Link v0.2.1"
 	@echo "VPN Router for Raspberry Pi"
+	@echo "See PRODUCT_FEATURES.md for full capabilities"
 
 # === CI/CD Simulation ===
 
