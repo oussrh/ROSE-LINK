@@ -10,7 +10,7 @@
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -200,6 +200,11 @@ ROSE Link automatically detects:
 #### Health and Status
 - `GET /api/health` - Health check
 - `GET /api/status` - Global status (WAN, VPN, AP)
+- `GET /api/metrics` - Prometheus metrics endpoint
+
+#### WebSocket (v0.3.0+)
+- `WS /api/ws` - Real-time status updates
+- `GET /api/ws/status` - WebSocket connection info
 
 #### WiFi WAN
 - `POST /api/wifi/scan` - Scan WiFi networks
@@ -220,6 +225,26 @@ ROSE Link automatically detects:
 - `GET /api/hotspot/status` - Hotspot status
 - `POST /api/hotspot/apply` - Apply configuration
 - `POST /api/hotspot/restart` - Restart hotspot
+
+#### Backup/Restore (v0.3.0+)
+- `GET /api/backup/list` - List available backups
+- `POST /api/backup/create` - Create new backup
+- `POST /api/backup/restore/{filename}` - Restore from backup
+- `GET /api/backup/download/{filename}` - Download backup file
+- `POST /api/backup/upload` - Upload backup file
+- `DELETE /api/backup/{filename}` - Delete backup
+
+#### Speed Test (v0.3.0+)
+- `GET /api/speedtest/status` - Check if test running
+- `POST /api/speedtest/run` - Start speed test
+- `GET /api/speedtest/history` - Get test history
+- `GET /api/speedtest/last` - Get last result
+
+#### SSL Certificates (v0.3.0+)
+- `GET /api/ssl/status` - Certificate status
+- `POST /api/ssl/request` - Request Let's Encrypt certificate
+- `POST /api/ssl/renew` - Renew certificates
+- `POST /api/ssl/self-signed` - Generate self-signed certificate
 
 #### Settings
 - `GET /api/settings/vpn` - Get VPN watchdog settings
@@ -254,7 +279,7 @@ curl -k https://roselink.local/api/system/info | jq
 
 ## Roadmap
 
-### Version 0.2.0 (Released)
+### Version 0.2.x (Released)
 - [x] Complete i18n support (English & French)
 - [x] Mobile-first responsive design for all screen sizes
 - [x] Code optimization with comprehensive docstrings and type hints
@@ -264,16 +289,21 @@ curl -k https://roselink.local/api/system/info | jq
 - [x] Accessibility improvements (ARIA labels, semantic HTML)
 - [x] API documentation endpoints (/api/docs, /api/redoc)
 
-### Version 0.3.0 (In Progress)
-- [ ] WebSocket for real-time status updates
-- [ ] Configuration backup/restore
-- [ ] Let's Encrypt SSL certificate option
-- [ ] Speed test integration
+### Version 0.3.0 (Released)
+- [x] WebSocket for real-time status updates (replaces polling)
+- [x] Configuration backup/restore (VPN profiles, hotspot config, settings)
+- [x] Let's Encrypt SSL certificate option (+ self-signed generation)
+- [x] Speed test integration (speedtest-cli, Ookla)
+- [x] Prometheus metrics endpoint (/api/metrics)
+- [x] Bandwidth usage statistics (per-interface, real-time)
+
+### Version 0.4.0 (In Progress)
+- [ ] Email notifications for VPN failures
 - [ ] Simple QoS (traffic prioritization)
 - [ ] Integrated AdGuard Home (DNS + ad blocking)
 - [ ] OpenVPN support in addition to WireGuard
-- [ ] Metrics dashboard (Grafana)
-- [ ] Bandwidth usage statistics
+- [ ] Grafana metrics dashboard
+- [ ] Connected clients management
 
 ### Version 1.0.0 (Future)
 - [ ] Ready-to-flash SD image
