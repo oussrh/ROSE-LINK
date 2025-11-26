@@ -2,7 +2,7 @@
  * Tests for Debounce Utility
  */
 
-import { debounce, throttle, debouncedSubmit } from '../../js/utils/debounce.js';
+import { debounce, throttle, debouncedRequest, debouncedSubmit } from '../../js/utils/debounce.js';
 
 describe('Debounce Utility', () => {
     beforeEach(() => {
@@ -251,6 +251,161 @@ describe('Debounce Utility', () => {
 
             await protectedFn('arg1', 'arg2');
             expect(func).toHaveBeenCalledWith('arg1', 'arg2');
+        });
+
+        it('should handle errors and still reset isSubmitting', async () => {
+            const func = jest.fn().mockRejectedValue(new Error('Submit failed'));
+            const protectedFn = debouncedSubmit(func, 100);
+
+            await expect(protectedFn()).rejects.toThrow('Submit failed');
+
+            // After cooldown, should be able to submit again
+            jest.advanceTimersByTime(100);
+            func.mockResolvedValue('done');
+            await protectedFn();
+            expect(func).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('debouncedRequest', () => {
+        it('should debounce API requests', async () => {
+            const requestFn = jest.fn().mockResolvedValue({ data: 'test' });
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            debouncedFn('arg1');
+            debouncedFn('arg2');
+            debouncedFn('arg3');
+
+            expect(requestFn).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(100);
+            await Promise.resolve(); // Allow async to complete
+
+            expect(requestFn).toHaveBeenCalledTimes(1);
+        });
+
+        it('should pass arguments to request function', async () => {
+            const requestFn = jest.fn().mockResolvedValue({ data: 'result' });
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            debouncedFn('url', { headers: {} });
+            jest.advanceTimersByTime(100);
+            await Promise.resolve();
+
+            expect(requestFn).toHaveBeenCalledWith('url', { headers: {} }, expect.any(AbortSignal));
+        });
+
+        it('should have abort method', () => {
+            const requestFn = jest.fn().mockResolvedValue({});
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            expect(typeof debouncedFn.abort).toBe('function');
+        });
+
+        it('should cancel pending requests when abort is called', () => {
+            const requestFn = jest.fn().mockResolvedValue({});
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            debouncedFn('test');
+            debouncedFn.abort();
+
+            jest.advanceTimersByTime(100);
+            expect(requestFn).not.toHaveBeenCalled();
+        });
+
+        it('should handle AbortError silently', async () => {
+            const abortError = new Error('Aborted');
+            abortError.name = 'AbortError';
+
+            const requestFn = jest.fn().mockRejectedValue(abortError);
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            debouncedFn();
+            jest.advanceTimersByTime(100);
+
+            // Should not throw
+            await expect(Promise.resolve()).resolves.not.toThrow();
+        });
+
+        it('should rethrow non-AbortError errors', async () => {
+            const error = new Error('Network error');
+            const requestFn = jest.fn().mockRejectedValue(error);
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            const promise = debouncedFn();
+            jest.advanceTimersByTime(100);
+
+            await expect(promise).rejects.toThrow('Network error');
+        });
+
+        it('should use default wait time of 300ms', () => {
+            const requestFn = jest.fn().mockResolvedValue({});
+            const debouncedFn = debouncedRequest(requestFn);
+
+            debouncedFn();
+            jest.advanceTimersByTime(299);
+            expect(requestFn).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(1);
+            expect(requestFn).toHaveBeenCalled();
+        });
+    });
+
+    describe('throttle additional edge cases', () => {
+        it('should handle both leading and trailing false', () => {
+            const func = jest.fn();
+            // Both false would mean nothing executes - this is an edge case
+            const throttledFn = throttle(func, 100, { leading: false, trailing: false });
+
+            throttledFn();
+            expect(func).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(100);
+            expect(func).not.toHaveBeenCalled();
+        });
+
+        it('should cancel pending trailing call', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100);
+
+            throttledFn('first');
+            throttledFn('second'); // This schedules trailing
+
+            throttledFn.cancel();
+            jest.advanceTimersByTime(100);
+
+            expect(func).toHaveBeenCalledTimes(1);
+            expect(func).toHaveBeenCalledWith('first');
+        });
+    });
+
+    describe('debounce edge cases', () => {
+        it('should not flush when no pending call', () => {
+            const func = jest.fn();
+            const debouncedFn = debounce(func, 100);
+
+            // Call flush without any pending debounce
+            debouncedFn.flush();
+
+            expect(func).not.toHaveBeenCalled();
+        });
+
+        it('should handle cancel when no pending call', () => {
+            const func = jest.fn();
+            const debouncedFn = debounce(func, 100);
+
+            // Should not throw
+            expect(() => debouncedFn.cancel()).not.toThrow();
+        });
+
+        it('should reset after flush', () => {
+            const func = jest.fn();
+            const debouncedFn = debounce(func, 100);
+
+            debouncedFn('first');
+            debouncedFn.flush();
+
+            expect(debouncedFn.pending()).toBe(false);
         });
     });
 });
