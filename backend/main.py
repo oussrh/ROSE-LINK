@@ -1,93 +1,177 @@
 #!/usr/bin/env python3
 """
 ROSE Link - Backend API
-Routeur VPN domestique sur Raspberry Pi (3, 4, 5, Zero 2W)
+=======================
+
+A modern FastAPI-based REST API for managing a VPN router on Raspberry Pi.
+Supports Raspberry Pi 3, 4, 5, and Zero 2W.
+
+Features:
+- WiFi WAN management (scan, connect, disconnect)
+- WireGuard VPN management (profiles, start/stop/restart)
+- WiFi Hotspot configuration (SSID, password, channel, WPA3)
+- System monitoring (CPU, RAM, disk, temperature)
+- VPN watchdog settings
+
+Author: ROSE Link Team
+License: MIT
+Version: 0.2.0
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from typing import Optional, List
-import subprocess
+from __future__ import annotations
+
 import json
 import os
 import re
+import subprocess
 from pathlib import Path
+from typing import Any
 
-app = FastAPI(title="ROSE Link API", version="0.1.0")
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, field_validator
 
-# Paths
+# =============================================================================
+# Application Configuration
+# =============================================================================
+
+app = FastAPI(
+    title="ROSE Link API",
+    description="REST API for ROSE Link VPN Router",
+    version="0.2.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+)
+
+# CORS middleware for development and external access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# =============================================================================
+# Path Constants
+# =============================================================================
+
 WG_PROFILES_DIR = Path("/etc/wireguard/profiles")
 WG_ACTIVE_CONF = Path("/etc/wireguard/wg0.conf")
 HOSTAPD_CONF = Path("/etc/hostapd/hostapd.conf")
+INTERFACES_CONF = Path("/opt/rose-link/system/interfaces.conf")
+VPN_SETTINGS_FILE = Path("/opt/rose-link/system/vpn-settings.conf")
 
-# Ensure directories exist
+# Ensure required directories exist
 WG_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ===== Models =====
+# =============================================================================
+# Pydantic Models
+# =============================================================================
 
 class WifiConnectRequest(BaseModel):
-    ssid: str
-    password: str
+    """Request model for WiFi connection."""
+
+    ssid: str = Field(..., min_length=1, max_length=32, description="WiFi network SSID")
+    password: str = Field(..., min_length=8, max_length=63, description="WiFi password")
 
 
 class HotspotConfig(BaseModel):
-    ssid: str
-    password: str
-    country: str = "BE"
-    channel: int = 6
-    wpa3: bool = False
-    band: str = "2.4GHz"  # "2.4GHz" or "5GHz"
+    """Configuration model for WiFi hotspot settings."""
+
+    ssid: str = Field(default="ROSE-Link", min_length=1, max_length=32, description="Hotspot SSID")
+    password: str = Field(..., min_length=8, max_length=63, description="Hotspot password")
+    country: str = Field(default="BE", min_length=2, max_length=2, description="Country code for WiFi regulation")
+    channel: int = Field(default=6, ge=1, le=165, description="WiFi channel")
+    wpa3: bool = Field(default=False, description="Enable WPA3 security")
+    band: str = Field(default="2.4GHz", description="WiFi band (2.4GHz or 5GHz)")
+
+    @field_validator("band")
+    @classmethod
+    def validate_band(cls, v: str) -> str:
+        """Validate WiFi band selection."""
+        if v not in ("2.4GHz", "5GHz"):
+            raise ValueError("Band must be '2.4GHz' or '5GHz'")
+        return v
 
 
 class VPNProfile(BaseModel):
-    name: str
-    active: bool = False
+    """Model for VPN profile activation."""
+
+    name: str = Field(..., min_length=1, description="VPN profile name")
+    active: bool = Field(default=False, description="Whether profile is active")
 
 
 class VPNSettings(BaseModel):
-    ping_host: str = "8.8.8.8"
-    check_interval: int = 60
+    """Configuration model for VPN watchdog settings."""
+
+    ping_host: str = Field(default="8.8.8.8", min_length=4, description="Host to ping for VPN health check")
+    check_interval: int = Field(default=60, ge=30, le=300, description="Check interval in seconds")
 
 
-# ===== Helper Functions =====
+# =============================================================================
+# Helper Functions
+# =============================================================================
 
-def run_command(cmd: List[str], check=True) -> tuple:
-    """Execute command and return (returncode, stdout, stderr)"""
+def run_command(cmd: list[str], check: bool = True, timeout: int = 30) -> tuple[int, str, str]:
+    """
+    Execute a shell command and return the result.
+
+    Args:
+        cmd: Command and arguments as a list
+        check: Whether to raise exception on non-zero return code
+        timeout: Command timeout in seconds
+
+    Returns:
+        Tuple of (return_code, stdout, stderr)
+    """
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            check=check
+            check=check,
+            timeout=timeout
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
-        return e.returncode, e.stdout, e.stderr
+        return e.returncode, e.stdout or "", e.stderr or ""
+    except subprocess.TimeoutExpired:
+        return -1, "", "Command timed out"
     except Exception as e:
         return -1, "", str(e)
 
 
-def get_interface_config() -> dict:
-    """Get configured interface names from interfaces.conf"""
+def get_interface_config() -> dict[str, str]:
+    """
+    Get configured network interface names from interfaces.conf.
+
+    Falls back to auto-detection if config file doesn't exist.
+
+    Returns:
+        Dictionary with 'eth', 'wifi_wan', and 'wifi_ap' interface names
+    """
     config = {
         "eth": "eth0",
         "wifi_wan": "wlan0",
         "wifi_ap": "wlan1"
     }
 
-    interfaces_conf = Path("/opt/rose-link/system/interfaces.conf")
-    if interfaces_conf.exists():
+    # Try to load from config file first
+    if INTERFACES_CONF.exists():
         try:
-            with open(interfaces_conf, 'r') as f:
+            with open(INTERFACES_CONF, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if line.startswith('#') or '=' not in line:
+                    if line.startswith("#") or "=" not in line:
                         continue
-                    key, value = line.split('=', 1)
+                    key, value = line.split("=", 1)
                     key = key.strip().upper()
                     value = value.strip().strip('"')
+
                     if key == "ETH_INTERFACE" and value:
                         config["eth"] = value
                     elif key == "WIFI_WAN_INTERFACE" and value:
@@ -96,53 +180,129 @@ def get_interface_config() -> dict:
                         config["wifi_ap"] = value
         except (IOError, OSError, ValueError):
             pass
-
-    # Fallback: detect interfaces if config is missing
-    if not interfaces_conf.exists():
-        # Try to find Ethernet interface
-        for iface in ["eth0", "end0", "enp1s0"]:
-            if os.path.exists(f"/sys/class/net/{iface}"):
-                config["eth"] = iface
-                break
-
-        # Try to find WiFi interfaces
-        wifi_ifaces = []
-        for iface in os.listdir("/sys/class/net/"):
-            if os.path.exists(f"/sys/class/net/{iface}/wireless"):
-                wifi_ifaces.append(iface)
-
-        if wifi_ifaces:
-            config["wifi_ap"] = wifi_ifaces[0]
-            config["wifi_wan"] = wifi_ifaces[0]
-            if len(wifi_ifaces) > 1:
-                config["wifi_wan"] = wifi_ifaces[1]
+    else:
+        # Auto-detect interfaces if config is missing
+        config = _detect_interfaces()
 
     return config
 
 
-def get_wan_status() -> dict:
-    """Get WAN connection status (Ethernet + WiFi)"""
+def _detect_interfaces() -> dict[str, str]:
+    """
+    Auto-detect network interfaces when config file is missing.
+
+    Returns:
+        Dictionary with detected interface names
+    """
+    config = {
+        "eth": "eth0",
+        "wifi_wan": "wlan0",
+        "wifi_ap": "wlan0"
+    }
+
+    # Detect Ethernet interface (Pi 5 uses end0)
+    for iface in ["eth0", "end0", "enp1s0"]:
+        if os.path.exists(f"/sys/class/net/{iface}"):
+            config["eth"] = iface
+            break
+
+    # Detect WiFi interfaces
+    wifi_ifaces = []
+    try:
+        for iface in os.listdir("/sys/class/net/"):
+            if os.path.exists(f"/sys/class/net/{iface}/wireless"):
+                wifi_ifaces.append(iface)
+    except OSError:
+        pass
+
+    if wifi_ifaces:
+        wifi_ifaces.sort()  # Ensure consistent ordering
+        config["wifi_ap"] = wifi_ifaces[0]
+        config["wifi_wan"] = wifi_ifaces[0]
+        if len(wifi_ifaces) > 1:
+            config["wifi_wan"] = wifi_ifaces[1]
+
+    return config
+
+
+def parse_config_file(filepath: Path, keys_map: dict[str, str]) -> dict[str, Any]:
+    """
+    Generic parser for key=value configuration files.
+
+    Args:
+        filepath: Path to the configuration file
+        keys_map: Mapping of config keys (uppercase) to result dict keys
+
+    Returns:
+        Dictionary with parsed values
+    """
+    result = {}
+
+    if not filepath.exists():
+        return result
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip().upper()
+                value = value.strip().strip('"')
+
+                if key in keys_map:
+                    result[keys_map[key]] = value
+    except (IOError, OSError, ValueError):
+        pass
+
+    return result
+
+
+# =============================================================================
+# Status Functions
+# =============================================================================
+
+def get_wan_status() -> dict[str, Any]:
+    """
+    Get WAN connection status for both Ethernet and WiFi.
+
+    Returns:
+        Dictionary with ethernet and wifi connection status
+    """
     iface_config = get_interface_config()
 
     status = {
-        "ethernet": {"connected": False, "ip": None, "interface": iface_config["eth"]},
-        "wifi": {"connected": False, "ssid": None, "ip": None, "interface": iface_config["wifi_wan"]}
+        "ethernet": {
+            "connected": False,
+            "ip": None,
+            "interface": iface_config["eth"]
+        },
+        "wifi": {
+            "connected": False,
+            "ssid": None,
+            "ip": None,
+            "interface": iface_config["wifi_wan"]
+        }
     }
 
-    # Check Ethernet (dynamic interface name)
+    # Check Ethernet connection
     eth_iface = iface_config["eth"]
     if eth_iface:
         ret, out, _ = run_command(["ip", "addr", "show", eth_iface], check=False)
         if ret == 0 and "inet " in out:
             status["ethernet"]["connected"] = True
-            match = re.search(r'inet\s+(\S+)', out)
+            match = re.search(r"inet\s+(\S+)", out)
             if match:
                 status["ethernet"]["ip"] = match.group(1)
 
-    # Check WiFi WAN (dynamic interface name)
+    # Check WiFi WAN connection using NetworkManager
     wifi_wan_iface = iface_config["wifi_wan"]
     if wifi_wan_iface:
-        ret, out, _ = run_command(["nmcli", "-t", "-f", "DEVICE,STATE,CONNECTION", "device"], check=False)
+        ret, out, _ = run_command(
+            ["nmcli", "-t", "-f", "DEVICE,STATE,CONNECTION", "device"],
+            check=False
+        )
         if ret == 0:
             for line in out.splitlines():
                 parts = line.split(":")
@@ -150,18 +310,26 @@ def get_wan_status() -> dict:
                     status["wifi"]["connected"] = True
                     status["wifi"]["ssid"] = parts[2]
 
-                    # Get IP
-                    ret2, out2, _ = run_command(["ip", "addr", "show", wifi_wan_iface], check=False)
+                    # Get IP address
+                    ret2, out2, _ = run_command(
+                        ["ip", "addr", "show", wifi_wan_iface],
+                        check=False
+                    )
                     if ret2 == 0:
-                        match = re.search(r'inet\s+(\S+)', out2)
+                        match = re.search(r"inet\s+(\S+)", out2)
                         if match:
                             status["wifi"]["ip"] = match.group(1)
 
     return status
 
 
-def get_vpn_status() -> dict:
-    """Get WireGuard VPN status"""
+def get_vpn_status() -> dict[str, Any]:
+    """
+    Get WireGuard VPN connection status.
+
+    Returns:
+        Dictionary with VPN status including endpoint, handshake, and transfer stats
+    """
     status = {
         "active": False,
         "interface": "wg0",
@@ -185,14 +353,25 @@ def get_vpn_status() -> dict:
                 transfer = line.split(":", 1)[1].strip()
                 parts = transfer.split(",")
                 if len(parts) == 2:
-                    status["transfer"]["received"] = parts[0].strip().split()[0] + " " + parts[0].strip().split()[1]
-                    status["transfer"]["sent"] = parts[1].strip().split()[0] + " " + parts[1].strip().split()[1]
+                    try:
+                        recv_parts = parts[0].strip().split()
+                        sent_parts = parts[1].strip().split()
+                        if len(recv_parts) >= 2 and len(sent_parts) >= 2:
+                            status["transfer"]["received"] = f"{recv_parts[0]} {recv_parts[1]}"
+                            status["transfer"]["sent"] = f"{sent_parts[0]} {sent_parts[1]}"
+                    except (IndexError, ValueError):
+                        pass
 
     return status
 
 
-def get_ap_status() -> dict:
-    """Get Access Point (Hotspot) status"""
+def get_ap_status() -> dict[str, Any]:
+    """
+    Get WiFi Access Point (Hotspot) status.
+
+    Returns:
+        Dictionary with hotspot status including SSID, channel, and client count
+    """
     iface_config = get_interface_config()
     ap_iface = iface_config["wifi_ap"]
 
@@ -211,25 +390,24 @@ def get_ap_status() -> dict:
     if ret == 0 and out.strip() == "active":
         status["active"] = True
 
-        # Read config from hostapd.conf
+        # Read configuration from hostapd.conf
         if HOSTAPD_CONF.exists():
-            with open(HOSTAPD_CONF, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line.startswith("ssid="):
-                        status["ssid"] = line.split("=", 1)[1].strip()
-                    elif line.startswith("channel="):
-                        status["channel"] = int(line.split("=", 1)[1].strip())
-                    elif line.startswith("hw_mode="):
-                        hw_mode = line.split("=", 1)[1].strip()
-                        status["hw_mode"] = hw_mode
-                        # Determine frequency band
-                        if hw_mode == "a":
-                            status["frequency"] = "5GHz"
-                        else:
-                            status["frequency"] = "2.4GHz"
+            try:
+                with open(HOSTAPD_CONF, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("ssid="):
+                            status["ssid"] = line.split("=", 1)[1].strip()
+                        elif line.startswith("channel="):
+                            status["channel"] = int(line.split("=", 1)[1].strip())
+                        elif line.startswith("hw_mode="):
+                            hw_mode = line.split("=", 1)[1].strip()
+                            status["hw_mode"] = hw_mode
+                            status["frequency"] = "5GHz" if hw_mode == "a" else "2.4GHz"
+            except (IOError, OSError, ValueError):
+                pass
 
-        # Count connected clients (using dynamic interface name)
+        # Count connected clients
         ret2, out2, _ = run_command(["iw", "dev", ap_iface, "station", "dump"], check=False)
         if ret2 == 0:
             status["clients"] = out2.count("Station ")
@@ -237,17 +415,29 @@ def get_ap_status() -> dict:
     return status
 
 
-# ===== API Endpoints =====
+# =============================================================================
+# API Endpoints - Health & Status
+# =============================================================================
 
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "ok", "service": "ROSE Link"}
+@app.get("/api/health", tags=["Health"])
+async def health_check() -> dict[str, str]:
+    """
+    Health check endpoint for monitoring.
+
+    Returns:
+        Status information for the ROSE Link service
+    """
+    return {"status": "ok", "service": "ROSE Link", "version": "0.2.0"}
 
 
-@app.get("/api/status")
-async def get_status():
-    """Get overall system status"""
+@app.get("/api/status", tags=["Status"])
+async def get_status() -> dict[str, Any]:
+    """
+    Get overall system status including WAN, VPN, and hotspot.
+
+    Returns:
+        Combined status of all major components
+    """
     return {
         "wan": get_wan_status(),
         "vpn": get_vpn_status(),
@@ -255,18 +445,28 @@ async def get_status():
     }
 
 
-# ===== WiFi WAN Endpoints =====
+# =============================================================================
+# API Endpoints - WiFi WAN
+# =============================================================================
 
-@app.post("/api/wifi/scan")
-async def wifi_scan():
-    """Scan for available WiFi networks"""
-    ret, out, err = run_command(["sudo", "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY", "device", "wifi", "list"], check=False)
+@app.post("/api/wifi/scan", tags=["WiFi"])
+async def wifi_scan() -> dict[str, list]:
+    """
+    Scan for available WiFi networks.
+
+    Returns:
+        List of networks with SSID, signal strength, and security type
+    """
+    ret, out, err = run_command(
+        ["sudo", "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY", "device", "wifi", "list"],
+        check=False
+    )
 
     if ret != 0:
         raise HTTPException(status_code=500, detail=f"Scan failed: {err}")
 
     networks = []
-    seen_ssids = set()
+    seen_ssids: set[str] = set()
 
     for line in out.splitlines():
         parts = line.split(":")
@@ -280,15 +480,23 @@ async def wifi_scan():
                     "security": parts[2] if len(parts) > 2 else "Open"
                 })
 
-    # Sort by signal strength
+    # Sort by signal strength (strongest first)
     networks.sort(key=lambda x: x["signal"], reverse=True)
 
     return {"networks": networks}
 
 
-@app.post("/api/wifi/connect")
-async def wifi_connect(request: WifiConnectRequest):
-    """Connect to WiFi network (WAN)"""
+@app.post("/api/wifi/connect", tags=["WiFi"])
+async def wifi_connect(request: WifiConnectRequest) -> dict[str, str]:
+    """
+    Connect to a WiFi network as WAN.
+
+    Args:
+        request: WiFi connection credentials
+
+    Returns:
+        Connection status
+    """
     ret, out, err = run_command([
         "sudo", "nmcli", "device", "wifi", "connect",
         request.ssid, "password", request.password
@@ -300,10 +508,24 @@ async def wifi_connect(request: WifiConnectRequest):
     return {"status": "connected", "ssid": request.ssid}
 
 
-@app.post("/api/wifi/disconnect")
-async def wifi_disconnect():
-    """Disconnect from WiFi WAN"""
-    ret, out, err = run_command(["sudo", "nmcli", "device", "disconnect", "wlan0"], check=False)
+@app.post("/api/wifi/disconnect", tags=["WiFi"])
+async def wifi_disconnect() -> dict[str, str]:
+    """
+    Disconnect from WiFi WAN.
+
+    Uses the configured WiFi WAN interface from interfaces.conf.
+
+    Returns:
+        Disconnection status
+    """
+    # Use dynamic interface instead of hardcoded wlan0
+    iface_config = get_interface_config()
+    wifi_wan_iface = iface_config["wifi_wan"]
+
+    ret, out, err = run_command(
+        ["sudo", "nmcli", "device", "disconnect", wifi_wan_iface],
+        check=False
+    )
 
     if ret != 0:
         raise HTTPException(status_code=500, detail=f"Disconnect failed: {err}")
@@ -311,22 +533,41 @@ async def wifi_disconnect():
     return {"status": "disconnected"}
 
 
-# ===== VPN Endpoints =====
+# =============================================================================
+# API Endpoints - VPN
+# =============================================================================
 
-@app.get("/api/vpn/status")
-async def vpn_status():
-    """Get VPN status"""
+@app.get("/api/vpn/status", tags=["VPN"])
+async def vpn_status() -> dict[str, Any]:
+    """
+    Get current VPN connection status.
+
+    Returns:
+        VPN status including connection state, endpoint, and transfer stats
+    """
     return get_vpn_status()
 
 
-@app.get("/api/vpn/profiles")
-async def vpn_list_profiles():
-    """List available VPN profiles"""
+@app.get("/api/vpn/profiles", tags=["VPN"])
+async def vpn_list_profiles() -> dict[str, list]:
+    """
+    List all available VPN profiles.
+
+    Returns:
+        List of VPN profiles with their activation status
+    """
     profiles = []
 
     if WG_PROFILES_DIR.exists():
         for conf_file in WG_PROFILES_DIR.glob("*.conf"):
-            is_active = WG_ACTIVE_CONF.exists() and WG_ACTIVE_CONF.resolve() == conf_file.resolve()
+            # Check if this profile is currently active
+            is_active = False
+            if WG_ACTIVE_CONF.exists():
+                try:
+                    is_active = WG_ACTIVE_CONF.resolve() == conf_file.resolve()
+                except OSError:
+                    pass
+
             profiles.append({
                 "name": conf_file.stem,
                 "active": is_active
@@ -335,21 +576,28 @@ async def vpn_list_profiles():
     return {"profiles": profiles}
 
 
-@app.post("/api/vpn/upload")
-async def vpn_upload_profile(file: UploadFile = File(...)):
-    """Upload a new VPN profile"""
-    if not file.filename.endswith(".conf"):
+@app.post("/api/vpn/upload", tags=["VPN"])
+async def vpn_upload_profile(file: UploadFile = File(...)) -> dict[str, str]:
+    """
+    Upload a new VPN profile without activating it.
+
+    Args:
+        file: WireGuard .conf file
+
+    Returns:
+        Upload status
+    """
+    if not file.filename or not file.filename.endswith(".conf"):
         raise HTTPException(status_code=400, detail="File must be a .conf file")
 
-    # Save profile
     profile_path = WG_PROFILES_DIR / file.filename
 
     try:
         content = await file.read()
-        with open(profile_path, 'wb') as f:
+        with open(profile_path, "wb") as f:
             f.write(content)
 
-        # Set permissions
+        # Set secure permissions (readable only by root/owner)
         os.chmod(profile_path, 0o600)
 
         return {"status": "uploaded", "name": file.filename}
@@ -357,37 +605,56 @@ async def vpn_upload_profile(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
-@app.post("/api/vpn/import")
-async def vpn_import_profile(file: UploadFile = File(...)):
-    """Import and activate VPN profile"""
-    if not file.filename.endswith(".conf"):
+@app.post("/api/vpn/import", tags=["VPN"])
+async def vpn_import_profile(file: UploadFile = File(...)) -> dict[str, str]:
+    """
+    Import and immediately activate a VPN profile.
+
+    Args:
+        file: WireGuard .conf file
+
+    Returns:
+        Import and activation status
+    """
+    if not file.filename or not file.filename.endswith(".conf"):
         raise HTTPException(status_code=400, detail="File must be a .conf file")
 
     try:
-        # Save to profiles
+        # Save to profiles directory
         profile_path = WG_PROFILES_DIR / file.filename
         content = await file.read()
-        with open(profile_path, 'wb') as f:
+
+        with open(profile_path, "wb") as f:
             f.write(content)
         os.chmod(profile_path, 0o600)
 
-        # Activate it
-        if WG_ACTIVE_CONF.exists():
-            WG_ACTIVE_CONF.unlink()
+        # Stop existing VPN if running
+        run_command(["sudo", "systemctl", "stop", "wg-quick@wg0"], check=False)
 
+        # Update symlink to new profile
+        if WG_ACTIVE_CONF.exists() or WG_ACTIVE_CONF.is_symlink():
+            WG_ACTIVE_CONF.unlink()
         WG_ACTIVE_CONF.symlink_to(profile_path)
 
-        # Restart WireGuard
-        run_command(["sudo", "systemctl", "restart", "wg-quick@wg0"], check=False)
+        # Start WireGuard with new profile
+        run_command(["sudo", "systemctl", "start", "wg-quick@wg0"], check=False)
 
         return {"status": "imported", "name": file.filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 
-@app.post("/api/vpn/activate")
-async def vpn_activate_profile(profile: VPNProfile):
-    """Activate a VPN profile"""
+@app.post("/api/vpn/activate", tags=["VPN"])
+async def vpn_activate_profile(profile: VPNProfile) -> dict[str, str]:
+    """
+    Activate an existing VPN profile.
+
+    Args:
+        profile: Profile name to activate
+
+    Returns:
+        Activation status
+    """
     profile_path = WG_PROFILES_DIR / f"{profile.name}.conf"
 
     if not profile_path.exists():
@@ -398,12 +665,11 @@ async def vpn_activate_profile(profile: VPNProfile):
         run_command(["sudo", "systemctl", "stop", "wg-quick@wg0"], check=False)
 
         # Update symlink
-        if WG_ACTIVE_CONF.exists():
+        if WG_ACTIVE_CONF.exists() or WG_ACTIVE_CONF.is_symlink():
             WG_ACTIVE_CONF.unlink()
-
         WG_ACTIVE_CONF.symlink_to(profile_path)
 
-        # Start VPN
+        # Start VPN with new profile
         run_command(["sudo", "systemctl", "start", "wg-quick@wg0"], check=False)
 
         return {"status": "activated", "name": profile.name}
@@ -411,10 +677,13 @@ async def vpn_activate_profile(profile: VPNProfile):
         raise HTTPException(status_code=500, detail=f"Activation failed: {str(e)}")
 
 
-@app.post("/api/vpn/restart")
-async def vpn_restart():
-    """Restart VPN"""
-    ret, out, err = run_command(["sudo", "systemctl", "restart", "wg-quick@wg0"], check=False)
+@app.post("/api/vpn/restart", tags=["VPN"])
+async def vpn_restart() -> dict[str, str]:
+    """Restart the VPN connection."""
+    ret, out, err = run_command(
+        ["sudo", "systemctl", "restart", "wg-quick@wg0"],
+        check=False
+    )
 
     if ret != 0:
         raise HTTPException(status_code=500, detail=f"Restart failed: {err}")
@@ -422,10 +691,13 @@ async def vpn_restart():
     return {"status": "restarted"}
 
 
-@app.post("/api/vpn/stop")
-async def vpn_stop():
-    """Stop VPN"""
-    ret, out, err = run_command(["sudo", "systemctl", "stop", "wg-quick@wg0"], check=False)
+@app.post("/api/vpn/stop", tags=["VPN"])
+async def vpn_stop() -> dict[str, str]:
+    """Stop the VPN connection."""
+    ret, out, err = run_command(
+        ["sudo", "systemctl", "stop", "wg-quick@wg0"],
+        check=False
+    )
 
     if ret != 0:
         raise HTTPException(status_code=500, detail=f"Stop failed: {err}")
@@ -433,10 +705,13 @@ async def vpn_stop():
     return {"status": "stopped"}
 
 
-@app.post("/api/vpn/start")
-async def vpn_start():
-    """Start VPN"""
-    ret, out, err = run_command(["sudo", "systemctl", "start", "wg-quick@wg0"], check=False)
+@app.post("/api/vpn/start", tags=["VPN"])
+async def vpn_start() -> dict[str, str]:
+    """Start the VPN connection."""
+    ret, out, err = run_command(
+        ["sudo", "systemctl", "start", "wg-quick@wg0"],
+        check=False
+    )
 
     if ret != 0:
         raise HTTPException(status_code=500, detail=f"Start failed: {err}")
@@ -444,33 +719,51 @@ async def vpn_start():
     return {"status": "started"}
 
 
-# ===== Hotspot Endpoints =====
+# =============================================================================
+# API Endpoints - Hotspot
+# =============================================================================
 
-@app.get("/api/hotspot/status")
-async def hotspot_status():
-    """Get hotspot status"""
+@app.get("/api/hotspot/status", tags=["Hotspot"])
+async def hotspot_status() -> dict[str, Any]:
+    """
+    Get current hotspot status.
+
+    Returns:
+        Hotspot status including SSID, channel, frequency, and connected clients
+    """
     return get_ap_status()
 
 
-@app.post("/api/hotspot/apply")
-async def hotspot_apply(config: HotspotConfig):
-    """Apply hotspot configuration with 5GHz support"""
-    try:
-        # Validate password length
-        if len(config.password) < 8:
-            raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+@app.post("/api/hotspot/apply", tags=["Hotspot"])
+async def hotspot_apply(config: HotspotConfig) -> dict[str, Any]:
+    """
+    Apply new hotspot configuration.
 
+    Supports both 2.4GHz and 5GHz bands with automatic channel validation.
+
+    Args:
+        config: New hotspot configuration
+
+    Returns:
+        Applied configuration status
+    """
+    try:
         # Get dynamic interface name
         iface_config = get_interface_config()
         ap_iface = iface_config["wifi_ap"]
 
-        # Determine hw_mode and extra config based on band
+        # Configure based on band selection
         if config.band == "5GHz":
             hw_mode = "a"
             # Validate 5GHz channel
-            valid_5ghz_channels = [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161, 165]
+            valid_5ghz_channels = [
+                36, 40, 44, 48, 52, 56, 60, 64,
+                100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140,
+                149, 153, 157, 161, 165
+            ]
             if config.channel not in valid_5ghz_channels:
                 config.channel = 36  # Default to channel 36 for 5GHz
+
             extra_config = """
 # 802.11ac (WiFi 5) support
 ieee80211ac=1
@@ -493,6 +786,7 @@ ieee80211w=1"""
             wpa_config = """wpa=2
 wpa_key_mgmt=WPA-PSK"""
 
+        # Generate hostapd configuration
         hostapd_config = f"""# ROSE Link Hotspot Configuration
 # Auto-generated via Web API
 # Band: {config.band}
@@ -522,22 +816,26 @@ logger_syslog=-1
 logger_syslog_level=2
 """
 
-        # Write config
-        with open(HOSTAPD_CONF, 'w') as f:
+        # Write configuration file
+        with open(HOSTAPD_CONF, "w", encoding="utf-8") as f:
             f.write(hostapd_config)
 
-        # Restart hostapd
+        # Restart services to apply changes
         run_command(["sudo", "systemctl", "restart", "hostapd"], check=False)
         run_command(["sudo", "systemctl", "restart", "dnsmasq"], check=False)
 
-        return {"status": "applied", "config": config.dict(), "interface": ap_iface}
+        return {
+            "status": "applied",
+            "config": config.model_dump(),
+            "interface": ap_iface
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Apply failed: {str(e)}")
 
 
-@app.post("/api/hotspot/restart")
-async def hotspot_restart():
-    """Restart hotspot"""
+@app.post("/api/hotspot/restart", tags=["Hotspot"])
+async def hotspot_restart() -> dict[str, str]:
+    """Restart the hotspot services (hostapd and dnsmasq)."""
     ret1, _, err1 = run_command(["sudo", "systemctl", "restart", "hostapd"], check=False)
     ret2, _, err2 = run_command(["sudo", "systemctl", "restart", "dnsmasq"], check=False)
 
@@ -547,47 +845,18 @@ async def hotspot_restart():
     return {"status": "restarted"}
 
 
-# ===== System Endpoints =====
+# =============================================================================
+# API Endpoints - System
+# =============================================================================
 
-INTERFACES_CONF = Path("/opt/rose-link/system/interfaces.conf")
+@app.get("/api/system/info", tags=["System"])
+async def system_info() -> dict[str, Any]:
+    """
+    Get comprehensive Raspberry Pi system information.
 
-
-def parse_interfaces_conf() -> dict:
-    """Parse the interfaces configuration file"""
-    config = {
-        "eth_interface": "eth0",
-        "wifi_ap_interface": "wlan1",
-        "wifi_wan_interface": "wlan0",
-        "pi_model": "unknown",
-        "pi_version": "unknown"
-    }
-
-    if INTERFACES_CONF.exists():
-        with open(INTERFACES_CONF, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('#') or '=' not in line:
-                    continue
-                key, value = line.split('=', 1)
-                key = key.strip().lower()
-                value = value.strip().strip('"')
-                if key == "eth_interface":
-                    config["eth_interface"] = value
-                elif key == "wifi_ap_interface":
-                    config["wifi_ap_interface"] = value
-                elif key == "wifi_wan_interface":
-                    config["wifi_wan_interface"] = value
-                elif key == "pi_model":
-                    config["pi_model"] = value
-                elif key == "pi_version":
-                    config["pi_version"] = value
-
-    return config
-
-
-@app.get("/api/system/info")
-async def system_info():
-    """Get Raspberry Pi system information and hardware details"""
+    Returns:
+        System info including model, RAM, disk, CPU, interfaces, and WiFi capabilities
+    """
     info = {
         "model": "unknown",
         "model_short": "unknown",
@@ -616,18 +885,19 @@ async def system_info():
 
     # Get Pi model from device tree
     try:
-        with open("/proc/device-tree/model", 'r') as f:
-            info["model"] = f.read().strip('\x00')
+        with open("/proc/device-tree/model", "r", encoding="utf-8") as f:
+            info["model"] = f.read().strip("\x00")
             # Extract short model name
-            if "Raspberry Pi 5" in info["model"]:
+            model = info["model"]
+            if "Raspberry Pi 5" in model:
                 info["model_short"] = "Pi 5"
-            elif "Raspberry Pi 4" in info["model"]:
+            elif "Raspberry Pi 4" in model:
                 info["model_short"] = "Pi 4"
-            elif "Raspberry Pi 3" in info["model"]:
+            elif "Raspberry Pi 3" in model:
                 info["model_short"] = "Pi 3"
-            elif "Raspberry Pi Zero 2" in info["model"]:
+            elif "Raspberry Pi Zero 2" in model:
                 info["model_short"] = "Zero 2W"
-            elif "Raspberry Pi" in info["model"]:
+            elif "Raspberry Pi" in model:
                 info["model_short"] = "Pi"
     except (IOError, OSError):
         pass
@@ -644,7 +914,7 @@ async def system_info():
 
     # Get OS version
     try:
-        with open("/etc/os-release", 'r') as f:
+        with open("/etc/os-release", "r", encoding="utf-8") as f:
             for line in f:
                 if line.startswith("PRETTY_NAME="):
                     info["os_version"] = line.split("=", 1)[1].strip().strip('"')
@@ -666,47 +936,50 @@ async def system_info():
     # Get disk info
     ret, out, _ = run_command(["df", "-BG", "/"], check=False)
     if ret == 0:
-        lines = out.strip().split('\n')
+        lines = out.strip().split("\n")
         if len(lines) >= 2:
             parts = lines[1].split()
             if len(parts) >= 4:
-                info["disk_total_gb"] = int(parts[1].rstrip('G'))
-                info["disk_free_gb"] = int(parts[3].rstrip('G'))
+                info["disk_total_gb"] = int(parts[1].rstrip("G"))
+                info["disk_free_gb"] = int(parts[3].rstrip("G"))
 
     # Get CPU temperature
     try:
-        with open("/sys/class/thermal/thermal_zone0/temp", 'r') as f:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r", encoding="utf-8") as f:
             info["cpu_temp_c"] = int(f.read().strip()) // 1000
     except (IOError, OSError, ValueError):
         pass
 
-    # Get CPU usage
+    # Get CPU usage (simple calculation)
     ret, out, _ = run_command(["grep", "cpu ", "/proc/stat"], check=False)
     if ret == 0:
         parts = out.split()
         if len(parts) >= 5:
-            idle = int(parts[4])
-            total = sum(int(x) for x in parts[1:])
-            if total > 0:
-                info["cpu_usage_percent"] = round(100 * (1 - idle / total), 1)
+            try:
+                idle = int(parts[4])
+                total = sum(int(x) for x in parts[1:])
+                if total > 0:
+                    info["cpu_usage_percent"] = round(100 * (1 - idle / total), 1)
+            except (ValueError, IndexError):
+                pass
 
     # Get uptime
     try:
-        with open("/proc/uptime", 'r') as f:
+        with open("/proc/uptime", "r", encoding="utf-8") as f:
             info["uptime_seconds"] = int(float(f.read().split()[0]))
     except (IOError, OSError, ValueError):
         pass
 
     # Get interface configuration
-    iface_config = parse_interfaces_conf()
-    info["interfaces"]["ethernet"] = iface_config["eth_interface"]
-    info["interfaces"]["wifi_ap"] = iface_config["wifi_ap_interface"]
-    info["interfaces"]["wifi_wan"] = iface_config["wifi_wan_interface"]
+    iface_config = get_interface_config()
+    info["interfaces"]["ethernet"] = iface_config["eth"]
+    info["interfaces"]["wifi_ap"] = iface_config["wifi_ap"]
+    info["interfaces"]["wifi_wan"] = iface_config["wifi_wan"]
 
     # Check WiFi capabilities
     ret, out, _ = run_command(["iw", "list"], check=False)
     if ret == 0:
-        if re.search(r'5[0-9]{3} MHz', out):
+        if re.search(r"5[0-9]{3} MHz", out):
             info["wifi_capabilities"]["supports_5ghz"] = True
         if "VHT" in out:
             info["wifi_capabilities"]["supports_ac"] = True
@@ -718,16 +991,21 @@ async def system_info():
     return info
 
 
-@app.get("/api/system/interfaces")
-async def system_interfaces():
-    """Get detected network interfaces and their status"""
-    interfaces = {
+@app.get("/api/system/interfaces", tags=["System"])
+async def system_interfaces() -> dict[str, list]:
+    """
+    Get detailed network interface information.
+
+    Returns:
+        Lists of ethernet, wifi, and vpn interfaces with their status
+    """
+    interfaces: dict[str, list] = {
         "ethernet": [],
         "wifi": [],
         "vpn": []
     }
 
-    # Get all network interfaces
+    # Get all network interfaces using JSON output
     ret, out, _ = run_command(["ip", "-j", "addr", "show"], check=False)
     if ret == 0:
         try:
@@ -749,18 +1027,23 @@ async def system_interfaces():
                     "mac": iface.get("address", "")
                 }
 
-                if name.startswith("eth") or name.startswith("end") or name.startswith("enp"):
+                # Categorize interface
+                if name.startswith(("eth", "end", "enp")):
                     interfaces["ethernet"].append(iface_info)
-                elif name.startswith("wlan") or name.startswith("wlp"):
-                    # Check if it's built-in or USB
+                elif name.startswith(("wlan", "wlp")):
+                    # Determine if built-in or USB
                     device_path = ""
                     try:
                         device_path = os.readlink(f"/sys/class/net/{name}/device")
                     except OSError:
                         pass
-                    iface_info["type"] = "builtin" if "mmc" in device_path or "soc" in device_path else "usb"
 
-                    # Get driver
+                    iface_info["type"] = (
+                        "builtin" if "mmc" in device_path or "soc" in device_path
+                        else "usb"
+                    )
+
+                    # Get driver name
                     try:
                         driver_path = os.readlink(f"/sys/class/net/{name}/device/driver")
                         iface_info["driver"] = os.path.basename(driver_path)
@@ -776,20 +1059,29 @@ async def system_interfaces():
     return interfaces
 
 
-@app.post("/api/system/reboot")
-async def system_reboot():
-    """Reboot system"""
+@app.post("/api/system/reboot", tags=["System"])
+async def system_reboot() -> dict[str, str]:
+    """
+    Reboot the Raspberry Pi.
+
+    Returns:
+        Reboot confirmation status
+    """
     run_command(["sudo", "reboot"], check=False)
     return {"status": "rebooting"}
 
 
-# ===== Settings Endpoints =====
+# =============================================================================
+# API Endpoints - Settings
+# =============================================================================
 
-VPN_SETTINGS_FILE = Path("/opt/rose-link/system/vpn-settings.conf")
+def load_vpn_settings() -> dict[str, Any]:
+    """
+    Load VPN watchdog settings from configuration file.
 
-
-def load_vpn_settings() -> dict:
-    """Load VPN watchdog settings from config file"""
+    Returns:
+        Dictionary with ping_host and check_interval settings
+    """
     settings = {
         "ping_host": "8.8.8.8",
         "check_interval": 60
@@ -797,14 +1089,15 @@ def load_vpn_settings() -> dict:
 
     if VPN_SETTINGS_FILE.exists():
         try:
-            with open(VPN_SETTINGS_FILE, 'r') as f:
+            with open(VPN_SETTINGS_FILE, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if line.startswith('#') or '=' not in line:
+                    if line.startswith("#") or "=" not in line:
                         continue
-                    key, value = line.split('=', 1)
+                    key, value = line.split("=", 1)
                     key = key.strip().lower()
                     value = value.strip().strip('"')
+
                     if key == "ping_host":
                         settings["ping_host"] = value
                     elif key == "check_interval":
@@ -815,8 +1108,16 @@ def load_vpn_settings() -> dict:
     return settings
 
 
-def save_vpn_settings(settings: dict) -> bool:
-    """Save VPN watchdog settings to config file"""
+def save_vpn_settings(settings: dict[str, Any]) -> bool:
+    """
+    Save VPN watchdog settings to configuration file.
+
+    Args:
+        settings: Dictionary with ping_host and check_interval
+
+    Returns:
+        True if save was successful, False otherwise
+    """
     try:
         config_content = f"""# ROSE Link VPN Watchdog Settings
 # Auto-generated via Web API
@@ -827,7 +1128,7 @@ PING_HOST={settings.get('ping_host', '8.8.8.8')}
 # Check interval in seconds (30-300)
 CHECK_INTERVAL={settings.get('check_interval', 60)}
 """
-        with open(VPN_SETTINGS_FILE, 'w') as f:
+        with open(VPN_SETTINGS_FILE, "w", encoding="utf-8") as f:
             f.write(config_content)
 
         # Restart watchdog to apply new settings
@@ -837,25 +1138,28 @@ CHECK_INTERVAL={settings.get('check_interval', 60)}
         return False
 
 
-@app.get("/api/settings/vpn")
-async def get_vpn_settings():
-    """Get VPN watchdog settings"""
+@app.get("/api/settings/vpn", tags=["Settings"])
+async def get_vpn_settings() -> dict[str, Any]:
+    """
+    Get current VPN watchdog settings.
+
+    Returns:
+        Current ping_host and check_interval values
+    """
     return load_vpn_settings()
 
 
-@app.post("/api/settings/vpn")
-async def update_vpn_settings(settings: VPNSettings):
-    """Update VPN watchdog settings"""
-    # Validate check_interval
-    if settings.check_interval < 30:
-        settings.check_interval = 30
-    elif settings.check_interval > 300:
-        settings.check_interval = 300
+@app.post("/api/settings/vpn", tags=["Settings"])
+async def update_vpn_settings(settings: VPNSettings) -> dict[str, Any]:
+    """
+    Update VPN watchdog settings.
 
-    # Validate ping_host (basic check)
-    if not settings.ping_host or len(settings.ping_host) < 4:
-        raise HTTPException(status_code=400, detail="Invalid ping host")
+    Args:
+        settings: New VPN watchdog configuration
 
+    Returns:
+        Confirmation with saved settings
+    """
     settings_dict = {
         "ping_host": settings.ping_host,
         "check_interval": settings.check_interval
@@ -867,23 +1171,54 @@ async def update_vpn_settings(settings: VPNSettings):
         raise HTTPException(status_code=500, detail="Failed to save settings")
 
 
-@app.get("/api/system/logs")
-async def system_logs(service: str = "rose-backend"):
-    """Get system logs"""
-    valid_services = ["rose-backend", "rose-watchdog", "hostapd", "dnsmasq", "wg-quick@wg0"]
+@app.get("/api/system/logs", tags=["System"])
+async def system_logs(service: str = "rose-backend") -> dict[str, str]:
+    """
+    Get system logs for a specific service.
+
+    Args:
+        service: Service name to get logs for
+
+    Returns:
+        Recent log entries for the specified service
+    """
+    valid_services = [
+        "rose-backend",
+        "rose-watchdog",
+        "hostapd",
+        "dnsmasq",
+        "wg-quick@wg0"
+    ]
 
     if service not in valid_services:
-        raise HTTPException(status_code=400, detail="Invalid service")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid service. Valid options: {', '.join(valid_services)}"
+        )
 
-    ret, out, err = run_command(["sudo", "journalctl", "-u", service, "-n", "100", "--no-pager"], check=False)
+    ret, out, err = run_command(
+        ["sudo", "journalctl", "-u", service, "-n", "100", "--no-pager"],
+        check=False
+    )
 
     return {"service": service, "logs": out}
 
 
-# Serve static files (web UI)
+# =============================================================================
+# Static Files & Application Entry Point
+# =============================================================================
+
+# Serve static files (web UI) - must be last to not override API routes
 app.mount("/", StaticFiles(directory="/opt/rose-link/web", html=True), name="static")
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000,
+        log_level="info",
+        access_log=True
+    )
