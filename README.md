@@ -1,6 +1,12 @@
+<div align="center">
+
+<img src="web/Logo.webp" alt="ROSE Link Logo" width="200">
+
 # ROSE Link
 
 **Home VPN Router on Raspberry Pi**
+
+<img src="web/icon.webp" alt="ROSE Link Icon" width="64">
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
@@ -9,6 +15,8 @@ Transform your Raspberry Pi into a professional WiFi router/access point that es
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
 **[Version Francaise](README.fr.md)**
+
+</div>
 
 ---
 
