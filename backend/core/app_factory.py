@@ -18,8 +18,11 @@ from __future__ import annotations
 import logging
 from typing import Callable, Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from config import (
     APP_NAME,
@@ -31,6 +34,7 @@ from core.lifespan import lifespan_handler
 from core.middleware import configure_middleware
 from api import api_router
 from api.routes.health import health_router
+from api.routes.auth import get_limiter
 
 logger = logging.getLogger("rose-link.factory")
 
@@ -78,6 +82,9 @@ def create_app(
     if not skip_middleware:
         configure_middleware(app)
 
+    # Configure rate limiting
+    _configure_rate_limiting(app)
+
     # Register routes
     _register_routes(app)
 
@@ -87,6 +94,22 @@ def create_app(
 
     logger.debug(f"Created {APP_NAME} application")
     return app
+
+
+def _configure_rate_limiting(app: FastAPI) -> None:
+    """
+    Configure rate limiting for the application.
+
+    Rate limiting is applied to authentication endpoints to prevent
+    brute force attacks:
+    - Login: 5 requests/minute per IP
+    - Logout: 10 requests/minute per IP
+    - Check: 30 requests/minute per IP
+    """
+    limiter = get_limiter()
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    logger.debug("Rate limiting configured")
 
 
 def _register_routes(app: FastAPI) -> None:
@@ -109,16 +132,21 @@ def _register_routes(app: FastAPI) -> None:
 
 def _mount_static_files(app: FastAPI) -> None:
     """
-    Mount static file serving for the web UI.
+    Mount static file serving for the web UI with cache headers.
 
     The static file mount must be last to not override API routes.
     Uses HTML mode for SPA (Single Page Application) support.
+
+    Cache strategy:
+    - HTML files: no-cache (always revalidate)
+    - Static assets (JS, CSS, images): 1 year cache
+    - Service worker: no-cache (ensure updates)
     """
     try:
         if Paths.WEB_DIR.exists():
             app.mount(
                 "/",
-                StaticFiles(directory=str(Paths.WEB_DIR), html=True),
+                CacheControlStaticFiles(directory=str(Paths.WEB_DIR), html=True),
                 name="static",
             )
             logger.debug(f"Static files mounted from {Paths.WEB_DIR}")
@@ -126,3 +154,37 @@ def _mount_static_files(app: FastAPI) -> None:
             logger.warning(f"Web directory not found: {Paths.WEB_DIR}")
     except Exception as e:
         logger.error(f"Failed to mount static files: {e}")
+
+
+class CacheControlStaticFiles(StaticFiles):
+    """
+    StaticFiles with cache control headers for optimal caching.
+
+    Cache policy:
+    - HTML files: no-cache, must-revalidate (always check for updates)
+    - Service worker (sw.js): no-cache (critical for PWA updates)
+    - Static assets (JS, CSS, images, fonts): max-age=31536000 (1 year)
+    - Default: max-age=3600 (1 hour)
+    """
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+
+        # Determine cache policy based on file type
+        if path.endswith(".html") or path == "" or path == "/":
+            # HTML files - always revalidate
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        elif path == "sw.js" or path.endswith("sw.js"):
+            # Service worker - never cache (critical for PWA updates)
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        elif any(path.endswith(ext) for ext in [".js", ".css", ".webp", ".png", ".ico", ".woff2", ".woff"]):
+            # Static assets - cache for 1 year (immutable content)
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif path.endswith(".json"):
+            # JSON files (locales, manifest) - cache for 1 day
+            response.headers["Cache-Control"] = "public, max-age=86400"
+        else:
+            # Default - cache for 1 hour
+            response.headers["Cache-Control"] = "public, max-age=3600"
+
+        return response
