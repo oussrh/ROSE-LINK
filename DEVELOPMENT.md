@@ -7,6 +7,7 @@ This document provides comprehensive guidance for contributors and developers wo
 - [Development Environment Setup](#development-environment-setup)
 - [Project Architecture](#project-architecture)
 - [Running Locally](#running-locally)
+- [Frontend Development](#frontend-development)
 - [Testing](#testing)
 - [Code Quality](#code-quality)
 - [Building Artifacts](#building-artifacts)
@@ -23,6 +24,7 @@ This document provides comprehensive guidance for contributors and developers wo
 | Requirement | Version | Notes |
 |-------------|---------|-------|
 | Python | 3.9+ | Recommended: 3.11 |
+| Node.js | 18+ | Required for frontend tooling |
 | Git | 2.x | For version control |
 | Make | 4.x | Build automation |
 | curl, jq | Latest | API testing |
@@ -195,6 +197,40 @@ The backend can run without actual hardware by mocking system commands:
 # For development, set environment variable:
 export ROSE_MOCK_COMMANDS=true
 ```
+
+---
+
+## Frontend Development
+
+The frontend is a static site served by Nginx. Local tooling uses Node.js for linting, testing, and type checking.
+
+### Setup
+
+```bash
+cd web
+npm install
+```
+
+### Useful Commands
+
+```bash
+# Lint JavaScript
+npm run lint
+
+# Fix lint issues where possible
+npm run lint:fix
+
+# Run Jest tests
+npm test
+
+# Collect coverage reports
+npm run test:coverage
+
+# Type-check TypeScript-aware JSDoc/definitions
+npm run typecheck
+```
+
+Tests and linting rely on the Jest configuration and ESLint rules defined in `web/package.json` and `web/eslint.config.js`. Coverage output is written to `web/coverage/`.
 
 ---
 
