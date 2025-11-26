@@ -21,6 +21,10 @@ python-multipart>=0.0.17
 # https://github.com/laurentS/slowapi
 slowapi>=0.1.9
 
+# aiohttp - Async HTTP client for AdGuard API integration
+# https://docs.aiohttp.org/
+aiohttp>=3.9.0
+
 # Optional performance enhancements (automatically installed with uvicorn[standard]):
 # - uvloop: Fast drop-in replacement for asyncio event loop
 # - httptools: Fast HTTP parsing

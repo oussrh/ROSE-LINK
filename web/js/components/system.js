@@ -3,7 +3,7 @@
  * Handles system info display and settings
  */
 
-import { escapeHtml, icon, refreshIcons, setButtonLoading } from '../utils/dom.js';
+import { escapeHtml, setButtonLoading } from '../utils/dom.js';
 import { t } from '../i18n.js';
 import { showToast } from '../utils/toast.js';
 
@@ -79,7 +79,7 @@ export function initVPNSettingsForm() {
     const form = document.getElementById('vpn-settings-form');
     if (!form) return;
 
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
         const btn = document.getElementById('vpn-settings-submit-btn');
         const formData = new FormData(e.target);
@@ -94,18 +94,18 @@ export function initVPNSettingsForm() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-        .then(r => {
-            if (r.ok) return r.json();
-            return r.json().then(data => Promise.reject(data));
-        })
-        .then(() => {
-            showToast(t('vpn_settings_saved'), 'success');
-        })
-        .catch((err) => {
-            const msg = err.detail || t('settings_save_failed');
-            showToast(msg, 'error');
-        })
-        .finally(() => setButtonLoading(btn, false));
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
+            .then(() => {
+                showToast(t('vpn_settings_saved'), 'success');
+            })
+            .catch((err) => {
+                const msg = err.detail || t('settings_save_failed');
+                showToast(msg, 'error');
+            })
+            .finally(() => setButtonLoading(btn, false));
     });
 }
 

@@ -166,7 +166,6 @@ export function throttle(func, wait, { leading = true, trailing = true } = {}) {
  */
 export function debouncedRequest(requestFn, wait = 300) {
     let abortController = null;
-    let pendingPromise = null;
 
     const debouncedFn = debounce(async (...args) => {
         // Cancel any pending request

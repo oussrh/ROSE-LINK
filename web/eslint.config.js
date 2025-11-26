@@ -36,6 +36,7 @@ export default [
                 ...globals.es2021,
                 htmx: 'readonly',
                 lucide: 'readonly',
+                tailwind: 'readonly',
             },
         },
         rules: {

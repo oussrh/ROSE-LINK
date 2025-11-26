@@ -5,7 +5,6 @@
 
 import { escapeHtml, icon, refreshIcons, setButtonLoading, formatBytes } from '../utils/dom.js';
 import { t } from '../i18n.js';
-import { showToast } from '../utils/toast.js';
 
 /**
  * Update channel options based on selected band
@@ -94,7 +93,7 @@ export function initHotspotForm() {
     const form = document.getElementById('hotspot-form');
     if (!form) return;
 
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
         const btn = document.getElementById('hotspot-submit-btn');
         const formData = new FormData(e.target);
@@ -113,27 +112,27 @@ export function initHotspotForm() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-        .then(r => {
-            if (r.ok) return r.json();
-            return r.json().then(data => Promise.reject(data));
-        })
-        .then(() => {
-            document.getElementById('hotspot-message').innerHTML = `
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
+            .then(() => {
+                document.getElementById('hotspot-message').innerHTML = `
                 <div class="p-3 bg-green-900 border border-green-700 rounded-lg text-green-200 text-sm flex items-center gap-2">
                     ${icon('check-circle')} ${t('config_applied')}
                 </div>`;
-            refreshIcons();
-            setTimeout(() => htmx.trigger('#status-cards', 'htmx:load'), 3000);
-        })
-        .catch((err) => {
-            const msg = err.detail || t('error');
-            document.getElementById('hotspot-message').innerHTML = `
+                refreshIcons();
+                setTimeout(() => htmx.trigger('#status-cards', 'htmx:load'), 3000);
+            })
+            .catch((err) => {
+                const msg = err.detail || t('error');
+                document.getElementById('hotspot-message').innerHTML = `
                 <div class="p-3 bg-red-900 border border-red-700 rounded-lg text-red-200 text-sm flex items-center gap-2">
                     ${icon('x-circle')} ${escapeHtml(msg)}
                 </div>`;
-            refreshIcons();
-        })
-        .finally(() => setButtonLoading(btn, false));
+                refreshIcons();
+            })
+            .finally(() => setButtonLoading(btn, false));
     });
 }
 

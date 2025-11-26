@@ -10,7 +10,6 @@ import './config.js';
 import { initI18n, t } from './i18n.js';
 
 // Import utilities
-import { refreshIcons } from './utils/dom.js';
 import './utils/toast.js';
 import { initWebSocket } from './utils/websocket.js';
 
@@ -29,7 +28,7 @@ window.t = t;
  * Handle htmx afterSwap events for rendering dynamic content
  */
 function setupHtmxHandlers() {
-    document.body.addEventListener('htmx:afterSwap', function(event) {
+    document.body.addEventListener('htmx:afterSwap', (event) => {
         const targetId = event.detail.target.id;
         try {
             const data = JSON.parse(event.detail.xhr.responseText);
@@ -57,7 +56,7 @@ function setupHtmxHandlers() {
                     renderConnectedClients(data);
                     break;
             }
-        } catch (e) {
+        } catch {
             // Non-JSON response, ignore
         }
     });

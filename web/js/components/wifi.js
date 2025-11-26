@@ -108,20 +108,20 @@ export function connectToWifi(ssid, btn) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ssid, password })
     })
-    .then(r => {
-        if (r.ok) return r.json();
-        return r.json().then(data => Promise.reject(data));
-    })
-    .then(() => {
-        showToast(`${t('wifi_connected_to')} ${escapeHtml(ssid)}`, 'success');
-        htmx.trigger('#status-cards', 'htmx:load');
-        htmx.trigger('#wifi-current-status', 'htmx:load');
-    })
-    .catch((err) => {
-        const msg = err.detail || `${t('connection_failed')}: ${escapeHtml(ssid)}`;
-        showToast(msg, 'error');
-    })
-    .finally(() => setButtonLoading(btn, false));
+        .then(r => {
+            if (r.ok) return r.json();
+            return r.json().then(data => Promise.reject(data));
+        })
+        .then(() => {
+            showToast(`${t('wifi_connected_to')} ${escapeHtml(ssid)}`, 'success');
+            htmx.trigger('#status-cards', 'htmx:load');
+            htmx.trigger('#wifi-current-status', 'htmx:load');
+        })
+        .catch((err) => {
+            const msg = err.detail || `${t('connection_failed')}: ${escapeHtml(ssid)}`;
+            showToast(msg, 'error');
+        })
+        .finally(() => setButtonLoading(btn, false));
 }
 
 /**
@@ -135,20 +135,20 @@ export function disconnectWifi(btn) {
 
     setButtonLoading(btn, true);
     fetch('/api/wifi/disconnect', { method: 'POST' })
-    .then(r => {
-        if (r.ok) return r.json();
-        return r.json().then(data => Promise.reject(data));
-    })
-    .then(() => {
-        showToast(t('wifi_disconnected'), 'success');
-        htmx.trigger('#status-cards', 'htmx:load');
-        htmx.trigger('#wifi-current-status', 'htmx:load');
-    })
-    .catch((err) => {
-        const msg = err.detail || t('error');
-        showToast(msg, 'error');
-    })
-    .finally(() => setButtonLoading(btn, false));
+        .then(r => {
+            if (r.ok) return r.json();
+            return r.json().then(data => Promise.reject(data));
+        })
+        .then(() => {
+            showToast(t('wifi_disconnected'), 'success');
+            htmx.trigger('#status-cards', 'htmx:load');
+            htmx.trigger('#wifi-current-status', 'htmx:load');
+        })
+        .catch((err) => {
+            const msg = err.detail || t('error');
+            showToast(msg, 'error');
+        })
+        .finally(() => setButtonLoading(btn, false));
 }
 
 // Make functions globally available for onclick handlers

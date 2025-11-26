@@ -63,7 +63,7 @@ export const CHART_THEME = {
         '#b31f1e', // Dark red
         '#961917', // Darker red
     ],
-}
+};
 
 // App version
 export const APP_VERSION = 'v0.2.0';
