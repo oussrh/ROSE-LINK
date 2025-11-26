@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from config import Services
 from models import VPNSettings
@@ -31,10 +31,12 @@ from services.wan_service import WANService
 from exceptions import ValidationError
 from utils.validators import validate_ping_host
 from api.dependencies import require_auth
+from api.routes.auth import get_limiter
 
 logger = logging.getLogger("rose-link.api.system")
 
 router = APIRouter()
+limiter = get_limiter()
 
 
 # =============================================================================
@@ -69,9 +71,14 @@ async def get_interfaces() -> dict[str, list]:
 
 
 @router.get("/logs")
-async def get_logs(service: str = "rose-backend") -> dict[str, str]:
+async def get_logs(
+    service: str = "rose-backend",
+    authenticated: bool = Depends(require_auth),
+) -> dict[str, str]:
     """
     Get system logs for a specific service.
+
+    Requires authentication.
 
     Args:
         service: Service name (rose-backend, rose-watchdog, hostapd, dnsmasq, wg-quick@wg0)
@@ -91,7 +98,9 @@ async def get_logs(service: str = "rose-backend") -> dict[str, str]:
 
 
 @router.post("/reboot")
+@limiter.limit("2/minute")
 async def reboot_system(
+    request: Request,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
     """
@@ -136,9 +145,13 @@ async def get_overall_status() -> dict[str, Any]:
 # =============================================================================
 
 @router.get("/settings/vpn")
-async def get_vpn_settings() -> dict[str, Any]:
+async def get_vpn_settings(
+    authenticated: bool = Depends(require_auth),
+) -> dict[str, Any]:
     """
     Get current VPN watchdog settings.
+
+    Requires authentication.
 
     Returns:
         Current ping_host and check_interval values
@@ -148,7 +161,9 @@ async def get_vpn_settings() -> dict[str, Any]:
 
 
 @router.post("/settings/vpn")
+@limiter.limit("10/minute")
 async def update_vpn_settings(
+    request: Request,
     settings: VPNSettings,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, Any]:
