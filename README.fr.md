@@ -10,7 +10,7 @@
 
 Transformez votre Raspberry Pi en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau distant, vous permettant d'accéder à vos ressources locales et d'obtenir l'IP publique de votre serveur VPN depuis n'importe où dans le monde.
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -593,7 +593,7 @@ curl -k https://roselink.local/api/system/interfaces | jq
 
 ## 🛣️ Roadmap
 
-### Version 0.2.0 (Publiée)
+### Version 0.2.x (Publiée)
 - [x] Support i18n complet (anglais & français)
 - [x] Design mobile-first responsive pour tous les écrans
 - [x] Optimisation du code avec docstrings et type hints complets
@@ -603,16 +603,21 @@ curl -k https://roselink.local/api/system/interfaces | jq
 - [x] Améliorations d'accessibilité (labels ARIA, HTML sémantique)
 - [x] Points d'accès documentation API (/api/docs, /api/redoc)
 
-### Version 0.3.0 (En cours)
-- [ ] WebSocket pour mises à jour statut temps réel
-- [ ] Sauvegarde/restauration configuration
-- [ ] Option certificat SSL Let's Encrypt
-- [ ] Intégration test de vitesse
+### Version 0.3.0 (Publiée)
+- [x] WebSocket pour mises à jour statut temps réel (remplace le polling)
+- [x] Sauvegarde/restauration configuration (profils VPN, config hotspot)
+- [x] Option certificat SSL Let's Encrypt (+ génération auto-signé)
+- [x] Intégration test de vitesse (speedtest-cli, Ookla)
+- [x] Point d'accès métriques Prometheus (/api/metrics)
+- [x] Statistiques bande passante (par interface, temps réel)
+
+### Version 0.4.0 (En cours)
+- [ ] Notifications email pour pannes VPN
 - [ ] QoS simple (priorisation trafic)
 - [ ] AdGuard Home intégré (DNS + blocage pubs)
 - [ ] Support OpenVPN en plus de WireGuard
-- [ ] Dashboard métriques (Grafana)
-- [ ] Statistiques d'utilisation bande passante
+- [ ] Dashboard métriques Grafana
+- [ ] Gestion des clients connectés
 
 ### Version 1.0.0 (Future)
 - [ ] Image SD flashable prête à l'emploi
