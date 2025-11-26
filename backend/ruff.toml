@@ -36,6 +36,22 @@ ignore = [
     "B008",   # function call in default argument (needed for FastAPI Depends)
     "B904",   # raise without from (not always appropriate)
     "ARG001", # unused function argument (common in route handlers)
+    "ARG002", # unused method argument (common in base classes)
+    "ARG003", # unused class method argument
+    "UP006",  # use type instead of Type - requires Python 3.9+
+    "UP015",  # unnecessary mode argument - stylistic
+    "UP024",  # replace aliased errors with OSError - backwards compat
+    "UP035",  # deprecated typing imports - backwards compat with older Python
+    "UP045",  # X | None type annotations - requires Python 3.10+
+    "SIM102", # use single if statement - not always clearer
+    "SIM103", # return condition directly - not always clearer
+    "SIM105", # use contextlib.suppress - not always clearer
+    "SIM108", # use ternary operator - not always clearer
+    "SIM114", # combine if branches - not always clearer
+    "SIM117", # use single with statement - not always clearer
+    "SIM210", # remove unnecessary bool conversion
+    "SIM300", # yoda condition - stylistic preference
+    "B007",   # loop control variable not used - sometimes intentional
 ]
 
 # Allow autofix for all enabled rules

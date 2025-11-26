@@ -98,9 +98,17 @@ export function throttle(func, wait, { leading = true, trailing = true } = {}) {
     let lastArgs = null;
     let lastThis = null;
     let lastCallTime = 0;
+    let hasLeadingCall = false;
 
     function throttled(...args) {
         const now = Date.now();
+
+        // On first call, if leading is false, set lastCallTime to now to skip leading invocation
+        if (!hasLeadingCall && !leading) {
+            lastCallTime = now;
+        }
+        hasLeadingCall = true;
+
         const remaining = wait - (now - lastCallTime);
 
         lastArgs = args;
@@ -112,12 +120,11 @@ export function throttle(func, wait, { leading = true, trailing = true } = {}) {
                 timeout = null;
             }
             lastCallTime = now;
-            if (leading || lastCallTime !== 0) {
-                func.apply(this, args);
-            }
+            func.apply(this, args);
         } else if (!timeout && trailing) {
             timeout = setTimeout(() => {
                 lastCallTime = leading ? Date.now() : 0;
+                hasLeadingCall = leading;
                 timeout = null;
                 func.apply(lastThis, lastArgs);
             }, remaining);
@@ -130,6 +137,7 @@ export function throttle(func, wait, { leading = true, trailing = true } = {}) {
             timeout = null;
         }
         lastCallTime = 0;
+        hasLeadingCall = false;
         lastArgs = null;
         lastThis = null;
     };

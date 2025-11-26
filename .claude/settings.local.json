@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed:*)",
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(npm test)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix CI workflow issues and add comprehensive test coverage\n\n- Fix ruff linting: Update ruff.toml to ignore style-only rules\n- Fix shellcheck errors in shell scripts (SC2045, SC2115, SC2145, SC2155)\n- Fix npm caching in CI workflow using actions/cache@v4\n- Fix api.js header merging bug\n- Fix throttle() leading:false behavior in debounce.js\n- Fix localStorage mock in Jest setup\n- Update build-image workflow to use softprops/action-gh-release@v2\n\nNew test files:\n- Backend: validators, sanitizers, backup, bandwidth, interface, speedtest, ssl, websocket\n- Frontend: vpn, hotspot, system, websocket components\n\nAll 299 frontend tests now pass.\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

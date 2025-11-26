@@ -41,7 +41,7 @@ load_settings() {
 
 log() {
     logger -t "$LOG_TAG" "$@"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $@"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
 check_wg_interface() {
@@ -60,7 +60,8 @@ check_wg_handshake() {
         return 1
     fi
 
-    local current_time=$(date +%s)
+    local current_time
+    current_time=$(date +%s)
     local time_diff=$((current_time - last_handshake))
 
     # Consider connection dead if no handshake in last 3 minutes

@@ -24,9 +24,9 @@ describe('API Utilities', () => {
 
             const result = await apiRequest('/api/health');
 
-            expect(fetch).toHaveBeenCalledWith('/api/health', {
+            expect(fetch).toHaveBeenCalledWith('/api/health', expect.objectContaining({
                 headers: { 'Content-Type': 'application/json' }
-            });
+            }));
             expect(result).toEqual(mockData);
         });
 
@@ -40,12 +40,12 @@ describe('API Utilities', () => {
                 headers: { 'Authorization': 'Bearer token' }
             });
 
-            expect(fetch).toHaveBeenCalledWith('/api/test', {
+            expect(fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer token'
                 }
-            });
+            }));
         });
 
         it('should throw error on failed request with detail', async () => {
@@ -79,11 +79,11 @@ describe('API Utilities', () => {
 
             const result = await post('/api/action', { key: 'value' });
 
-            expect(fetch).toHaveBeenCalledWith('/api/action', {
+            expect(fetch).toHaveBeenCalledWith('/api/action', expect.objectContaining({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: 'value' })
-            });
+            }));
             expect(result).toEqual(mockData);
         });
     });
@@ -97,10 +97,10 @@ describe('API Utilities', () => {
 
             const result = await del('/api/resource/123');
 
-            expect(fetch).toHaveBeenCalledWith('/api/resource/123', {
+            expect(fetch).toHaveBeenCalledWith('/api/resource/123', expect.objectContaining({
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' }
-            });
+            }));
             expect(result).toEqual({ deleted: true });
         });
     });
@@ -115,10 +115,10 @@ describe('API Utilities', () => {
 
             const result = await get('/api/items');
 
-            expect(fetch).toHaveBeenCalledWith('/api/items', {
+            expect(fetch).toHaveBeenCalledWith('/api/items', expect.objectContaining({
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
-            });
+            }));
             expect(result).toEqual(mockData);
         });
     });

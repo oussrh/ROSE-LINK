@@ -9,6 +9,7 @@ set -e
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+# shellcheck disable=SC2034  # YELLOW may be used in future
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
@@ -49,7 +50,7 @@ fi
 
 # Clean previous build
 info "Cleaning previous build..."
-rm -rf "$DEB_DIR/opt" "$DEB_DIR/etc" "$DEB_DIR/var"
+rm -rf "${DEB_DIR:?}/opt" "${DEB_DIR:?}/etc" "${DEB_DIR:?}/var"
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 success "Clean complete"
@@ -201,7 +202,7 @@ dpkg-deb --info "$PROJECT_DIR/${PACKAGE_NAME}.deb" 2>/dev/null | head -15
 
 # Cleanup build directory
 rm -rf "$BUILD_DIR"
-rm -rf "$DEB_DIR/opt" "$DEB_DIR/etc" "$DEB_DIR/var"
+rm -rf "${DEB_DIR:?}/opt" "${DEB_DIR:?}/etc" "${DEB_DIR:?}/var"
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
