@@ -20,6 +20,7 @@ import { renderWifiNetworks, renderWifiCurrentStatus, initWifiEvents } from './c
 import { renderVPNStatus, renderVPNProfiles, loadVPNSettings, initVPNEvents } from './components/vpn.js';
 import { renderConnectedClients, initHotspotForm } from './components/hotspot.js';
 import { renderSystemInfo, initVPNSettingsForm, updateRebootConfirmations } from './components/system.js';
+import { initWizard, showWizard, resetWizard } from './components/wizard.js';
 
 // Make t() function globally available
 window.t = t;
@@ -104,6 +105,12 @@ async function init() {
     initHotspotForm();
     initVPNSettingsForm();
 
+    // Initialize setup wizard (checks if first run)
+    initWizard();
+
+    // Set up run wizard button in System tab
+    setupWizardButton();
+
     // Load VPN settings
     loadVPNSettings();
 
@@ -116,6 +123,21 @@ async function init() {
 
     // Update confirmation messages with translations
     updateRebootConfirmations();
+}
+
+/**
+ * Setup the "Run Setup Wizard" button in System tab
+ */
+function setupWizardButton() {
+    const wizardBtn = document.getElementById('run-wizard-btn');
+    if (wizardBtn) {
+        wizardBtn.addEventListener('click', () => {
+            if (confirm(t('confirm_run_wizard'))) {
+                resetWizard();
+                showWizard();
+            }
+        });
+    }
 }
 
 // Initialize when DOM is ready
