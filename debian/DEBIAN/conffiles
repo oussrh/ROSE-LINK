@@ -1,0 +1,4 @@
+/etc/nginx/sites-available/roselink
+/etc/sudoers.d/rose
+/etc/systemd/system/rose-backend.service
+/etc/systemd/system/rose-watchdog.service
