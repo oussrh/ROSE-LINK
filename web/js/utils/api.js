@@ -51,17 +51,17 @@ function createTimeoutController(timeout) {
  * @throws {ApiError} On request failure
  */
 export async function apiRequest(url, options = {}) {
-    const { timeout = DEFAULT_TIMEOUT, ...fetchOptions } = options;
+    const { timeout = DEFAULT_TIMEOUT, headers: customHeaders, ...fetchOptions } = options;
     const { controller, timeoutId } = createTimeoutController(timeout);
 
     try {
         const response = await fetch(url, {
+            ...fetchOptions,
             headers: {
                 'Content-Type': 'application/json',
-                ...fetchOptions.headers
+                ...customHeaders
             },
-            signal: controller.signal,
-            ...fetchOptions
+            signal: controller.signal
         });
 
         clearTimeout(timeoutId);

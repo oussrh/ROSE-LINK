@@ -9,6 +9,7 @@ set -e
 REPO_DIR="roselink-repo"
 DIST="bookworm"
 COMPONENT="main"
+# shellcheck disable=SC2034  # ARCH may be used for multi-arch support in future
 ARCH="armhf arm64 all"
 
 echo "🌹 Setting up ROSE Link APT repository..."

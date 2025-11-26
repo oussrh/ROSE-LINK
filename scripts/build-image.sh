@@ -35,6 +35,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Raspberry Pi OS image configuration
 RPI_OS_VERSION="2024-03-15"
 RPI_OS_URL="https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-${RPI_OS_VERSION}/2024-03-15-raspios-bookworm-arm64-lite.img.xz"
+# shellcheck disable=SC2034  # SHA256 may be used for verification in future
 RPI_OS_SHA256="f0a2f8e8d5c9e2f0a1b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3"
 
 # Output configuration

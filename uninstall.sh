@@ -11,6 +11,7 @@ set -e
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
 readonly YELLOW='\033[1;33m'
+# shellcheck disable=SC2034  # BLUE may be used in future
 readonly BLUE='\033[0;34m'
 readonly CYAN='\033[0;36m'
 readonly BOLD='\033[1m'
@@ -19,6 +20,7 @@ readonly NC='\033[0m'
 # Configuration
 readonly INSTALL_DIR="/opt/rose-link"
 readonly USER="rose"
+# shellcheck disable=SC2034  # GROUP may be used in future
 readonly GROUP="rose"
 readonly LOG_FILE="/var/log/rose-link-uninstall.log"
 

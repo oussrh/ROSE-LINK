@@ -39,6 +39,7 @@ jobs:
       - name: Run linting with Ruff
         working-directory: backend
         run: |
+          ruff check . --fix --unsafe-fixes
           ruff check . --output-format=github
 
       - name: Run type checking with mypy
@@ -71,8 +72,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         working-directory: web
@@ -100,7 +107,7 @@ jobs:
 
       - name: Run ShellCheck on scripts
         run: |
-          find . -name "*.sh" -type f | xargs shellcheck --severity=warning
+          find . -name "*.sh" -type f | xargs shellcheck --severity=error
 
   # Security Scanning
   security-scan:

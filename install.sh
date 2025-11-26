@@ -27,6 +27,7 @@ readonly GREEN='\033[0;32m'
 readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly CYAN='\033[0;36m'
+# shellcheck disable=SC2034  # MAGENTA may be used in future
 readonly MAGENTA='\033[0;35m'
 readonly BOLD='\033[1m'
 readonly DIM='\033[2m'
@@ -375,7 +376,8 @@ detect_network_interfaces() {
     # Detect WiFi interfaces
     step_info "Scanning WiFi interfaces..."
 
-    for iface in $(ls /sys/class/net/ 2>/dev/null); do
+    for iface in /sys/class/net/*; do
+        iface=$(basename "$iface")
         if [[ -d "/sys/class/net/$iface/wireless" ]]; then
             local device_path driver
             device_path=$(readlink -f "/sys/class/net/$iface/device" 2>/dev/null || echo "")
@@ -778,7 +780,8 @@ EOF
 configure_dhcpcd() {
     step_info "Configuring static IP for Access Point..."
 
-    local dhcpcd_config="
+    local dhcpcd_config
+    dhcpcd_config="
 # ROSE Link AP Configuration - Added $(date)
 interface ${WIFI_AP_INTERFACE:-wlan0}
     static ip_address=192.168.50.1/24
