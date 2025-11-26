@@ -5,7 +5,6 @@
 // Mock dependencies before importing
 jest.mock('../../js/utils/dom.js', () => ({
     escapeHtml: jest.fn(text => text || ''),
-    escapeJs: jest.fn(text => text || ''),
     icon: jest.fn(name => `<i data-lucide="${name}"></i>`),
     refreshIcons: jest.fn(),
     setButtonLoading: jest.fn()
@@ -19,8 +18,8 @@ jest.mock('../../js/utils/toast.js', () => ({
     showToast: jest.fn()
 }));
 
-import { renderWifiNetworks, renderWifiCurrentStatus, connectToWifi, disconnectWifi } from '../../js/components/wifi.js';
-import { escapeHtml, escapeJs, icon, refreshIcons, setButtonLoading } from '../../js/utils/dom.js';
+import { renderWifiNetworks, renderWifiCurrentStatus, connectToWifi, disconnectWifi, initWifiEvents } from '../../js/components/wifi.js';
+import { escapeHtml, icon, refreshIcons, setButtonLoading } from '../../js/utils/dom.js';
 import { t } from '../../js/i18n.js';
 import { showToast } from '../../js/utils/toast.js';
 
@@ -73,13 +72,14 @@ describe('WiFi Component', () => {
             expect(container.innerHTML).toContain('85%');
         });
 
-        it('should include connect button for each network', () => {
+        it('should include connect button with data attributes for each network', () => {
             const networks = [{ ssid: 'MyNetwork', security: 'WPA2', signal: 75 }];
 
             renderWifiNetworks(networks);
 
             const container = document.getElementById('wifi-networks');
-            expect(container.innerHTML).toContain('onclick="connectToWifi');
+            expect(container.innerHTML).toContain('data-action="connect-wifi"');
+            expect(container.innerHTML).toContain('data-ssid="MyNetwork"');
             expect(t).toHaveBeenCalledWith('connect');
         });
 
@@ -95,12 +95,13 @@ describe('WiFi Component', () => {
             expect(t).toHaveBeenCalledWith('no_networks');
         });
 
-        it('should escape SSID in onclick handler', () => {
+        it('should escape SSID in data attribute', () => {
             const networks = [{ ssid: "Network'With'Quotes", security: 'WPA2', signal: 75 }];
 
             renderWifiNetworks(networks);
 
-            expect(escapeJs).toHaveBeenCalledWith("Network'With'Quotes");
+            // SSID is escaped via escapeHtml for data attributes
+            expect(escapeHtml).toHaveBeenCalledWith("Network'With'Quotes");
         });
 
         it('should handle missing container gracefully', () => {
@@ -137,7 +138,7 @@ describe('WiFi Component', () => {
             renderWifiCurrentStatus(data);
 
             const container = document.getElementById('wifi-current-status');
-            expect(container.innerHTML).toContain('disconnectWifi');
+            expect(container.innerHTML).toContain('data-action="disconnect-wifi"');
             expect(t).toHaveBeenCalledWith('disconnect');
         });
 
@@ -348,13 +349,13 @@ describe('WiFi Component', () => {
         });
     });
 
-    describe('window global functions', () => {
-        it('should expose connectToWifi globally', () => {
-            expect(typeof window.connectToWifi).toBe('function');
+    describe('initWifiEvents', () => {
+        it('should be a function for setting up event delegation', () => {
+            expect(typeof initWifiEvents).toBe('function');
         });
 
-        it('should expose disconnectWifi globally', () => {
-            expect(typeof window.disconnectWifi).toBe('function');
+        it('should not throw when called', () => {
+            expect(() => initWifiEvents()).not.toThrow();
         });
     });
 });

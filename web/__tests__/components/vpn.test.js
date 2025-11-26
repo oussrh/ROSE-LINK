@@ -5,7 +5,6 @@
 // Mock dependencies before importing
 jest.mock('../../js/utils/dom.js', () => ({
     escapeHtml: jest.fn(text => text || ''),
-    escapeJs: jest.fn(text => text || ''),
     icon: jest.fn(name => `<i data-lucide="${name}"></i>`),
     refreshIcons: jest.fn(),
     setButtonLoading: jest.fn()
@@ -19,8 +18,8 @@ jest.mock('../../js/utils/toast.js', () => ({
     showToast: jest.fn()
 }));
 
-import { renderVPNStatus, renderVPNProfiles, activateProfile, deleteProfile, loadVPNSettings } from '../../js/components/vpn.js';
-import { escapeHtml, escapeJs, icon, refreshIcons, setButtonLoading } from '../../js/utils/dom.js';
+import { renderVPNStatus, renderVPNProfiles, activateProfile, deleteProfile, loadVPNSettings, initVPNEvents } from '../../js/components/vpn.js';
+import { escapeHtml, icon, refreshIcons, setButtonLoading } from '../../js/utils/dom.js';
 import { t } from '../../js/i18n.js';
 import { showToast } from '../../js/utils/toast.js';
 
@@ -165,17 +164,18 @@ describe('VPN Component', () => {
             expect(escapeHtml).toHaveBeenCalledWith('<script>evil</script>');
         });
 
-        it('should escape profile names in onclick handlers', () => {
+        it('should escape profile names in data attributes', () => {
             const profiles = [
                 { name: "Profile'With'Quotes", active: false }
             ];
 
             renderVPNProfiles(profiles);
 
-            expect(escapeJs).toHaveBeenCalledWith("Profile'With'Quotes");
+            // Profile name is escaped via escapeHtml for data attributes
+            expect(escapeHtml).toHaveBeenCalledWith("Profile'With'Quotes");
         });
 
-        it('should show activate and delete buttons for inactive profiles', () => {
+        it('should show activate and delete buttons with data attributes for inactive profiles', () => {
             const profiles = [
                 { name: 'InactiveProfile', active: false }
             ];
@@ -183,8 +183,9 @@ describe('VPN Component', () => {
             renderVPNProfiles(profiles);
 
             const container = document.getElementById('vpn-profiles');
-            expect(container.innerHTML).toContain('activateProfile');
-            expect(container.innerHTML).toContain('deleteProfile');
+            expect(container.innerHTML).toContain('data-action="activate-vpn"');
+            expect(container.innerHTML).toContain('data-action="delete-vpn"');
+            expect(container.innerHTML).toContain('data-name="InactiveProfile"');
             expect(t).toHaveBeenCalledWith('activate');
             expect(t).toHaveBeenCalledWith('delete');
         });
@@ -198,8 +199,8 @@ describe('VPN Component', () => {
 
             expect(t).toHaveBeenCalledWith('active');
             const container = document.getElementById('vpn-profiles');
-            expect(container.innerHTML).not.toContain('activateProfile');
-            expect(container.innerHTML).not.toContain('deleteProfile');
+            expect(container.innerHTML).not.toContain('data-action="activate-vpn"');
+            expect(container.innerHTML).not.toContain('data-action="delete-vpn"');
         });
 
         it('should call refreshIcons after rendering', () => {
@@ -481,13 +482,13 @@ describe('VPN Component', () => {
         });
     });
 
-    describe('window global functions', () => {
-        it('should expose activateProfile globally', () => {
-            expect(typeof window.activateProfile).toBe('function');
+    describe('initVPNEvents', () => {
+        it('should be a function for setting up event delegation', () => {
+            expect(typeof initVPNEvents).toBe('function');
         });
 
-        it('should expose deleteProfile globally', () => {
-            expect(typeof window.deleteProfile).toBe('function');
+        it('should not throw when called', () => {
+            expect(() => initVPNEvents()).not.toThrow();
         });
     });
 });
