@@ -72,16 +72,33 @@ ROSE Link crée une solution VPN complète qui :
 - ✅ **HTTPS** : Connexion sécurisée (certificat auto-signé)
 
 ### 🛡️ Sécurité Renforcée
-- ✅ **Isolation backend** : API accessible uniquement via Nginx
-- ✅ **Sudoers restreint** : Accès minimal aux commandes système
-- ✅ **Fichiers protégés** : Configurations VPN en mode 600
-- ✅ **Kill-switch iptables** : Protection contre les fuites
+- ✅ **Isolation backend** : API accessible uniquement via Nginx reverse proxy
+- ✅ **Sudoers restreint** : Accès minimal aux commandes système avec validation
+- ✅ **Fichiers protégés** : Configurations VPN en mode 600, répertoire WireGuard mode 700
+- ✅ **Kill-switch iptables** : Protection contre les fuites, bloque tout trafic si VPN déconnecté
+- ✅ **SSL/TLS** : Certificats RSA 4096 bits avec Subject Alternative Names
+- ✅ **Mots de passe sécurisés** : Génération aléatoire de 12 caractères pour le WiFi
+- ✅ **Durcissement systemd** : `ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`
+- ✅ **Limites ressources** : Limites mémoire et CPU sur le service backend
 
 ---
 
 ## 📦 Installation
 
-### Méthode 1 : Archive (recommandé pour test)
+### Prérequis
+
+- **Matériel** : Raspberry Pi 3, 4, 5 ou Zero 2W
+- **OS** : Raspberry Pi OS (Bullseye/Bookworm) ou Debian 11/12
+- **Mémoire** : 512 Mo RAM minimum, 1 Go+ recommandé
+- **Stockage** : 300 Mo d'espace disque minimum
+
+### Méthode 1 : Installation en une ligne (Rapide)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install.sh | sudo bash
+```
+
+### Méthode 2 : Télécharger et Installer (Recommandé)
 
 ```bash
 # Télécharger l'archive
@@ -91,41 +108,61 @@ wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.
 tar -xzf rose-link-pro.tar.gz
 cd rose-link
 
-# Installer
+# Installation interactive
 sudo bash install.sh
+
+# Ou avec options personnalisées
+sudo bash install.sh --ssid "MonVPN" --country FR
 ```
 
-### Méthode 2 : Paquet Debian (propre)
+### Méthode 3 : Paquet Debian (Meilleur pour les mises à jour)
 
 ```bash
 # Télécharger le paquet
 wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.2.0-1_all.deb
 
-# Installer
-sudo apt-get install ./rose-link-pro_0.2.0-1_all.deb
+# Installer avec apt (gère les dépendances)
+sudo apt install ./rose-link-pro_0.2.0-1_all.deb
 ```
 
-### Méthode 3 : Dépôt APT (production)
+### Options d'installation
 
+| Option | Description |
+|--------|-------------|
+| `-h, --help` | Afficher l'aide |
+| `-y, --yes` | Mode non-interactif (accepter les défauts) |
+| `-f, --force` | Forcer l'installation (ignorer les vérifications) |
+| `--ssid NOM` | SSID WiFi personnalisé (défaut: ROSE-Link) |
+| `--password MOT` | Mot de passe WiFi personnalisé (min 8 car., auto-généré si non défini) |
+| `--country CODE` | Code pays pour la réglementation WiFi (défaut: BE) |
+
+**Exemples :**
 ```bash
-# Installation en une ligne
-curl -fsSL https://oussrh.github.io/roselink-repo/install.sh | sudo bash
+# Installation silencieuse avec défauts
+sudo bash install.sh -y
+
+# Configuration hotspot personnalisée
+sudo bash install.sh --ssid "MaisonVPN" --password "MonMotDePasse123" --country FR
+
+# Forcer l'installation sur matériel non-Pi (test)
+sudo bash install.sh -f
 ```
 
-Ou manuellement :
+### Désinstallation
 
 ```bash
-# Ajouter la clé GPG
-curl -fsSL https://oussrh.github.io/roselink-repo/ROSELINK-REPO.gpg \
-  | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/roselink.gpg
+# Désinstallation interactive
+sudo bash uninstall.sh
 
-# Ajouter le dépôt
-echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] https://oussrh.github.io/roselink-repo bookworm main" \
-  | sudo tee /etc/apt/sources.list.d/roselink.list
+# Désinstallation rapide (garder profils VPN)
+sudo bash uninstall.sh -y
 
-# Installer
-sudo apt update
-sudo apt install -y rose-link-pro
+# Suppression complète
+sudo bash uninstall.sh -y -f
+
+# Si installé via paquet Debian
+sudo apt remove rose-link-pro    # Garder config
+sudo apt purge rose-link-pro     # Tout supprimer
 ```
 
 ---
@@ -134,14 +171,14 @@ sudo apt install -y rose-link-pro
 
 ### 1️⃣ Accès à l'interface Web
 
-Après installation, connectez-vous au hotspot par défaut :
-- **SSID** : `ROSE-Link`
-- **Mot de passe** : `RoseLink2024`
+Après installation, connectez-vous au hotspot :
+- **SSID** : `ROSE-Link` (ou votre nom personnalisé)
+- **Mot de passe** : Affiché à la fin de l'installation (généré aléatoirement pour la sécurité)
 
 Puis ouvrez votre navigateur :
 - **URL** : `https://roselink.local` ou `https://192.168.50.1`
 
-⚠️ **Note** : Acceptez l'avertissement du certificat auto-signé
+⚠️ **Note** : Acceptez l'avertissement du certificat auto-signé (le certificat utilise un chiffrement RSA 4096 bits)
 
 ### 2️⃣ Configurer le VPN WireGuard
 
@@ -429,6 +466,41 @@ Pour contourner les restrictions géographiques :
 ---
 
 ## 🐛 Dépannage
+
+### Vérification rapide des services
+
+```bash
+# Vérifier tous les services ROSE Link en une fois
+for svc in rose-backend rose-watchdog hostapd dnsmasq nginx; do
+    status=$(systemctl is-active $svc 2>/dev/null || echo "inactif")
+    echo "$svc: $status"
+done
+```
+
+### Problèmes courants
+
+| Problème | Solution |
+|----------|----------|
+| Impossible de se connecter au hotspot | `sudo systemctl restart hostapd` |
+| VPN ne se connecte pas | `sudo systemctl restart wg-quick@wg0` |
+| Interface web ne charge pas | `sudo systemctl restart nginx rose-backend` |
+| Pas d'internet sur les clients | Vérifier VPN: `sudo wg show` et IP forwarding: `cat /proc/sys/net/ipv4/ip_forward` |
+
+### Consulter les logs
+
+```bash
+# Logs du backend
+sudo journalctl -u rose-backend -f
+
+# Logs VPN
+sudo journalctl -u wg-quick@wg0 -n 50
+
+# Logs hotspot
+sudo journalctl -u hostapd -n 50
+
+# Log d'installation
+cat /var/log/rose-link-install.log
+```
 
 ### Le VPN ne démarre pas
 
