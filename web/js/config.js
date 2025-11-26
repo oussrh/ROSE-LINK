@@ -9,23 +9,60 @@ if (typeof tailwind !== 'undefined') {
         darkMode: 'class',
         theme: {
             extend: {
+                fontFamily: {
+                    'alexandria': ['Alexandria', 'sans-serif'],
+                },
                 colors: {
                     rose: {
-                        50: '#fff1f2',
-                        100: '#ffe4e6',
-                        200: '#fecdd3',
-                        300: '#fda4af',
-                        400: '#fb7185',
-                        500: '#f43f5e',
-                        600: '#e11d48',
-                        700: '#be123c',
-                        800: '#9f1239',
-                        900: '#881337',
+                        50: '#fff1f1',
+                        100: '#ffe3e3',
+                        200: '#ffcbcb',
+                        300: '#fea6a6',
+                        400: '#fa6b6b',
+                        500: '#ca2625',
+                        600: '#b31f1e',
+                        700: '#961917',
+                        800: '#7c1716',
+                        900: '#671918',
                     }
                 }
             }
         }
     };
+}
+
+// Chart.js Theme Configuration
+export const CHART_THEME = {
+    // Main brand color
+    primaryColor: '#ca2625',
+
+    // Color palette for charts (based on primary)
+    colors: {
+        primary: '#ca2625',
+        primaryLight: '#fa6b6b',
+        primaryDark: '#961917',
+        secondary: '#fea6a6',
+        background: '#1f2937',
+        gridLines: '#374151',
+        text: '#f3f4f6',
+        textSecondary: '#9ca3af',
+    },
+
+    // Font configuration
+    font: {
+        family: "'Alexandria', sans-serif",
+        weight: 600, // Semi Bold
+    },
+
+    // Chart color schemes for different data series
+    palette: [
+        '#ca2625', // Primary red
+        '#fa6b6b', // Light red
+        '#fea6a6', // Lighter red
+        '#ffcbcb', // Very light red
+        '#b31f1e', // Dark red
+        '#961917', // Darker red
+    ],
 }
 
 // App version
