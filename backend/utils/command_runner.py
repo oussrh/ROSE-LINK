@@ -10,6 +10,15 @@ Key Features:
 - Structured return values (return_code, stdout, stderr)
 - Automatic exception handling
 - Convenience methods for common systemd operations
+- Abstract interface for dependency injection and testing
+
+Architecture:
+- ICommandExecutor: Abstract interface for command execution
+- SubprocessExecutor: Production implementation using subprocess
+- CommandRunner: High-level convenience methods using ICommandExecutor
+
+For testing, inject a mock ICommandExecutor via set_executor() to
+avoid actual system calls.
 
 Author: ROSE Link Team
 License: MIT
@@ -19,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import subprocess
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 
@@ -49,6 +59,119 @@ class CommandResult:
         return self.return_code == 0
 
 
+# =============================================================================
+# Abstract Command Executor Interface
+# =============================================================================
+
+
+class ICommandExecutor(ABC):
+    """
+    Abstract interface for command execution.
+
+    This interface allows for dependency injection and mocking in tests.
+    Production code uses SubprocessExecutor, while tests can inject
+    a mock implementation.
+    """
+
+    @abstractmethod
+    def execute(
+        self,
+        cmd: list[str],
+        timeout: int = Limits.DEFAULT_COMMAND_TIMEOUT,
+    ) -> CommandResult:
+        """
+        Execute a command and return the result.
+
+        Args:
+            cmd: Command and arguments as a list
+            timeout: Command timeout in seconds
+
+        Returns:
+            CommandResult with return_code, stdout, stderr
+        """
+        pass
+
+
+class SubprocessExecutor(ICommandExecutor):
+    """
+    Production implementation of ICommandExecutor using subprocess.
+
+    This executor runs actual system commands and should only be used
+    in production or integration tests.
+    """
+
+    def execute(
+        self,
+        cmd: list[str],
+        timeout: int = Limits.DEFAULT_COMMAND_TIMEOUT,
+    ) -> CommandResult:
+        """Execute a command using subprocess.run()."""
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
+            return CommandResult(
+                return_code=result.returncode,
+                stdout=result.stdout,
+                stderr=result.stderr,
+            )
+
+        except subprocess.TimeoutExpired:
+            logger.warning(f"Command timed out after {timeout}s: {' '.join(cmd[:3])}...")
+            return CommandResult(-1, "", "Command timed out")
+
+        except FileNotFoundError:
+            logger.error(f"Command not found: {cmd[0]}")
+            return CommandResult(-1, "", f"Command not found: {cmd[0]}")
+
+        except PermissionError:
+            logger.error(f"Permission denied: {cmd[0]}")
+            return CommandResult(-1, "", f"Permission denied: {cmd[0]}")
+
+        except Exception as e:
+            logger.error(f"Command execution failed: {e}")
+            return CommandResult(-1, "", str(e))
+
+
+# Global executor instance (can be replaced for testing)
+_executor: ICommandExecutor = SubprocessExecutor()
+
+
+def get_executor() -> ICommandExecutor:
+    """Get the current command executor instance."""
+    return _executor
+
+
+def set_executor(executor: ICommandExecutor) -> None:
+    """
+    Set the command executor instance.
+
+    This is primarily used for testing to inject a mock executor.
+
+    Args:
+        executor: The ICommandExecutor implementation to use
+
+    Example:
+        >>> from unittest.mock import MagicMock
+        >>> mock_executor = MagicMock(spec=ICommandExecutor)
+        >>> mock_executor.execute.return_value = CommandResult(0, "output", "")
+        >>> set_executor(mock_executor)
+        >>> # Now all command execution will use the mock
+    """
+    global _executor
+    _executor = executor
+
+
+def reset_executor() -> None:
+    """Reset the executor to the default SubprocessExecutor."""
+    global _executor
+    _executor = SubprocessExecutor()
+
+
 def run_command(
     cmd: list[str],
     check: bool = True,
@@ -60,6 +183,9 @@ def run_command(
     This is the primary function for executing system commands throughout
     the application. It provides consistent error handling and timeout
     management.
+
+    Uses the global ICommandExecutor instance, which can be replaced
+    for testing via set_executor().
 
     Args:
         cmd: Command and arguments as a list (e.g., ["ls", "-la"])
@@ -79,31 +205,8 @@ def run_command(
         ... else:
         ...     print(f"Error: {err}")
     """
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=False,  # We handle errors ourselves
-            timeout=timeout,
-        )
-        return result.returncode, result.stdout, result.stderr
-
-    except subprocess.TimeoutExpired:
-        logger.warning(f"Command timed out after {timeout}s: {' '.join(cmd[:3])}...")
-        return -1, "", "Command timed out"
-
-    except FileNotFoundError:
-        logger.error(f"Command not found: {cmd[0]}")
-        return -1, "", f"Command not found: {cmd[0]}"
-
-    except PermissionError:
-        logger.error(f"Permission denied: {cmd[0]}")
-        return -1, "", f"Permission denied: {cmd[0]}"
-
-    except Exception as e:
-        logger.error(f"Command execution failed: {e}")
-        return -1, "", str(e)
+    result = _executor.execute(cmd, timeout)
+    return result.return_code, result.stdout, result.stderr
 
 
 class CommandRunner:

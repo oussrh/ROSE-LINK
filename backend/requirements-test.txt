@@ -1,0 +1,25 @@
+# ROSE Link Backend Test Dependencies
+# Install with: pip install -r requirements-test.txt
+
+# Include base requirements
+-r requirements.txt
+
+# Pytest - Testing framework
+# https://docs.pytest.org/
+pytest>=8.0.0
+
+# Pytest-asyncio - Async test support
+# https://github.com/pytest-dev/pytest-asyncio
+pytest-asyncio>=0.24.0
+
+# HTTPX - Async HTTP client for FastAPI TestClient
+# https://www.python-httpx.org/
+httpx>=0.27.0
+
+# Coverage - Code coverage measurement
+# https://coverage.readthedocs.io/
+pytest-cov>=5.0.0
+
+# Pytest-mock - Thin wrapper around unittest.mock
+# https://github.com/pytest-dev/pytest-mock
+pytest-mock>=3.14.0

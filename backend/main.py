@@ -30,6 +30,8 @@ Version: 0.2.1
 from __future__ import annotations
 
 import logging
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,6 +59,59 @@ logging.basicConfig(
 )
 logger = logging.getLogger("rose-link")
 
+
+# =============================================================================
+# Lifespan Handler (Startup/Shutdown)
+# =============================================================================
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Application lifespan handler for startup and shutdown events.
+
+    Startup:
+    - Creates required directories with proper permissions
+    - Initializes or retrieves API key for authentication
+
+    This approach ensures initialization happens explicitly at startup
+    rather than at module import time, improving testability and
+    deployability in various environments.
+    """
+    # === STARTUP ===
+    logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
+
+    # Create required directories with error handling
+    try:
+        Paths.WG_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Ensured WireGuard profiles directory exists: {Paths.WG_PROFILES_DIR}")
+    except PermissionError as e:
+        logger.error(f"Permission denied creating directory {Paths.WG_PROFILES_DIR}: {e}")
+        logger.warning("Application may have limited functionality without write access")
+    except OSError as e:
+        logger.error(f"Failed to create directory {Paths.WG_PROFILES_DIR}: {e}")
+
+    # Initialize API key with error handling
+    try:
+        api_key = AuthService.get_or_create_api_key()
+        if api_key:
+            logger.info(f"API key available at {Paths.API_KEY_FILE}")
+        else:
+            logger.warning("API key initialization returned empty key")
+    except PermissionError as e:
+        logger.error(f"Permission denied accessing API key files: {e}")
+        logger.warning("Authentication may not work correctly")
+    except OSError as e:
+        logger.error(f"Failed to initialize API key: {e}")
+
+    logger.info("Startup complete")
+
+    yield  # Application runs here
+
+    # === SHUTDOWN ===
+    logger.info(f"Shutting down {APP_NAME}")
+
+
 # =============================================================================
 # Application Setup
 # =============================================================================
@@ -67,6 +122,7 @@ app = FastAPI(
     version=APP_VERSION,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    lifespan=lifespan,
 )
 
 # =============================================================================
@@ -133,16 +189,6 @@ async def get_status() -> dict:
 # Serve web UI - must be last to not override API routes
 app.mount("/", StaticFiles(directory=str(Paths.WEB_DIR), html=True), name="static")
 
-# =============================================================================
-# Initialization
-# =============================================================================
-
-# Ensure required directories exist
-Paths.WG_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
-
-# Initialize API key on startup
-_api_key = AuthService.get_or_create_api_key()
-logger.info(f"API key available at {Paths.API_KEY_FILE}")
 
 # =============================================================================
 # Application Entry Point
