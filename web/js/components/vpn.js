@@ -3,7 +3,7 @@
  * Handles VPN status, profiles, and operations
  */
 
-import { escapeHtml, escapeJs, icon, refreshIcons, setButtonLoading } from '../utils/dom.js';
+import { escapeHtml, icon, refreshIcons, setButtonLoading } from '../utils/dom.js';
 import { t } from '../i18n.js';
 import { showToast } from '../utils/toast.js';
 
@@ -62,7 +62,6 @@ export function renderVPNProfiles(profiles) {
 
     container.innerHTML = profiles.map(prof => {
         const safeName = escapeHtml(prof.name);
-        const jsName = escapeJs(prof.name);
         return `
         <div class="bg-gray-700 rounded-lg p-3 mb-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -71,8 +70,8 @@ export function renderVPNProfiles(profiles) {
             </div>
             <div class="flex gap-2 flex-shrink-0">
                 ${!prof.active
-        ? `<button onclick="activateProfile('${jsName}', this)" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>
-                       <button onclick="deleteProfile('${jsName}', this)" class="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center" title="${t('delete')}">${icon('trash-2')}</button>`
+        ? `<button data-action="activate-vpn" data-name="${safeName}" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>
+                       <button data-action="delete-vpn" data-name="${safeName}" class="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center" title="${t('delete')}">${icon('trash-2')}</button>`
         : `<span class="text-xs text-green-400 px-2">${t('active')}</span>`}
             </div>
         </div>
@@ -102,7 +101,9 @@ export function activateProfile(name, btn) {
             htmx.trigger('#vpn-status-detail', 'htmx:load');
         })
         .catch((err) => {
-            const msg = err.detail || t('activation_failed');
+            // Escape error message from server to prevent XSS
+            const serverMsg = err.detail ? escapeHtml(String(err.detail)) : null;
+            const msg = serverMsg || t('activation_failed');
             showToast(msg, 'error');
         })
         .finally(() => setButtonLoading(btn, false));
@@ -125,11 +126,13 @@ export function deleteProfile(name, btn) {
             return r.json().then(data => Promise.reject(data));
         })
         .then(() => {
-            showToast(`${t('deleted')}: ${name}`, 'success');
+            showToast(`${t('deleted')}: ${escapeHtml(name)}`, 'success');
             htmx.trigger('#vpn-profiles', 'htmx:load');
         })
         .catch((err) => {
-            const msg = err.detail || t('delete_failed');
+            // Escape error message from server to prevent XSS
+            const serverMsg = err.detail ? escapeHtml(String(err.detail)) : null;
+            const msg = serverMsg || t('delete_failed');
             showToast(msg, 'error');
         })
         .finally(() => setButtonLoading(btn, false));
@@ -153,6 +156,27 @@ export async function loadVPNSettings() {
     }
 }
 
-// Make functions globally available for onclick handlers
-window.activateProfile = activateProfile;
-window.deleteProfile = deleteProfile;
+/**
+ * Initialize VPN event delegation
+ * Call this once from main.js to set up click handlers
+ */
+export function initVPNEvents() {
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+
+        if (action === 'activate-vpn') {
+            const name = target.dataset.name;
+            if (name) {
+                activateProfile(name, target);
+            }
+        } else if (action === 'delete-vpn') {
+            const name = target.dataset.name;
+            if (name) {
+                deleteProfile(name, target);
+            }
+        }
+    });
+}

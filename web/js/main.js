@@ -16,8 +16,8 @@ import { initWebSocket } from './utils/websocket.js';
 // Import components
 import { initTabs } from './components/tabs.js';
 import { renderStatusCards } from './components/statusCards.js';
-import { renderWifiNetworks, renderWifiCurrentStatus } from './components/wifi.js';
-import { renderVPNStatus, renderVPNProfiles, loadVPNSettings } from './components/vpn.js';
+import { renderWifiNetworks, renderWifiCurrentStatus, initWifiEvents } from './components/wifi.js';
+import { renderVPNStatus, renderVPNProfiles, loadVPNSettings, initVPNEvents } from './components/vpn.js';
 import { renderConnectedClients, initHotspotForm } from './components/hotspot.js';
 import { renderSystemInfo, initVPNSettingsForm, updateRebootConfirmations } from './components/system.js';
 
@@ -99,6 +99,8 @@ async function init() {
 
     // Initialize components
     initTabs();
+    initWifiEvents();
+    initVPNEvents();
     initHotspotForm();
     initVPNSettingsForm();
 

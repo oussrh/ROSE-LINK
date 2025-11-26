@@ -3,12 +3,13 @@
  * Handles WiFi scanning, connection, and status display
  */
 
-import { escapeHtml, escapeJs, icon, refreshIcons, setButtonLoading } from '../utils/dom.js';
+import { escapeHtml, icon, refreshIcons, setButtonLoading } from '../utils/dom.js';
 import { t } from '../i18n.js';
 import { showToast } from '../utils/toast.js';
 
 /**
  * Render available WiFi networks
+ * Uses data attributes and event delegation for security (no inline onclick)
  * @param {Array} networks - Array of network objects
  */
 export function renderWifiNetworks(networks) {
@@ -26,7 +27,7 @@ export function renderWifiNetworks(networks) {
                 <div class="font-medium truncate text-sm sm:text-base">${escapeHtml(net.ssid)}</div>
                 <div class="text-xs sm:text-sm text-gray-400">${escapeHtml(net.security)} | ${net.signal}%</div>
             </div>
-            <button onclick="connectToWifi('${escapeJs(net.ssid)}', this)"
+            <button data-action="connect-wifi" data-ssid="${escapeHtml(net.ssid)}"
                 class="flex-shrink-0 px-2 sm:px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-xs sm:text-sm transition-smooth focus-ring touch-manipulation">
                 ${t('connect')}
             </button>
@@ -71,7 +72,7 @@ export function renderWifiCurrentStatus(data) {
                         <span class="font-medium truncate">${wifiSsid}</span>
                         <span class="text-sm text-gray-400">${wifiIp}</span>
                     </div>
-                    <button onclick="disconnectWifi(this)"
+                    <button data-action="disconnect-wifi"
                         class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center gap-1">
                         ${icon('wifi-off')}
                         <span>${t('disconnect')}</span>
@@ -118,7 +119,9 @@ export function connectToWifi(ssid, btn) {
             htmx.trigger('#wifi-current-status', 'htmx:load');
         })
         .catch((err) => {
-            const msg = err.detail || `${t('connection_failed')}: ${escapeHtml(ssid)}`;
+            // Escape error message from server to prevent XSS
+            const serverMsg = err.detail ? escapeHtml(String(err.detail)) : null;
+            const msg = serverMsg || `${t('connection_failed')}: ${escapeHtml(ssid)}`;
             showToast(msg, 'error');
         })
         .finally(() => setButtonLoading(btn, false));
@@ -145,12 +148,32 @@ export function disconnectWifi(btn) {
             htmx.trigger('#wifi-current-status', 'htmx:load');
         })
         .catch((err) => {
-            const msg = err.detail || t('error');
+            // Escape error message from server to prevent XSS
+            const serverMsg = err.detail ? escapeHtml(String(err.detail)) : null;
+            const msg = serverMsg || t('error');
             showToast(msg, 'error');
         })
         .finally(() => setButtonLoading(btn, false));
 }
 
-// Make functions globally available for onclick handlers
-window.connectToWifi = connectToWifi;
-window.disconnectWifi = disconnectWifi;
+/**
+ * Initialize WiFi event delegation
+ * Call this once from main.js to set up click handlers
+ */
+export function initWifiEvents() {
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+
+        if (action === 'connect-wifi') {
+            const ssid = target.dataset.ssid;
+            if (ssid) {
+                connectToWifi(ssid, target);
+            }
+        } else if (action === 'disconnect-wifi') {
+            disconnectWifi(target);
+        }
+    });
+}
