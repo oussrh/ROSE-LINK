@@ -1,0 +1,60 @@
+# ROSE Link Backend - Ruff Configuration
+# https://docs.astral.sh/ruff/
+
+# Target Python version
+target-version = "py39"
+
+# Line length
+line-length = 100
+
+# Exclude directories
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+]
+
+[lint]
+# Enable rules
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # function call in default argument (needed for FastAPI Depends)
+    "B904",   # raise without from (not always appropriate)
+    "ARG001", # unused function argument (common in route handlers)
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+[lint.per-file-ignores]
+# Tests can use assertions and have unused variables
+"tests/*" = ["ARG", "S101"]
+
+[lint.isort]
+known-first-party = ["api", "core", "services", "utils"]
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Unix line endings
+line-ending = "lf"
