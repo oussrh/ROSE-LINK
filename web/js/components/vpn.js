@@ -71,12 +71,12 @@ export function renderVPNProfiles(profiles) {
             </div>
             <div class="flex gap-2 flex-shrink-0">
                 ${!prof.active
-                    ? `<button onclick="activateProfile('${jsName}', this)" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>
+        ? `<button onclick="activateProfile('${jsName}', this)" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>
                        <button onclick="deleteProfile('${jsName}', this)" class="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center" title="${t('delete')}">${icon('trash-2')}</button>`
-                    : `<span class="text-xs text-green-400 px-2">${t('active')}</span>`}
+        : `<span class="text-xs text-green-400 px-2">${t('active')}</span>`}
             </div>
         </div>
-    `}).join('');
+    `;}).join('');
     refreshIcons();
 }
 
@@ -92,20 +92,20 @@ export function activateProfile(name, btn) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
     })
-    .then(r => {
-        if (r.ok) return r.json();
-        return r.json().then(data => Promise.reject(data));
-    })
-    .then(() => {
-        showToast(`${t('vpn_activated')}: ${escapeHtml(name)}`, 'success');
-        htmx.trigger('#vpn-profiles', 'htmx:load');
-        htmx.trigger('#vpn-status-detail', 'htmx:load');
-    })
-    .catch((err) => {
-        const msg = err.detail || t('activation_failed');
-        showToast(msg, 'error');
-    })
-    .finally(() => setButtonLoading(btn, false));
+        .then(r => {
+            if (r.ok) return r.json();
+            return r.json().then(data => Promise.reject(data));
+        })
+        .then(() => {
+            showToast(`${t('vpn_activated')}: ${escapeHtml(name)}`, 'success');
+            htmx.trigger('#vpn-profiles', 'htmx:load');
+            htmx.trigger('#vpn-status-detail', 'htmx:load');
+        })
+        .catch((err) => {
+            const msg = err.detail || t('activation_failed');
+            showToast(msg, 'error');
+        })
+        .finally(() => setButtonLoading(btn, false));
 }
 
 /**
@@ -120,19 +120,19 @@ export function deleteProfile(name, btn) {
 
     setButtonLoading(btn, true);
     fetch(`/api/vpn/profiles/${encodeURIComponent(name)}`, { method: 'DELETE' })
-    .then(r => {
-        if (r.ok) return r.json();
-        return r.json().then(data => Promise.reject(data));
-    })
-    .then(() => {
-        showToast(`${t('deleted')}: ${name}`, 'success');
-        htmx.trigger('#vpn-profiles', 'htmx:load');
-    })
-    .catch((err) => {
-        const msg = err.detail || t('delete_failed');
-        showToast(msg, 'error');
-    })
-    .finally(() => setButtonLoading(btn, false));
+        .then(r => {
+            if (r.ok) return r.json();
+            return r.json().then(data => Promise.reject(data));
+        })
+        .then(() => {
+            showToast(`${t('deleted')}: ${name}`, 'success');
+            htmx.trigger('#vpn-profiles', 'htmx:load');
+        })
+        .catch((err) => {
+            const msg = err.detail || t('delete_failed');
+            showToast(msg, 'error');
+        })
+        .finally(() => setButtonLoading(btn, false));
 }
 
 /**
@@ -148,7 +148,7 @@ export async function loadVPNSettings() {
             if (pingHost) pingHost.value = data.ping_host || '8.8.8.8';
             if (checkInterval) checkInterval.value = data.check_interval || 60;
         }
-    } catch (e) {
+    } catch {
         console.warn('Could not load VPN settings');
     }
 }

@@ -27,8 +27,8 @@ export function renderStatusCards(data) {
     const wanStatus = wan.ethernet?.connected
         ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div><span class="text-xs sm:text-base">${t('ethernet_connected')}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${ethIp}</p>`
         : wan.wifi?.connected
-        ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div><span class="text-xs sm:text-base truncate">${wifiSsid}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${wifiIp}</p>`
-        : `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div><span class="text-xs sm:text-base">${t('disconnected')}</span></div>`;
+            ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div><span class="text-xs sm:text-base truncate">${wifiSsid}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${wifiIp}</p>`
+            : `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div><span class="text-xs sm:text-base">${t('disconnected')}</span></div>`;
 
     // VPN status
     const vpnStatus = vpn.active

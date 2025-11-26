@@ -4,7 +4,7 @@
  */
 
 // Translation storage
-let translations = {
+const translations = {
     en: {},
     fr: {}
 };
@@ -29,7 +29,7 @@ export async function loadTranslations() {
         if (frResponse.ok) {
             translations.fr = await frResponse.json();
         }
-    } catch (e) {
+    } catch {
         console.warn('Could not load translations, using defaults');
     }
 }
