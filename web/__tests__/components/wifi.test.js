@@ -357,5 +357,161 @@ describe('WiFi Component', () => {
         it('should not throw when called', () => {
             expect(() => initWifiEvents()).not.toThrow();
         });
+
+        it('should handle connect-wifi action when clicked', () => {
+            initWifiEvents();
+            global.prompt.mockReturnValue('password123');
+            global.fetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            // Create a button with data-action and data-ssid
+            document.body.innerHTML = `
+                <button data-action="connect-wifi" data-ssid="TestNetwork">Connect</button>
+            `;
+
+            const button = document.querySelector('[data-action="connect-wifi"]');
+            button.click();
+
+            expect(global.prompt).toHaveBeenCalled();
+            expect(global.fetch).toHaveBeenCalledWith('/api/wifi/connect', expect.any(Object));
+        });
+
+        it('should handle disconnect-wifi action when clicked', () => {
+            initWifiEvents();
+            global.confirm.mockReturnValue(true);
+            global.fetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            document.body.innerHTML = `
+                <button data-action="disconnect-wifi">Disconnect</button>
+            `;
+
+            const button = document.querySelector('[data-action="disconnect-wifi"]');
+            button.click();
+
+            expect(global.confirm).toHaveBeenCalled();
+            expect(global.fetch).toHaveBeenCalledWith('/api/wifi/disconnect', expect.any(Object));
+        });
+
+        it('should ignore clicks on elements without data-action', () => {
+            initWifiEvents();
+
+            document.body.innerHTML = `<button>Regular Button</button>`;
+            const button = document.querySelector('button');
+
+            expect(() => button.click()).not.toThrow();
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('should ignore connect-wifi without ssid', () => {
+            initWifiEvents();
+
+            document.body.innerHTML = `
+                <button data-action="connect-wifi">Connect</button>
+            `;
+
+            const button = document.querySelector('[data-action="connect-wifi"]');
+            button.click();
+
+            // Should not call fetch because ssid is missing
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('should handle click on child element of button', () => {
+            initWifiEvents();
+            global.prompt.mockReturnValue('password123');
+            global.fetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            document.body.innerHTML = `
+                <button data-action="connect-wifi" data-ssid="TestNetwork">
+                    <span>Connect</span>
+                </button>
+            `;
+
+            const span = document.querySelector('span');
+            span.click();
+
+            expect(global.fetch).toHaveBeenCalled();
+        });
+    });
+
+    describe('disconnectWifi error handling', () => {
+        let button;
+
+        beforeEach(() => {
+            button = document.createElement('button');
+            document.body.appendChild(button);
+        });
+
+        it('should show error toast on failed disconnect', async () => {
+            global.confirm.mockReturnValue(true);
+            global.fetch.mockResolvedValue({
+                ok: false,
+                json: () => Promise.resolve({ detail: 'Network error' })
+            });
+
+            await disconnectWifi(button);
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(showToast).toHaveBeenCalledWith('Network error', 'error');
+        });
+
+        it('should show generic error when no detail provided', async () => {
+            global.confirm.mockReturnValue(true);
+            global.fetch.mockResolvedValue({
+                ok: false,
+                json: () => Promise.resolve({})
+            });
+
+            await disconnectWifi(button);
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(showToast).toHaveBeenCalledWith('error', 'error');
+        });
+
+        it('should reset button loading state on error', async () => {
+            global.confirm.mockReturnValue(true);
+            global.fetch.mockResolvedValue({
+                ok: false,
+                json: () => Promise.resolve({ detail: 'Error' })
+            });
+
+            await disconnectWifi(button);
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(setButtonLoading).toHaveBeenCalledWith(button, false);
+        });
+    });
+
+    describe('connectToWifi error handling', () => {
+        let button;
+
+        beforeEach(() => {
+            button = document.createElement('button');
+            document.body.appendChild(button);
+        });
+
+        it('should show generic error when no detail provided', async () => {
+            global.prompt.mockReturnValue('password123');
+            global.fetch.mockResolvedValue({
+                ok: false,
+                json: () => Promise.resolve({})
+            });
+
+            await connectToWifi('TestNetwork', button);
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(showToast).toHaveBeenCalledWith(
+                expect.stringContaining('TestNetwork'),
+                'error'
+            );
+        });
     });
 });

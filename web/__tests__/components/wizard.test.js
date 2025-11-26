@@ -538,4 +538,267 @@ describe('Setup Wizard Component', () => {
             expect(() => nextStep()).not.toThrow();
         });
     });
+
+    describe('WiFi network list rendering', () => {
+        it('should render network list after scan', async () => {
+            const mockNetworks = [
+                { ssid: 'Network1', signal: 80 },
+                { ssid: 'Network2', signal: 60 }
+            ];
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({ networks: mockNetworks })
+            });
+
+            showWizard();
+            nextStep(); // wifi step
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const container = document.getElementById('wizard-wifi-networks');
+            expect(container.innerHTML).toContain('Network1');
+            expect(container.innerHTML).toContain('Network2');
+        });
+
+        it('should show no networks message when list is empty', async () => {
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({ networks: [] })
+            });
+
+            showWizard();
+            nextStep();
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const container = document.getElementById('wizard-wifi-networks');
+            expect(container.innerHTML).toContain('no_networks');
+        });
+
+        it('should handle network click to connect', async () => {
+            const mockNetworks = [{ ssid: 'TestNet', signal: 80 }];
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({ networks: mockNetworks })
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({})
+                });
+
+            global.prompt = jest.fn().mockReturnValue('password123');
+
+            showWizard();
+            nextStep();
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const networkEl = document.querySelector('[data-ssid="TestNet"]');
+            networkEl.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(global.fetch).toHaveBeenCalledWith('/api/wifi/connect', expect.any(Object));
+        });
+
+        it('should handle connection error', async () => {
+            const mockNetworks = [{ ssid: 'TestNet', signal: 80 }];
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({ networks: mockNetworks })
+                })
+                .mockResolvedValueOnce({
+                    ok: false,
+                    json: () => Promise.resolve({ detail: 'Wrong password' })
+                });
+
+            global.prompt = jest.fn().mockReturnValue('wrongpass');
+
+            showWizard();
+            nextStep();
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const networkEl = document.querySelector('[data-ssid="TestNet"]');
+            networkEl.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(showToast).toHaveBeenCalledWith(expect.any(String), 'error');
+        });
+
+        it('should not connect if password prompt cancelled', async () => {
+            const mockNetworks = [{ ssid: 'TestNet', signal: 80 }];
+
+            global.fetch = jest.fn().mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ networks: mockNetworks })
+            });
+
+            global.prompt = jest.fn().mockReturnValue(null);
+
+            showWizard();
+            nextStep();
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const networkEl = document.querySelector('[data-ssid="TestNet"]');
+            networkEl.click();
+
+            // fetch should only be called once for scan, not for connect
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('VPN import success', () => {
+        it('should import VPN profile successfully', async () => {
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({ name: 'TestVPN' })
+            });
+
+            showWizard();
+            nextStep(); // wifi
+            nextStep(); // vpn
+
+            const fileInput = document.getElementById('wizard-vpn-file');
+            const file = new File(['[Interface]'], 'test.conf', { type: 'text/plain' });
+            Object.defineProperty(fileInput, 'files', { value: [file] });
+
+            const importBtn = document.getElementById('wizard-vpn-import');
+            importBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(showToast).toHaveBeenCalledWith('upload_success', 'success');
+        });
+
+        it('should handle VPN import error', async () => {
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: false,
+                json: () => Promise.resolve({ detail: 'Invalid file' })
+            });
+
+            showWizard();
+            nextStep();
+            nextStep();
+
+            const fileInput = document.getElementById('wizard-vpn-file');
+            const file = new File(['bad'], 'bad.conf', { type: 'text/plain' });
+            Object.defineProperty(fileInput, 'files', { value: [file] });
+
+            const importBtn = document.getElementById('wizard-vpn-import');
+            importBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const statusEl = document.getElementById('wizard-vpn-status');
+            expect(statusEl.innerHTML).toContain('Invalid file');
+        });
+    });
+
+    describe('Hotspot config save', () => {
+        it('should save valid hotspot config', async () => {
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            showWizard();
+            nextStep(); // wifi
+            nextStep(); // vpn
+            nextStep(); // hotspot
+
+            const ssidInput = document.getElementById('wizard-hotspot-ssid');
+            ssidInput.value = 'MyHotspot';
+
+            const passwordInput = document.getElementById('wizard-hotspot-password');
+            passwordInput.value = 'password123';
+
+            const saveBtn = document.getElementById('wizard-hotspot-save');
+            saveBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(global.fetch).toHaveBeenCalledWith('/api/hotspot/apply', expect.any(Object));
+            expect(showToast).toHaveBeenCalledWith('config_applied', 'success');
+        });
+
+        it('should continue even if hotspot API fails', async () => {
+            global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+            showWizard();
+            nextStep();
+            nextStep();
+            nextStep();
+
+            const saveBtn = document.getElementById('wizard-hotspot-save');
+            saveBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Should advance to complete step despite error
+            const stepCounter = document.getElementById('wizard-step-counter');
+            expect(stepCounter.textContent).toBe('5 / 5');
+        });
+
+        it('should set channel to 36 for 5GHz band', async () => {
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            showWizard();
+            nextStep();
+            nextStep();
+            nextStep();
+
+            const bandSelect = document.getElementById('wizard-hotspot-band');
+            bandSelect.value = '5GHz';
+
+            const saveBtn = document.getElementById('wizard-hotspot-save');
+            saveBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(global.fetch).toHaveBeenCalledWith('/api/hotspot/apply', expect.objectContaining({
+                body: expect.stringContaining('"channel":36')
+            }));
+        });
+    });
+
+    describe('Wizard summary display', () => {
+        it('should show configured items in summary', () => {
+            showWizard();
+
+            // Simulate wizard data being set
+            nextStep(); // wifi
+            nextStep(); // vpn
+            nextStep(); // hotspot
+            nextStep(); // complete
+
+            const content = document.getElementById('wizard-content');
+            expect(content.innerHTML).toContain('wizard_summary');
+        });
+    });
 });

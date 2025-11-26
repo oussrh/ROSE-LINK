@@ -490,5 +490,88 @@ describe('VPN Component', () => {
         it('should not throw when called', () => {
             expect(() => initVPNEvents()).not.toThrow();
         });
+
+        it('should handle activate-vpn action when clicked', () => {
+            initVPNEvents();
+            global.fetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            document.body.innerHTML = `
+                <button data-action="activate-vpn" data-name="TestProfile">Activate</button>
+            `;
+
+            const button = document.querySelector('[data-action="activate-vpn"]');
+            button.click();
+
+            expect(global.fetch).toHaveBeenCalledWith('/api/vpn/activate/TestProfile', expect.any(Object));
+        });
+
+        it('should handle delete-vpn action when clicked', () => {
+            initVPNEvents();
+            global.confirm.mockReturnValue(true);
+            global.fetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+
+            document.body.innerHTML = `
+                <button data-action="delete-vpn" data-name="TestProfile">Delete</button>
+            `;
+
+            const button = document.querySelector('[data-action="delete-vpn"]');
+            button.click();
+
+            expect(global.confirm).toHaveBeenCalled();
+            expect(global.fetch).toHaveBeenCalledWith('/api/vpn/profiles/TestProfile', expect.objectContaining({ method: 'DELETE' }));
+        });
+
+        it('should ignore clicks on elements without data-action', () => {
+            initVPNEvents();
+
+            document.body.innerHTML = `<button>Regular Button</button>`;
+            const button = document.querySelector('button');
+
+            expect(() => button.click()).not.toThrow();
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('should ignore activate-vpn without name', () => {
+            initVPNEvents();
+
+            document.body.innerHTML = `
+                <button data-action="activate-vpn">Activate</button>
+            `;
+
+            const button = document.querySelector('[data-action="activate-vpn"]');
+            button.click();
+
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('should ignore delete-vpn without name', () => {
+            initVPNEvents();
+
+            document.body.innerHTML = `
+                <button data-action="delete-vpn">Delete</button>
+            `;
+
+            const button = document.querySelector('[data-action="delete-vpn"]');
+            button.click();
+
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('loadVPNSettings additional tests', () => {
+        it('should handle non-ok response', async () => {
+            global.fetch.mockResolvedValue({
+                ok: false,
+                json: () => Promise.resolve({})
+            });
+
+            await expect(loadVPNSettings()).resolves.not.toThrow();
+        });
     });
 });

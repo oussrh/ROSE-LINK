@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)"
+      "Bash(git tag:*)",
+      "Bash(gh:*)",
+      "Bash(python -m http.server:*)",
+      "Bash(where:*)",
+      "Bash(npx serve:*)",
+      "Bash(dir \"C:\\Users\\ouss_\\Documents\\neoxitech\\ROSE-LINK\\web\\js\\components\")",
+      "Bash(dir \"C:\\Users\\ouss_\\Documents\\neoxitech\\ROSE-LINK\\web\\js\\utils\")",
+      "Bash(dir \"C:\\Users\\ouss_\\Documents\\neoxitech\\ROSE-LINK\\web\\vendor\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix XSS vulnerabilities and improve web UI security\n\n- Replace inline onclick handlers with data attributes and event delegation\n- Escape all server error messages to prevent XSS attacks\n- Add offline/online status indicator in header when WebSocket disconnects\n- Update version display to 1.1.0\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm test)",
+      "Bash(npm run test:coverage:*)"
     ],
     "deny": [],
     "ask": []

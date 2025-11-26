@@ -51,6 +51,7 @@ debian/etc/
 .coverage
 coverage.xml
 coverage_html/
+coverage/
 htmlcov/
 .hypothesis/
 *.cover
