@@ -35,7 +35,7 @@
    Accessibility: Focus States
    ================================================================= */
 .focus-ring:focus {
-    outline: 2px solid #f43f5e;
+    outline: 2px solid #ca2625;
     outline-offset: 2px;
 }
 
@@ -109,4 +109,111 @@
 .toast-exit {
     transform: translateY(0.5rem);
     opacity: 0;
+}
+
+/* =================================================================
+   Chart.js Styles
+   Brand: ROSE Link
+   Main Color: #ca2625
+   Font: Alexandria Semi Bold
+   ================================================================= */
+.chart-container {
+    position: relative;
+    min-height: 200px;
+    width: 100%;
+    background: #1f2937;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.chart-container canvas {
+    font-family: 'Alexandria', sans-serif !important;
+}
+
+/* Chart card wrapper */
+.chart-card {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.chart-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid #374151;
+}
+
+.chart-card-title {
+    font-family: 'Alexandria', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-card-title .icon {
+    color: #ca2625;
+}
+
+.chart-card-body {
+    padding: 1rem;
+}
+
+/* Chart legend customization */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    font-family: 'Alexandria', sans-serif;
+    font-size: 0.875rem;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9ca3af;
+}
+
+.chart-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Bandwidth chart specific */
+.bandwidth-chart {
+    height: 250px;
+}
+
+@media (min-width: 640px) {
+    .bandwidth-chart {
+        height: 300px;
+    }
+}
+
+/* Chart loading state */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #9ca3af;
+}
+
+.chart-loading::after {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border: 2px solid #374151;
+    border-top-color: #ca2625;
+    border-radius: 50%;
+    animation: spin-slow 1s linear infinite;
+    margin-left: 0.5rem;
 }

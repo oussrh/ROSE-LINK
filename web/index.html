@@ -10,6 +10,11 @@
     <title>ROSE Link - VPN Router</title>
     <link rel="icon" type="image/png" href="/icon.png">
 
+    <!-- Alexandria Semi Bold Font (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS (CDN with forms plugin) -->
     <!-- For offline deployments, use: npx tailwindcss -o vendor/tailwind.css --minify -->
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -20,11 +25,14 @@
                 darkMode: 'class',
                 theme: {
                     extend: {
+                        fontFamily: {
+                            'alexandria': ['Alexandria', 'sans-serif'],
+                        },
                         colors: {
                             rose: {
-                                50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af',
-                                400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c',
-                                800: '#9f1239', 900: '#881337',
+                                50: '#fff1f1', 100: '#ffe3e3', 200: '#ffcbcb', 300: '#fea6a6',
+                                400: '#fa6b6b', 500: '#ca2625', 600: '#b31f1e', 700: '#961917',
+                                800: '#7c1716', 900: '#671918',
                             }
                         }
                     }
@@ -42,7 +50,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/custom.css">
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen antialiased">
+<body class="bg-gray-900 text-gray-100 min-h-screen antialiased font-alexandria">
     <!-- Header -->
     <header class="bg-gray-800 border-b border-gray-700 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
