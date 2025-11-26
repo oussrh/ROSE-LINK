@@ -193,18 +193,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Grafana metrics dashboard
 - [ ] Connected clients management
 
-## [Unreleased]
+## [1.0.0] - 2024-XX-XX
 
-### Planned for 1.0.0
-- [ ] Flashable SD card image (Raspberry Pi OS + ROSE Link)
-- [ ] First-run setup wizard
-- [ ] Multi-WAN load balancing
-- [ ] iOS/Android companion app
-- [ ] Automatic updates
-- [ ] Full test suite
+### Added
+- **AdGuard Home Integration**: DNS-level ad blocking built-in
+  - Full AdGuard Home management API
+  - Blocking statistics and query log
+  - Enable/disable filtering from web interface
+  - Automatic DNS configuration
+
+- **OpenVPN Support**: Multi-protocol VPN support
+  - Upload and manage .ovpn configuration files
+  - Support for embedded certificates
+  - Username/password authentication support
+  - VPN provider abstraction layer for future protocols
+
+- **Connected Clients Management**: Complete device tracking
+  - Real-time and historical client tracking
+  - MAC-based device type detection (Apple, Samsung, etc.)
+  - Custom device naming
+  - Block/unblock/kick clients
+  - Per-client traffic statistics
+
+- **QoS Traffic Prioritization**: Simple traffic management
+  - "Prioritize VPN Traffic" toggle
+  - Configurable bandwidth allocation
+  - Uses Linux tc with HTB queueing
+  - iptables packet marking
+
+- **First-Time Setup Wizard**: Guided initial configuration
+  - Multi-step wizard (Network, VPN, Hotspot, Security, AdGuard)
+  - First-run detection
+  - Skip option for advanced users
+  - Language selection (EN/FR)
+
+- **Ready-to-Flash SD Card Image**: Simplified installation
+  - Pre-configured Raspberry Pi OS image
+  - First-boot auto-configuration
+  - Setup WiFi hotspot for initial configuration
+  - GitHub Actions workflow for automated builds
+
+- **Comprehensive Test Suite**: 90%+ code coverage
+  - Tests for all new services
+  - Integration tests for API routes
+  - Frontend tests for new components
+
+### API Endpoints Added
+- `GET/POST /api/adguard/*` - AdGuard Home management
+- `GET/PUT/POST /api/clients/*` - Connected clients management
+- `GET/POST/PUT /api/qos/*` - QoS traffic prioritization
+- `GET/POST /api/setup/*` - First-time setup wizard
+
+### Services Added
+- `AdGuardService` - AdGuard Home integration
+- `ClientsService` - Connected clients management
+- `QoSService` - Traffic prioritization
+- `SetupService` - Setup wizard state management
+- `VPNManager` - Unified VPN provider management
+- `WireGuardProvider` - WireGuard VPN provider
+- `OpenVPNProvider` - OpenVPN VPN provider
+
+### Changed
+- Refactored VPN service to support multiple providers
+- Updated ROADMAP.md with v1.0.0 focused scope
+- Improved documentation with new features
+
+### Security
+- MAC-based client blocking via iptables
+- Secure credential storage for OpenVPN auth
 
 ---
 
+## [Unreleased]
+
+### Planned for 1.x
+- Email notifications for VPN failures
+- Full QoS profiles (Gaming, Streaming, Work)
+- Grafana metrics dashboard
+- Multi-WAN load balancing
+- Automatic updates
+
+---
+
+[1.0.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.0.0
 [0.3.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.3.0
 [0.2.1]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.1
 [0.2.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.0

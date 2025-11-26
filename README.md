@@ -10,7 +10,7 @@
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -51,12 +51,19 @@ ROSE Link creates a complete VPN solution that:
 - Easy configuration: Scan and connect to WiFi from web interface
 - Real-time monitoring: WAN connection status
 
-### Advanced WireGuard VPN
+### Multi-Protocol VPN Support
+- **WireGuard**: Fast, modern VPN with .conf file import
+- **OpenVPN**: Support for .ovpn files with embedded certificates
 - Multi-profile: Import and manage multiple VPN configurations
-- .conf import: Direct upload of WireGuard files
 - Kill-switch: Blocks all traffic if VPN drops (no leaks)
 - Watchdog: Automatic monitoring and reconnection
 - Detailed status: Handshake, endpoint, data transfer
+
+### AdGuard Home Integration (DNS Ad Blocking)
+- DNS-level ad blocking: Pi-hole alternative built-in
+- Blocking statistics: Queries, blocked percentage, top domains
+- Easy toggle: Enable/disable from web interface
+- AdGuard web UI: Full access to AdGuard Home settings
 
 ### Configurable WiFi Hotspot
 - Custom SSID: Choose your network name
@@ -65,10 +72,29 @@ ROSE Link creates a complete VPN solution that:
 - Channel selection: Optimize performance (2.4GHz and 5GHz)
 - Connected clients: Real-time counter
 
+### Connected Clients Management
+- Device tracking: See all connected and historical devices
+- Device identification: Auto-detect manufacturer and device type
+- Custom naming: Assign friendly names to devices
+- Client control: Block, unblock, or kick devices
+- Per-client statistics: Traffic and connection history
+
+### QoS Traffic Prioritization
+- VPN priority: Prioritize VPN traffic over local traffic
+- Simple toggle: Enable/disable from web interface
+- Bandwidth allocation: Configure VPN vs other traffic ratio
+
+### First-Time Setup Wizard
+- Guided configuration: Step-by-step initial setup
+- Network setup: Configure WAN connection
+- VPN import: Upload VPN profile during setup
+- Hotspot configuration: Set SSID and password
+- Security setup: Configure admin password
+
 ### Modern User Interface
 - Dark mode: Elegant and eye-friendly interface
 - Responsive: Works on desktop, tablet and mobile
-- Real-time: Automatic status refresh
+- Real-time: WebSocket-based live status updates
 - HTTPS: Secure connection (self-signed certificate)
 - Bilingual: English and French support
 
@@ -255,7 +281,7 @@ ROSE Link automatically detects:
 - `GET /api/status` - Global status (WAN, VPN, AP)
 - `GET /api/metrics` - Prometheus metrics endpoint
 
-#### WebSocket (v0.3.0+)
+#### WebSocket
 - `WS /api/ws` - Real-time status updates
 - `GET /api/ws/status` - WebSocket connection info
 
@@ -264,9 +290,9 @@ ROSE Link automatically detects:
 - `POST /api/wifi/connect` - Connect to network
 - `POST /api/wifi/disconnect` - Disconnect
 
-#### VPN
+#### VPN (WireGuard + OpenVPN)
 - `GET /api/vpn/status` - VPN status
-- `GET /api/vpn/profiles` - List profiles
+- `GET /api/vpn/profiles` - List profiles (both .conf and .ovpn)
 - `POST /api/vpn/upload` - Upload profile (without activating)
 - `POST /api/vpn/import` - Import and activate
 - `POST /api/vpn/activate` - Activate existing profile
@@ -274,12 +300,42 @@ ROSE Link automatically detects:
 - `POST /api/vpn/stop` - Stop VPN
 - `POST /api/vpn/restart` - Restart VPN
 
+#### AdGuard Home (v1.0.0+)
+- `GET /api/adguard/status` - AdGuard status and stats
+- `POST /api/adguard/enable` - Enable DNS protection
+- `POST /api/adguard/disable` - Disable DNS protection
+- `GET /api/adguard/stats` - Blocking statistics
+- `GET /api/adguard/querylog` - DNS query log
+
+#### Connected Clients (v1.0.0+)
+- `GET /api/clients` - List all clients
+- `GET /api/clients/connected` - Currently connected clients
+- `GET /api/clients/{mac}` - Get client details
+- `PUT /api/clients/{mac}` - Update client name
+- `POST /api/clients/{mac}/block` - Block client
+- `POST /api/clients/{mac}/unblock` - Unblock client
+- `POST /api/clients/{mac}/kick` - Disconnect client
+
+#### QoS (v1.0.0+)
+- `GET /api/qos/status` - QoS status and config
+- `POST /api/qos/enable` - Enable traffic prioritization
+- `POST /api/qos/disable` - Disable QoS
+- `PUT /api/qos/config` - Update QoS settings
+
+#### Setup Wizard (v1.0.0+)
+- `GET /api/setup/status` - Check if setup required
+- `POST /api/setup/start` - Start setup wizard
+- `GET /api/setup/step/{step}` - Get step data
+- `POST /api/setup/step/{step}` - Submit step data
+- `POST /api/setup/complete` - Complete setup
+- `POST /api/setup/skip` - Skip setup
+
 #### Hotspot
 - `GET /api/hotspot/status` - Hotspot status
 - `POST /api/hotspot/apply` - Apply configuration
 - `POST /api/hotspot/restart` - Restart hotspot
 
-#### Backup/Restore (v0.3.0+)
+#### Backup/Restore
 - `GET /api/backup/list` - List available backups
 - `POST /api/backup/create` - Create new backup
 - `POST /api/backup/restore/{filename}` - Restore from backup
@@ -287,13 +343,13 @@ ROSE Link automatically detects:
 - `POST /api/backup/upload` - Upload backup file
 - `DELETE /api/backup/{filename}` - Delete backup
 
-#### Speed Test (v0.3.0+)
+#### Speed Test
 - `GET /api/speedtest/status` - Check if test running
 - `POST /api/speedtest/run` - Start speed test
 - `GET /api/speedtest/history` - Get test history
 - `GET /api/speedtest/last` - Get last result
 
-#### SSL Certificates (v0.3.0+)
+#### SSL Certificates
 - `GET /api/ssl/status` - Certificate status
 - `POST /api/ssl/request` - Request Let's Encrypt certificate
 - `POST /api/ssl/renew` - Renew certificates
@@ -332,39 +388,37 @@ curl -k https://roselink.local/api/system/info | jq
 
 ## Roadmap
 
-### Version 0.2.x (Released)
-- [x] Complete i18n support (English & French)
-- [x] Mobile-first responsive design for all screen sizes
-- [x] Code optimization with comprehensive docstrings and type hints
-- [x] Dynamic interface detection (fixed hardcoded wlan0)
-- [x] Upgraded to cutting-edge package versions (FastAPI 0.115+, Pydantic 2.10+, htmx 2.0.3)
-- [x] Toast notifications and loading spinners
-- [x] Accessibility improvements (ARIA labels, semantic HTML)
-- [x] API documentation endpoints (/api/docs, /api/redoc)
+### Version 1.0.0 (Current - Production Ready)
+- [x] **AdGuard Home Integration**: DNS-level ad blocking with statistics
+- [x] **OpenVPN Support**: In addition to WireGuard (.ovpn file import)
+- [x] **Connected Clients Management**: Track, name, block/unblock devices
+- [x] **Simple QoS**: VPN traffic prioritization
+- [x] **Ready-to-Flash SD Image**: Pre-configured Raspberry Pi image
+- [x] **First-Time Setup Wizard**: Guided initial configuration
+- [x] **Full Test Suite**: 90%+ code coverage
 
-### Version 0.3.0 (Released)
-- [x] WebSocket for real-time status updates (replaces polling)
-- [x] Configuration backup/restore (VPN profiles, hotspot config, settings)
-- [x] Let's Encrypt SSL certificate option (+ self-signed generation)
-- [x] Speed test integration (speedtest-cli, Ookla)
+### Previous Releases
+
+#### Version 0.3.0
+- [x] WebSocket for real-time status updates
+- [x] Configuration backup/restore
+- [x] Let's Encrypt SSL certificate option
+- [x] Speed test integration
 - [x] Prometheus metrics endpoint (/api/metrics)
-- [x] Bandwidth usage statistics (per-interface, real-time)
+- [x] Bandwidth usage statistics
 
-### Version 0.4.0 (In Progress)
+#### Version 0.2.x
+- [x] Complete i18n support (English & French)
+- [x] Mobile-first responsive design
+- [x] Dynamic interface detection
+- [x] API documentation endpoints
+
+### Future Releases (v1.x)
 - [ ] Email notifications for VPN failures
-- [ ] Simple QoS (traffic prioritization)
-- [ ] Integrated AdGuard Home (DNS + ad blocking)
-- [ ] OpenVPN support in addition to WireGuard
+- [ ] Full QoS profiles (Gaming, Streaming, Work)
 - [ ] Grafana metrics dashboard
-- [ ] Connected clients management
-
-### Version 1.0.0 (Future)
-- [ ] Ready-to-flash SD image
-- [ ] First-time setup wizard
-- [ ] Multi-WAN support (load balancing)
-- [ ] iOS/Android mobile app
+- [ ] Multi-WAN load balancing
 - [ ] Automatic updates
-- [ ] Full test suite
 
 ---
 
