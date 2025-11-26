@@ -1,104 +1,341 @@
 #!/bin/bash
 #
-# ROSE Link Post-installation script
+# ROSE Link Post-installation Script
+# Configures the system after package installation
 #
 
 set -e
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Configuration
 USER="rose"
 GROUP="rose"
 INSTALL_DIR="/opt/rose-link"
+LOG_FILE="/var/log/rose-link-postinst.log"
 
-echo "🌹 Configuration de ROSE Link..."
+# Logging function
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+}
 
-# Create user if doesn't exist
-if ! id -u "$USER" &>/dev/null; then
-    useradd -r -s /bin/bash -d "$INSTALL_DIR" -m "$USER"
-fi
+info() {
+    echo -e "${CYAN}→${NC} $1"
+    log "INFO" "$1"
+}
 
-# Create directories
-mkdir -p /etc/wireguard/profiles
-mkdir -p /etc/nginx/ssl
+success() {
+    echo -e "${GREEN}✓${NC} $1"
+    log "INFO" "$1"
+}
 
-# Set permissions
-chown -R "$USER:$GROUP" "$INSTALL_DIR"
-chmod +x "$INSTALL_DIR/system/rose-watchdog.sh"
+warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+    log "WARN" "$1"
+}
 
-# Setup Python virtual environment
-if [ ! -d "$INSTALL_DIR/venv" ]; then
-    python3 -m venv "$INSTALL_DIR/venv"
-    "$INSTALL_DIR/venv/bin/pip" install --upgrade pip
-    "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt"
-fi
+error() {
+    echo -e "${RED}✗${NC} $1"
+    log "ERROR" "$1"
+}
 
-# Configure hostapd
-if [ ! -f /etc/hostapd/hostapd.conf ]; then
-    cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
-fi
-sed -i 's|#DAEMON_CONF=""|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
-
-# Configure dnsmasq
-if [ ! -f /etc/dnsmasq.conf.backup ]; then
-    mv /etc/dnsmasq.conf /etc/dnsmasq.conf.backup 2>/dev/null || true
-fi
-cp "$INSTALL_DIR/system/dnsmasq.conf" /etc/dnsmasq.conf
-
-# Configure dhcpcd
-if ! grep -q "interface wlan1" /etc/dhcpcd.conf 2>/dev/null; then
-    cat "$INSTALL_DIR/system/dhcpcd.conf.append" >> /etc/dhcpcd.conf
-fi
-
-# Install sudoers
-cp "$INSTALL_DIR/system/rose-sudoers" /etc/sudoers.d/rose
-chmod 440 /etc/sudoers.d/rose
-
-# Generate SSL certificate if not exists
-if [ ! -f /etc/nginx/ssl/roselink.crt ]; then
-    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-        -keyout /etc/nginx/ssl/roselink.key \
-        -out /etc/nginx/ssl/roselink.crt \
-        -subj "/C=BE/ST=Brussels/L=Brussels/O=ROSE Link/OU=VPN/CN=roselink.local" 2>/dev/null
-    chmod 600 /etc/nginx/ssl/roselink.key
-fi
-
-# Enable IP forwarding
-sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-sysctl -p >/dev/null 2>&1 || true
-
-# Configure iptables
-iptables -t nat -F
-iptables -F FORWARD
-iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE
-iptables -A FORWARD -i wlan1 -o wg0 -j ACCEPT
-iptables -A FORWARD -i wg0 -o wlan1 -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -A FORWARD -i wlan1 ! -o wg0 -j REJECT
-iptables -A FORWARD -i eth0 -o wg0 -j ACCEPT
-iptables -A FORWARD -i wlan0 -o wg0 -j ACCEPT
-iptables -A FORWARD -i wg0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
-
-# Reload systemd
-systemctl daemon-reload
-
-# Enable services
-systemctl enable rose-backend >/dev/null 2>&1 || true
-systemctl enable rose-watchdog >/dev/null 2>&1 || true
-systemctl enable hostapd >/dev/null 2>&1 || true
-systemctl enable dnsmasq >/dev/null 2>&1 || true
-systemctl enable nginx >/dev/null 2>&1 || true
-
-# Restart services
-systemctl restart nginx >/dev/null 2>&1 || true
-systemctl restart dhcpcd >/dev/null 2>&1 || true
-systemctl restart dnsmasq >/dev/null 2>&1 || true
-systemctl restart hostapd >/dev/null 2>&1 || true
-systemctl restart rose-backend >/dev/null 2>&1 || true
+# Initialize log
+mkdir -p "$(dirname "$LOG_FILE")"
+echo "=== ROSE Link Post-installation $(date) ===" >> "$LOG_FILE"
 
 echo ""
-echo "✅ ROSE Link installé avec succès !"
-echo ""
-echo "📱 Accès: https://roselink.local ou https://192.168.50.1"
-echo "📶 Hotspot par défaut: ROSE-Link / RoseLink2024"
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║              🌹 ROSE Link Post-Installation                    ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
+case "$1" in
+    configure)
+        # Create system user
+        info "Creating system user '$USER'..."
+        if ! id -u "$USER" &>/dev/null; then
+            useradd -r -s /usr/sbin/nologin -d "$INSTALL_DIR" -c "ROSE Link Service Account" "$USER" || {
+                error "Failed to create user '$USER'"
+                exit 1
+            }
+            success "User '$USER' created"
+        else
+            success "User '$USER' already exists"
+        fi
+
+        # Create directories
+        info "Creating directories..."
+        mkdir -p /etc/wireguard/profiles
+        mkdir -p /etc/nginx/ssl
+        mkdir -p /var/log/rose-link
+        chmod 700 /etc/wireguard
+        chmod 700 /etc/wireguard/profiles
+        success "Directories created"
+
+        # Set permissions
+        info "Setting file permissions..."
+        chown -R "$USER:$GROUP" "$INSTALL_DIR"
+        chown -R "$USER:$GROUP" /var/log/rose-link
+        chmod +x "$INSTALL_DIR/system/rose-watchdog.sh" 2>/dev/null || true
+        success "Permissions configured"
+
+        # Setup Python virtual environment
+        info "Setting up Python virtual environment..."
+        if [ ! -d "$INSTALL_DIR/venv" ] || [ ! -x "$INSTALL_DIR/venv/bin/python" ]; then
+            rm -rf "$INSTALL_DIR/venv" 2>/dev/null || true
+            python3 -m venv "$INSTALL_DIR/venv" || {
+                error "Failed to create Python virtual environment"
+                exit 1
+            }
+            "$INSTALL_DIR/venv/bin/pip" install --upgrade pip -q
+            if [ -f "$INSTALL_DIR/backend/requirements.txt" ]; then
+                "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt" -q || {
+                    error "Failed to install Python dependencies"
+                    exit 1
+                }
+            fi
+            chown -R "$USER:$GROUP" "$INSTALL_DIR/venv"
+            success "Python environment configured"
+        else
+            success "Python environment already exists"
+        fi
+
+        # Detect WiFi interface
+        WIFI_AP_INTERFACE=""
+        for iface in $(ls /sys/class/net/ 2>/dev/null); do
+            if [ -d "/sys/class/net/$iface/wireless" ]; then
+                WIFI_AP_INTERFACE=$iface
+                break
+            fi
+        done
+        WIFI_AP_INTERFACE=${WIFI_AP_INTERFACE:-wlan0}
+        info "Using WiFi interface: $WIFI_AP_INTERFACE"
+
+        # Configure hostapd
+        info "Configuring WiFi hotspot..."
+        if [ ! -f /etc/hostapd/hostapd.conf ]; then
+            if [ -f "$INSTALL_DIR/system/hostapd.conf" ]; then
+                cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
+            else
+                cat > /etc/hostapd/hostapd.conf << EOF
+# ROSE Link Hotspot Configuration
+interface=${WIFI_AP_INTERFACE}
+driver=nl80211
+ssid=ROSE-Link
+hw_mode=g
+channel=6
+country_code=BE
+ieee80211n=1
+wmm_enabled=1
+auth_algs=1
+wpa=2
+wpa_passphrase=RoseLink2024
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+EOF
+            fi
+            chmod 600 /etc/hostapd/hostapd.conf
+            success "Hostapd configuration created"
+        else
+            success "Hostapd configuration already exists"
+        fi
+
+        # Enable hostapd config
+        if [ -f /etc/default/hostapd ]; then
+            sed -i 's|#DAEMON_CONF=""|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+            sed -i 's|DAEMON_CONF=".*"|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+        fi
+
+        # Configure dnsmasq
+        info "Configuring DHCP/DNS server..."
+        if [ ! -f /etc/dnsmasq.conf.rose-backup ] && [ -f /etc/dnsmasq.conf ]; then
+            mv /etc/dnsmasq.conf /etc/dnsmasq.conf.rose-backup 2>/dev/null || true
+        fi
+
+        if [ -f "$INSTALL_DIR/system/dnsmasq.conf" ]; then
+            cp "$INSTALL_DIR/system/dnsmasq.conf" /etc/dnsmasq.conf
+        else
+            cat > /etc/dnsmasq.conf << EOF
+# ROSE Link DHCP/DNS Configuration
+interface=${WIFI_AP_INTERFACE}
+bind-interfaces
+dhcp-range=192.168.50.10,192.168.50.250,255.255.255.0,24h
+dhcp-option=option:router,192.168.50.1
+dhcp-option=option:dns-server,192.168.50.1,1.1.1.1
+server=1.1.1.1
+server=8.8.8.8
+domain=roselink.local
+local=/roselink.local/
+cache-size=1000
+EOF
+        fi
+        success "dnsmasq configured"
+
+        # Configure dhcpcd
+        info "Configuring static IP..."
+        if ! grep -q "# ROSE Link AP Configuration" /etc/dhcpcd.conf 2>/dev/null; then
+            cat >> /etc/dhcpcd.conf << EOF
+
+# ROSE Link AP Configuration
+interface ${WIFI_AP_INTERFACE}
+    static ip_address=192.168.50.1/24
+    nohook wpa_supplicant
+EOF
+            success "Static IP configured"
+        else
+            success "Static IP already configured"
+        fi
+
+        # Install sudoers
+        info "Configuring sudo permissions..."
+        if [ -f "$INSTALL_DIR/system/rose-sudoers" ]; then
+            cp "$INSTALL_DIR/system/rose-sudoers" /etc/sudoers.d/rose
+        else
+            cat > /etc/sudoers.d/rose << 'EOF'
+# ROSE Link sudo rules
+rose ALL=(ALL) NOPASSWD: /usr/bin/nmcli *
+rose ALL=(ALL) NOPASSWD: /usr/bin/iw *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/ip *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/rfkill *
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg show
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg-quick up *
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg-quick down *
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl * wg-quick@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl * hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl * dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/journalctl *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/reboot
+EOF
+        fi
+        chmod 440 /etc/sudoers.d/rose
+        if visudo -c -f /etc/sudoers.d/rose >/dev/null 2>&1; then
+            success "Sudo permissions configured"
+        else
+            warning "Sudo configuration may have issues"
+            rm -f /etc/sudoers.d/rose
+        fi
+
+        # Generate SSL certificate
+        info "Configuring SSL certificate..."
+        if [ ! -f /etc/nginx/ssl/roselink.crt ]; then
+            openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
+                -keyout /etc/nginx/ssl/roselink.key \
+                -out /etc/nginx/ssl/roselink.crt \
+                -subj "/C=BE/ST=Local/L=Local/O=ROSE Link/OU=VPN/CN=roselink.local" \
+                -addext "subjectAltName=DNS:roselink.local,DNS:localhost,IP:192.168.50.1,IP:127.0.0.1" \
+                2>/dev/null || {
+                    # Fallback for older OpenSSL without -addext
+                    openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
+                        -keyout /etc/nginx/ssl/roselink.key \
+                        -out /etc/nginx/ssl/roselink.crt \
+                        -subj "/C=BE/ST=Local/L=Local/O=ROSE Link/OU=VPN/CN=roselink.local" \
+                        2>/dev/null
+                }
+            chmod 600 /etc/nginx/ssl/roselink.key
+            chmod 644 /etc/nginx/ssl/roselink.crt
+            success "SSL certificate generated"
+        else
+            success "SSL certificate already exists"
+        fi
+
+        # Configure Nginx
+        info "Configuring web server..."
+        if [ -f "$INSTALL_DIR/system/nginx/roselink" ]; then
+            cp "$INSTALL_DIR/system/nginx/roselink" /etc/nginx/sites-available/roselink
+        fi
+        ln -sf /etc/nginx/sites-available/roselink /etc/nginx/sites-enabled/roselink 2>/dev/null || true
+        rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+        if nginx -t >/dev/null 2>&1; then
+            success "Nginx configured"
+        else
+            warning "Nginx configuration may have issues"
+        fi
+
+        # Enable IP forwarding
+        info "Enabling IP forwarding..."
+        echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-rose-link.conf
+        sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+        success "IP forwarding enabled"
+
+        # Configure iptables
+        info "Configuring firewall rules..."
+        iptables -t nat -F 2>/dev/null || true
+        iptables -F FORWARD 2>/dev/null || true
+        iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE
+        iptables -A FORWARD -i "${WIFI_AP_INTERFACE}" -o wg0 -j ACCEPT
+        iptables -A FORWARD -i wg0 -o "${WIFI_AP_INTERFACE}" -m state --state RELATED,ESTABLISHED -j ACCEPT
+        iptables -A FORWARD -i "${WIFI_AP_INTERFACE}" ! -o wg0 -j REJECT --reject-with icmp-net-unreachable
+        iptables -A FORWARD -i eth0 -o wg0 -j ACCEPT 2>/dev/null || true
+        iptables -A FORWARD -i wg0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+        success "Firewall rules configured"
+
+        # Install systemd services
+        info "Installing systemd services..."
+        if [ -f "$INSTALL_DIR/system/rose-backend.service" ]; then
+            cp "$INSTALL_DIR/system/rose-backend.service" /etc/systemd/system/
+        fi
+        if [ -f "$INSTALL_DIR/system/rose-watchdog.service" ]; then
+            cp "$INSTALL_DIR/system/rose-watchdog.service" /etc/systemd/system/
+        fi
+        systemctl daemon-reload
+        success "Systemd services installed"
+
+        # Enable services
+        info "Enabling services..."
+        systemctl enable rose-backend >/dev/null 2>&1 || warning "Could not enable rose-backend"
+        systemctl enable rose-watchdog >/dev/null 2>&1 || warning "Could not enable rose-watchdog"
+        systemctl enable hostapd >/dev/null 2>&1 || warning "Could not enable hostapd"
+        systemctl enable dnsmasq >/dev/null 2>&1 || warning "Could not enable dnsmasq"
+        systemctl enable nginx >/dev/null 2>&1 || warning "Could not enable nginx"
+        success "Services enabled"
+
+        # Start services
+        info "Starting services..."
+        systemctl restart dhcpcd >/dev/null 2>&1 || true
+        sleep 2
+        systemctl restart dnsmasq >/dev/null 2>&1 || warning "Could not start dnsmasq"
+        systemctl restart hostapd >/dev/null 2>&1 || warning "Could not start hostapd"
+        systemctl restart nginx >/dev/null 2>&1 || warning "Could not start nginx"
+        systemctl restart rose-backend >/dev/null 2>&1 || warning "Could not start rose-backend"
+        success "Services started"
+
+        echo ""
+        echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${GREEN}║          🎉 ROSE Link Installation Complete! 🎉                ║${NC}"
+        echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+        echo -e "${CYAN}Web Interface:${NC}"
+        echo -e "  • https://roselink.local"
+        echo -e "  • https://192.168.50.1"
+        echo ""
+        echo -e "${CYAN}WiFi Hotspot:${NC}"
+        echo -e "  • SSID: ROSE-Link"
+        echo -e "  • Password: RoseLink2024"
+        echo ""
+        echo -e "${YELLOW}Note: Accept the self-signed certificate warning in your browser.${NC}"
+        echo ""
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        info "Post-installation aborted"
+        ;;
+
+    *)
+        error "Unknown argument: $1"
+        exit 1
+        ;;
+esac
+
+log "INFO" "Post-installation completed successfully"
 exit 0
