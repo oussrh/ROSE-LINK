@@ -332,9 +332,9 @@ class TestConnectionManagerGetSystemStatus:
         mock_status = MagicMock()
         mock_status.to_dict.return_value = {"active": True}
 
-        with patch("core.websocket.WANService") as wan_mock:
-            with patch("core.websocket.VPNService") as vpn_mock:
-                with patch("core.websocket.HotspotService") as ap_mock:
+        with patch("services.wan_service.WANService") as wan_mock:
+            with patch("services.vpn_service.VPNService") as vpn_mock:
+                with patch("services.hotspot_service.HotspotService") as ap_mock:
                     wan_mock.get_status.return_value = mock_status
                     vpn_mock.get_status.return_value = mock_status
                     ap_mock.get_status.return_value = mock_status
@@ -350,7 +350,7 @@ class TestConnectionManagerGetSystemStatus:
         self, manager: ConnectionManager
     ) -> None:
         """Should handle errors gracefully."""
-        with patch("core.websocket.WANService") as wan_mock:
+        with patch("services.wan_service.WANService") as wan_mock:
             wan_mock.get_status.side_effect = Exception("Service error")
 
             result = await manager._get_system_status()

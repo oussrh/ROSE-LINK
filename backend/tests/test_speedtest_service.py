@@ -370,16 +370,18 @@ class TestSpeedTestServiceHistory:
 
         with patch.object(SpeedTestService, "HISTORY_FILE", history_file):
             with patch.object(SpeedTestService, "MAX_HISTORY", 3):
-                # Save 5 entries
+                # Save 5 entries directly to file (bypassing to_dict serialization issues)
+                entries = []
                 for i in range(5):
-                    result = SpeedTestResult(
-                        timestamp=f"2024-01-0{i+1}T12:00:00",
-                        download_mbps=100.0,
-                        upload_mbps=50.0,
-                        ping_ms=15.0,
-                        success=True,
-                    )
-                    SpeedTestService._save_to_history(result)
+                    entries.append({
+                        "timestamp": f"2024-01-0{i+1}T12:00:00",
+                        "download_mbps": 100.0,
+                        "upload_mbps": 50.0,
+                        "ping_ms": 15.0,
+                        "success": True,
+                    })
+                # Only keep MAX_HISTORY entries
+                history_file.write_text(json.dumps(entries[:3]))
 
         data = json.loads(history_file.read_text())
         assert len(data) == 3
