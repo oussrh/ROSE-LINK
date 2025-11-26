@@ -6,27 +6,27 @@ This document outlines planned features, implementation details, and priorities 
 
 | Version | Theme | Status |
 |---------|-------|--------|
-| 0.3.0 | Real-time & Monitoring | ✅ Released |
-| 1.0.0 | Production Ready | 🚧 In Development |
-| 1.x | Extended Features | Future |
+| 1.1.0 | Production Ready | ✅ Current Release |
+| 0.3.0 | Real-time & Monitoring | ✅ Legacy Release |
+| 1.2.x | Extended Features | Future |
 
 ---
 
-## v1.0.0 Target Scope
+## v1.1.0 Delivered Scope
 
 **Product Identity**: "VPN Router + Ad Blocking on Raspberry Pi"
 
-### Core Features for v1.0.0
+### Core Features for v1.1.0
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| AdGuard Home Integration | High | 🚧 In Progress |
-| OpenVPN Support | High | 🚧 In Progress |
-| Connected Clients Management | High | 🚧 In Progress |
-| Simple QoS | Medium | 🚧 In Progress |
-| Ready-to-Flash SD Image | High | 🚧 In Progress |
-| First-Time Setup Wizard | High | 🚧 In Progress |
-| Full Test Suite (90%+) | High | 🚧 In Progress |
+| AdGuard Home Integration | High | ✅ Completed |
+| OpenVPN Support | High | ✅ Completed |
+| Connected Clients Management | High | ✅ Completed |
+| Simple QoS | Medium | ✅ Completed |
+| Ready-to-Flash SD Image | High | ✅ Completed |
+| First-Time Setup Wizard | High | ✅ Completed |
+| Full Test Suite (90%+) | High | ✅ In Place |
 
 ### Features Deferred to v1.x
 
@@ -40,50 +40,15 @@ This document outlines planned features, implementation details, and priorities 
 
 ---
 
-## v1.0.0 Feature Details
+## v1.1.0 Feature Details
 
 ### AdGuard Home Integration
 
 **Priority**: High
 **Complexity**: Medium
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed
 
-**Description**: Integrates AdGuard Home for DNS-level ad blocking, turning ROSE Link into a Pi-hole alternative with VPN routing.
-
-**Implementation Plan**:
-
-1. **AdGuard Home Service** (`backend/services/adguard_service.py`)
-   - Install/manage AdGuard Home binary
-   - Health check via AdGuard API
-   - Enable/disable filtering
-   - Get blocking statistics
-
-2. **API Endpoints** (`backend/api/routes/adguard.py`)
-   ```
-   GET  /api/adguard/status     - AdGuard status and stats
-   POST /api/adguard/enable     - Enable ad blocking
-   POST /api/adguard/disable    - Disable ad blocking
-   GET  /api/adguard/stats      - Blocking statistics (queries, blocked, etc.)
-   POST /api/adguard/install    - Install AdGuard Home (first-time setup)
-   ```
-
-3. **DNS Configuration**:
-   - Option A: AdGuard replaces dnsmasq for DNS (recommended)
-   - Option B: dnsmasq forwards to AdGuard (fallback)
-   - Automatic configuration during install
-
-4. **Frontend Integration** (`web/js/components/adguard.js`)
-   - Status card with blocking stats
-   - Enable/disable toggle
-   - Link to AdGuard web UI (port 3000)
-   - Quick stats: queries today, blocked %, top blocked domains
-
-**Files to Create/Modify**:
-- `backend/api/routes/adguard.py` (new)
-- `backend/services/adguard_service.py` (new)
-- `web/js/components/adguard.js` (new)
-- `install.sh` (add AdGuard installation)
-- `web/index.html` (add AdGuard tab/section)
+**Current Implementation**: Native AdGuard Home control ships with the stack. The service layer handles installation, health checks, and filter toggling (`backend/services/adguard_service.py`), and public endpoints expose status, enable/disable, stats, and install flows (`backend/api/routes/adguard.py`). The installer provisions AdGuard during setup (`install.sh`), and dashboard components surface ad-blocking controls and stats alongside other cards.
 
 ---
 
@@ -91,55 +56,9 @@ This document outlines planned features, implementation details, and priorities 
 
 **Priority**: High
 **Complexity**: High
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed
 
-**Description**: Many VPN providers only offer OpenVPN configs. Adding OpenVPN support expands compatibility significantly.
-
-**Implementation Plan**:
-
-1. **VPN Provider Abstraction** (`backend/services/vpn/`)
-   ```python
-   # base.py - Interface
-   class VPNProvider(ABC):
-       async def connect() -> bool
-       async def disconnect() -> bool
-       async def get_status() -> VPNStatus
-       async def import_config(file_path: Path) -> bool
-
-   # wireguard.py - WireGuard implementation
-   class WireGuardProvider(VPNProvider): ...
-
-   # openvpn.py - OpenVPN implementation
-   class OpenVPNProvider(VPNProvider): ...
-   ```
-
-2. **Profile Detection**:
-   - `.conf` files → WireGuard
-   - `.ovpn` files → OpenVPN
-   - Auto-detect on upload
-
-3. **OpenVPN Features**:
-   - Support for `.ovpn` with embedded certificates
-   - Support for separate cert/key files
-   - Username/password authentication support
-   - Connection status parsing from logs
-
-4. **API Changes**:
-   - `/api/vpn/upload` accepts both `.conf` and `.ovpn`
-   - `/api/vpn/status` returns provider-agnostic status
-   - New: `/api/vpn/providers` lists available providers
-
-5. **Kill-Switch Adaptation**:
-   - iptables rules work for both WireGuard and OpenVPN
-   - Interface detection (`wg0` vs `tun0`)
-
-**Files to Create/Modify**:
-- `backend/services/vpn/base.py` (new - interface)
-- `backend/services/vpn/wireguard.py` (refactor from vpn_service.py)
-- `backend/services/vpn/openvpn.py` (new)
-- `backend/services/vpn/__init__.py` (factory)
-- `backend/api/routes/vpn.py` (modify)
-- `system/rose-openvpn@.service` (new)
+**Current Implementation**: The VPN provider abstraction covers WireGuard and OpenVPN (`backend/services/vpn/base.py`, `backend/services/vpn/openvpn.py`, `backend/services/vpn/wireguard.py`) with provider-aware upload and status handling in the API (`backend/api/routes/vpn.py`). Systemd units for OpenVPN are packaged under `system/rose-openvpn@.service`, and kill-switch handling is unified across providers via the existing firewall logic.
 
 ---
 
@@ -147,49 +66,9 @@ This document outlines planned features, implementation details, and priorities 
 
 **Priority**: High
 **Complexity**: Low-Medium
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed
 
-**Description**: Essential router feature - users expect to see and manage devices connected to their hotspot.
-
-**Current State**: Basic client list exists at `GET /api/hotspot/clients`
-
-**Enhancements**:
-
-1. **Persistent Client Tracking**:
-   - Store client history in JSON file
-   - Track: MAC, IP, hostname, first seen, last seen, total traffic
-
-2. **Client Information**:
-   - Device type detection (via MAC OUI lookup)
-   - Custom device naming/labels
-   - Connection history
-
-3. **Client Management**:
-   - Block/unblock clients (MAC filtering)
-   - Per-client bandwidth stats
-   - Kick client (force disconnect)
-
-4. **API Endpoints**:
-   ```
-   GET  /api/clients              - List all clients (current + historical)
-   GET  /api/clients/{mac}        - Get client details
-   PUT  /api/clients/{mac}        - Update client (name, blocked status)
-   POST /api/clients/{mac}/block  - Block client
-   POST /api/clients/{mac}/unblock- Unblock client
-   POST /api/clients/{mac}/kick   - Kick connected client
-   ```
-
-5. **Frontend**:
-   - Clients tab with sortable table
-   - Device icons by type
-   - Quick actions (block, kick, rename)
-   - Traffic graphs per client
-
-**Files to Create/Modify**:
-- `backend/api/routes/clients.py` (new)
-- `backend/services/clients_service.py` (new)
-- `web/js/components/clients.js` (new)
-- `data/clients.json` (runtime data)
+**Current Implementation**: Persistent client tracking, device naming, and control flows are live via `backend/services/clients_service.py` and the associated API routes (`backend/api/routes/clients.py`). Historical and connected-client data is surfaced in the UI alongside block/unblock and kick actions, with backend support for MAC filtering and traffic metadata.
 
 ---
 
@@ -197,45 +76,9 @@ This document outlines planned features, implementation details, and priorities 
 
 **Priority**: Medium
 **Complexity**: Medium-High
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed
 
-**Description**: Simple "prioritize VPN traffic" toggle. Full QoS with port/app prioritization deferred to v1.1.
-
-**Simplified Approach for v1.0**:
-
-1. **Single Toggle**: "Prioritize VPN Traffic"
-   - When enabled: VPN traffic gets priority over local traffic
-   - Uses `tc` (traffic control) with simple HTB queueing
-
-2. **Implementation**:
-   ```bash
-   # Enable QoS
-   tc qdisc add dev eth0 root handle 1: htb default 20
-   tc class add dev eth0 parent 1: classid 1:1 htb rate 100mbit
-   tc class add dev eth0 parent 1:1 classid 1:10 htb rate 80mbit prio 1  # VPN
-   tc class add dev eth0 parent 1:1 classid 1:20 htb rate 20mbit prio 2  # Other
-
-   # Mark VPN packets
-   iptables -t mangle -A OUTPUT -o wg0 -j MARK --set-mark 10
-   tc filter add dev eth0 parent 1: prio 1 handle 10 fw flowid 1:10
-   ```
-
-3. **API Endpoints**:
-   ```
-   GET  /api/qos/status   - QoS enabled/disabled, current settings
-   POST /api/qos/enable   - Enable VPN traffic prioritization
-   POST /api/qos/disable  - Disable QoS (default behavior)
-   ```
-
-4. **Future (v1.1)**:
-   - Pre-defined profiles (Gaming, Streaming, Work)
-   - Port-based prioritization
-   - Application detection
-
-**Files to Create/Modify**:
-- `backend/api/routes/qos.py` (new)
-- `backend/services/qos_service.py` (new)
-- `web/js/components/qos.js` (new)
+**Description**: A simple "prioritize VPN traffic" toggle is implemented using tc-based shaping with firewall marks. API routes expose enable/disable/status operations (`backend/api/routes/qos.py`), and the service layer encapsulates queue setup/teardown (`backend/services/qos_service.py`). UI controls ship with the dashboard to switch prioritization on demand. Future profiles remain a post-1.1 enhancement.
 
 ---
 
@@ -243,49 +86,11 @@ This document outlines planned features, implementation details, and priorities 
 
 **Priority**: High
 **Complexity**: High
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed
 
 **Description**: Critical for ease of use - biggest barrier to adoption is installation complexity.
 
-**Implementation Plan**:
-
-1. **Image Contents**:
-   - Base: Raspberry Pi OS Lite (64-bit, Bookworm)
-   - Pre-installed: ROSE Link + all dependencies
-   - First-boot: Expand filesystem, run setup wizard
-   - Configured: SSH enabled, default credentials
-
-2. **Build Process** (GitHub Actions):
-   ```yaml
-   - Download official Raspberry Pi OS image
-   - Mount and customize with pi-gen or direct modification
-   - Install ROSE Link packages
-   - Configure first-boot scripts
-   - Compress with xz for smaller download
-   - Generate checksums (SHA256)
-   ```
-
-3. **Build Script** (`scripts/build-image.sh`):
-   - Uses `qemu-user-static` for ARM emulation
-   - Customization via chroot
-   - Automated testing in emulated environment
-
-4. **Distribution**:
-   - GitHub Releases (compressed .img.xz)
-   - Checksum file for verification
-   - Clear flashing instructions (Balena Etcher, Raspberry Pi Imager)
-
-5. **First Boot Experience**:
-   - Auto-expand filesystem
-   - Generate unique SSH keys
-   - Start setup wizard
-   - Connect to `ROSE-Link-Setup` hotspot for initial config
-
-**Files to Create**:
-- `scripts/build-image.sh` (main build script)
-- `scripts/image/first-boot.sh` (first boot customization)
-- `scripts/image/customize.sh` (image customization)
-- `.github/workflows/build-image.yml` (CI/CD for image builds)
+**Current Implementation**: SD card image generation is scripted via `scripts/build-image.sh`, targeting Raspberry Pi OS Lite with built-in ROSE Link services and setup automation. The script handles download, customization, compression, and checksum steps to produce ready-to-flash artifacts for releases.
 
 ---
 
@@ -293,80 +98,9 @@ This document outlines planned features, implementation details, and priorities 
 
 **Priority**: High
 **Complexity**: Medium
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed
 
-**Description**: Essential UX - without it, v1.0 doesn't feel "production ready".
-
-**Wizard Flow**:
-
-```
-Step 1: Welcome
-  → Language selection (EN/FR)
-  → Quick intro to ROSE Link
-
-Step 2: Network (WAN)
-  → Auto-detect Ethernet
-  → Or scan and connect to WiFi
-  → Connection test
-
-Step 3: VPN Configuration
-  → Upload WireGuard .conf or OpenVPN .ovpn
-  → Or skip for later
-  → Connection test (if configured)
-
-Step 4: Hotspot Setup
-  → SSID name
-  → Password (with strength indicator)
-  → Country (regulatory)
-  → Channel selection
-
-Step 5: Security
-  → Set admin password
-  → Optional: Enable 2FA (future)
-
-Step 6: AdGuard Home (Optional)
-  → Enable DNS ad blocking?
-  → Basic filter selection
-
-Step 7: Summary
-  → Review all settings
-  → Apply and restart services
-  → Show connection instructions
-```
-
-**Implementation**:
-
-1. **First-Run Detection**:
-   ```python
-   # Check if setup completed
-   INITIALIZED_FILE = "/opt/rose-link/.initialized"
-
-   def is_first_run() -> bool:
-       return not Path(INITIALIZED_FILE).exists()
-   ```
-
-2. **API Endpoints**:
-   ```
-   GET  /api/setup/status        - Check if setup needed
-   GET  /api/setup/step/{n}      - Get step data
-   POST /api/setup/step/{n}      - Submit step data
-   POST /api/setup/complete      - Finalize setup
-   POST /api/setup/skip          - Skip setup (advanced users)
-   ```
-
-3. **Frontend**:
-   - Dedicated `/setup` route
-   - Step indicators (progress bar)
-   - Validation at each step
-   - Back/Next navigation
-   - Skip option for advanced users
-
-**Files to Create/Modify**:
-- `backend/api/routes/setup.py` (new)
-- `backend/services/setup_service.py` (new)
-- `web/setup.html` (new - standalone wizard page)
-- `web/js/setup.js` (new - wizard logic)
-- `web/css/setup.css` (new - wizard styles)
+**Current Implementation**: First-run detection and wizard orchestration live in `backend/services/setup_service.py` with dedicated API routes (`backend/api/routes/setup.py`). Frontend setup flows and localization are bundled with the web assets and corresponding tests (`web/__tests__/setup.js`), providing guided WAN, VPN, hotspot, security, and AdGuard configuration on initial boot.
 
 ---
 
@@ -374,51 +108,9 @@ Step 7: Summary
 
 **Priority**: High
 **Complexity**: Medium
-**Status**: 🚧 In Progress
+**Status**: ✅ In Place
 
-**Description**: Non-negotiable for a "1.0" release - stability matters.
-
-**Current State**:
-- Backend: ~75% coverage (10 test files, 2841 lines)
-- Frontend: ~70% coverage (Jest tests)
-
-**Target**: 90%+ line coverage for backend, 80%+ for frontend
-
-**Test Additions Needed**:
-
-1. **Backend Tests**:
-   - `test_adguard_service.py` - AdGuard integration
-   - `test_openvpn_service.py` - OpenVPN provider
-   - `test_clients_service.py` - Client management
-   - `test_qos_service.py` - QoS functionality
-   - `test_setup_service.py` - Setup wizard
-   - `test_backup_service.py` - Backup/restore (expand)
-   - `test_api_routes_*.py` - Route-level tests for new endpoints
-
-2. **Frontend Tests**:
-   - Component tests for new features
-   - Setup wizard flow tests
-   - WebSocket integration tests
-
-3. **Integration Tests**:
-   - End-to-end API tests
-   - Service interaction tests
-   - Full wizard flow test
-
-4. **Test Infrastructure**:
-   - Coverage threshold enforcement in CI (fail if < 90%)
-   - Coverage badges in README
-   - Test reports as CI artifacts
-
-**Files to Create**:
-- `backend/tests/test_adguard_service.py`
-- `backend/tests/test_openvpn_service.py`
-- `backend/tests/test_clients_service.py`
-- `backend/tests/test_qos_service.py`
-- `backend/tests/test_setup_service.py`
-- `web/__tests__/setup.test.js`
-- `web/__tests__/adguard.test.js`
-- `web/__tests__/clients.test.js`
+**Current Implementation**: Backend and frontend suites cover the shipping features, including AdGuard, OpenVPN, clients, QoS, setup, hotspot, WAN, and system services (`backend/tests/*`, `web/__tests__`). Coverage thresholds are enforced in web tests (90% global targets in `web/package.json`), and API/service behavior is validated across dedicated test modules.
 
 ---
 
@@ -451,7 +143,7 @@ Step 7: Summary
 
 ---
 
-## Contributing to v1.0.0
+## Contributing to v1.2.x
 
 ### Claiming a Feature
 
@@ -485,7 +177,7 @@ Step 7: Summary
 
 ## Release Timeline
 
-**v1.0.0 Target**: Feature-complete, production-ready release
+**v1.2.x Target**: Extended feature polish beyond the current production release
 
 **Milestones**:
 1. All core features implemented
@@ -511,11 +203,3 @@ Features deferred from v1.0.0 for future releases:
 | Automatic Updates | v1.2 | APT-based with rollback |
 | iOS/Android App | v2.0 | Native mobile experience |
 
----
-
-## Feedback
-
-Have feature requests or suggestions? Open an issue with:
-- Clear use case description
-- Expected behavior
-- Any technical considerations
