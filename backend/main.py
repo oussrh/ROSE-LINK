@@ -47,6 +47,11 @@ class VPNProfile(BaseModel):
     active: bool = False
 
 
+class VPNSettings(BaseModel):
+    ping_host: str = "8.8.8.8"
+    check_interval: int = 60
+
+
 # ===== Helper Functions =====
 
 def run_command(cmd: List[str], check=True) -> tuple:
@@ -777,6 +782,90 @@ async def system_reboot():
     """Reboot system"""
     run_command(["sudo", "reboot"], check=False)
     return {"status": "rebooting"}
+
+
+# ===== Settings Endpoints =====
+
+VPN_SETTINGS_FILE = Path("/opt/rose-link/system/vpn-settings.conf")
+
+
+def load_vpn_settings() -> dict:
+    """Load VPN watchdog settings from config file"""
+    settings = {
+        "ping_host": "8.8.8.8",
+        "check_interval": 60
+    }
+
+    if VPN_SETTINGS_FILE.exists():
+        try:
+            with open(VPN_SETTINGS_FILE, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('#') or '=' not in line:
+                        continue
+                    key, value = line.split('=', 1)
+                    key = key.strip().lower()
+                    value = value.strip().strip('"')
+                    if key == "ping_host":
+                        settings["ping_host"] = value
+                    elif key == "check_interval":
+                        settings["check_interval"] = int(value)
+        except:
+            pass
+
+    return settings
+
+
+def save_vpn_settings(settings: dict) -> bool:
+    """Save VPN watchdog settings to config file"""
+    try:
+        config_content = f"""# ROSE Link VPN Watchdog Settings
+# Auto-generated via Web API
+
+# IP/Host to ping through VPN to verify connectivity
+PING_HOST={settings.get('ping_host', '8.8.8.8')}
+
+# Check interval in seconds (30-300)
+CHECK_INTERVAL={settings.get('check_interval', 60)}
+"""
+        with open(VPN_SETTINGS_FILE, 'w') as f:
+            f.write(config_content)
+
+        # Restart watchdog to apply new settings
+        run_command(["sudo", "systemctl", "restart", "rose-watchdog"], check=False)
+        return True
+    except:
+        return False
+
+
+@app.get("/api/settings/vpn")
+async def get_vpn_settings():
+    """Get VPN watchdog settings"""
+    return load_vpn_settings()
+
+
+@app.post("/api/settings/vpn")
+async def update_vpn_settings(settings: VPNSettings):
+    """Update VPN watchdog settings"""
+    # Validate check_interval
+    if settings.check_interval < 30:
+        settings.check_interval = 30
+    elif settings.check_interval > 300:
+        settings.check_interval = 300
+
+    # Validate ping_host (basic check)
+    if not settings.ping_host or len(settings.ping_host) < 4:
+        raise HTTPException(status_code=400, detail="Invalid ping host")
+
+    settings_dict = {
+        "ping_host": settings.ping_host,
+        "check_interval": settings.check_interval
+    }
+
+    if save_vpn_settings(settings_dict):
+        return {"status": "saved", "settings": settings_dict}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save settings")
 
 
 @app.get("/api/system/logs")
