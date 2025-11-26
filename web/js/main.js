@@ -12,6 +12,7 @@ import { initI18n, t } from './i18n.js';
 // Import utilities
 import { refreshIcons } from './utils/dom.js';
 import './utils/toast.js';
+import { initWebSocket } from './utils/websocket.js';
 
 // Import components
 import { initTabs } from './components/tabs.js';
@@ -63,6 +64,29 @@ function setupHtmxHandlers() {
 }
 
 /**
+ * Setup WebSocket real-time update handlers
+ */
+function setupWebSocketHandlers() {
+    // Listen for real-time status updates from WebSocket
+    window.addEventListener('rose:status', (event) => {
+        const data = event.detail;
+        if (data) {
+            renderStatusCards(data);
+        }
+    });
+
+    // Listen for bandwidth updates
+    window.addEventListener('rose:bandwidth', (event) => {
+        const data = event.detail;
+        // Dispatch to bandwidth component if it exists
+        const bandwidthEl = document.getElementById('bandwidth-stats');
+        if (bandwidthEl && data) {
+            window.dispatchEvent(new CustomEvent('rose:bandwidth:update', { detail: data }));
+        }
+    });
+}
+
+/**
  * Initialize the application
  */
 async function init() {
@@ -84,6 +108,10 @@ async function init() {
 
     // Setup htmx event handlers
     setupHtmxHandlers();
+
+    // Setup WebSocket real-time updates
+    setupWebSocketHandlers();
+    initWebSocket();
 
     // Update confirmation messages with translations
     updateRebootConfirmations();

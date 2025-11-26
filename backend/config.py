@@ -57,7 +57,7 @@ def _get_env_int(key: str, default: int) -> int:
 # =============================================================================
 
 APP_NAME: Final[str] = "ROSE Link"
-APP_VERSION: Final[str] = "0.2.1"
+APP_VERSION: Final[str] = "0.3.0"
 APP_DESCRIPTION: Final[str] = "REST API for ROSE Link VPN Router"
 
 

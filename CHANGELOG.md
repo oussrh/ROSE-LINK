@@ -115,20 +115,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated DEVELOPMENT.md with comprehensive CI check documentation
 - All quality gates in CI pipeline are now strictly enforced
 
-## [Unreleased]
+## [0.3.0] - 2025-11-26
 
-### Planned for 0.3.0
-- [ ] WebSocket real-time status updates
-- [ ] Configuration backup/restore
-- [ ] Let's Encrypt SSL certificate option
-- [ ] Speed test integration
+### Added
+- **WebSocket Real-time Updates**: Replace polling with WebSocket for live status updates
+  - Backend WebSocket manager with connection handling
+  - Frontend WebSocket utility with auto-reconnection
+  - Real-time status broadcasting every 2 seconds
+  - Support for on-demand status and bandwidth requests
+
+- **Configuration Backup/Restore**: Complete backup and restore functionality
+  - Backup VPN profiles, hotspot config, and system settings
+  - Download backups as .tar.gz files
+  - Upload and import backup files
+  - Selective component restore
+  - Backup metadata with timestamps
+
+- **Bandwidth Statistics**: Real-time network bandwidth monitoring
+  - Per-interface statistics (bytes, packets, errors)
+  - Bandwidth rate calculation
+  - Historical data tracking
+  - Formatted human-readable values
+
+- **Prometheus Metrics Endpoint**: `/api/metrics` for monitoring
+  - VPN, WAN, and Hotspot status metrics
+  - System metrics (CPU, memory, disk, temperature)
+  - Network bandwidth counters per interface
+  - Uptime and connection metrics
+
+- **Speed Test Integration**: Internet speed testing
+  - Support for speedtest-cli and Ookla speedtest
+  - Async test execution
+  - Test history storage
+  - Fallback to basic ping test
+
+- **Let's Encrypt SSL Certificates**: Automated SSL management
+  - Request certificates via certbot
+  - Renew existing certificates
+  - Generate self-signed certificates
+  - Certificate status and expiry monitoring
+
+### API Endpoints Added
+- `WS /api/ws` - WebSocket for real-time updates
+- `GET /api/ws/status` - WebSocket connection status
+- `GET /api/backup/list` - List available backups
+- `POST /api/backup/create` - Create new backup
+- `POST /api/backup/restore/{filename}` - Restore from backup
+- `GET /api/backup/download/{filename}` - Download backup
+- `POST /api/backup/upload` - Upload backup file
+- `DELETE /api/backup/{filename}` - Delete backup
+- `GET /api/metrics` - Prometheus metrics
+- `GET /api/speedtest/status` - Speed test status
+- `POST /api/speedtest/run` - Start speed test
+- `GET /api/speedtest/history` - Test history
+- `GET /api/ssl/status` - SSL certificate status
+- `POST /api/ssl/request` - Request Let's Encrypt certificate
+- `POST /api/ssl/renew` - Renew certificates
+- `POST /api/ssl/self-signed` - Generate self-signed certificate
+
+### Services Added
+- `BandwidthService` - Network bandwidth monitoring
+- `BackupService` - Configuration backup/restore
+- `SpeedTestService` - Internet speed testing
+- `SSLService` - SSL certificate management
+- `ConnectionManager` - WebSocket connection management
+
+### Changed
+- Frontend now uses WebSocket for real-time status updates
+- Reduced polling frequency (WebSocket provides instant updates)
+- Improved status card rendering performance
+
+### Planned for 0.4.0
 - [ ] Email notifications for VPN failures
 - [ ] QoS (Quality of Service) traffic prioritization
 - [ ] AdGuard Home integration (DNS filtering + ad blocking)
 - [ ] OpenVPN support (in addition to WireGuard)
 - [ ] Grafana metrics dashboard
-- [ ] Bandwidth usage statistics
 - [ ] Connected clients management
+
+## [Unreleased]
 
 ### Planned for 1.0.0
 - [ ] Flashable SD card image (Raspberry Pi OS + ROSE Link)
@@ -140,6 +205,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.3.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.3.0
 [0.2.1]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.1
 [0.2.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.0
 [0.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.1.0

@@ -8,6 +8,11 @@ This package contains the FastAPI routes organized by domain:
 - vpn: VPN profile and connection management
 - hotspot: WiFi hotspot configuration
 - system: System information and settings
+- websocket: Real-time WebSocket updates
+- backup: Configuration backup and restore
+- metrics: Prometheus metrics endpoint
+- speedtest: Internet speed testing
+- ssl: SSL certificate management
 
 Each module contains related endpoints grouped together.
 The main router aggregates all sub-routers.
@@ -18,7 +23,7 @@ License: MIT
 
 from fastapi import APIRouter
 
-from api.routes import auth, wifi, vpn, hotspot, system
+from api.routes import auth, wifi, vpn, hotspot, system, websocket, backup, metrics, speedtest, ssl
 
 # Create the main API router
 api_router = APIRouter()
@@ -29,5 +34,10 @@ api_router.include_router(wifi.router, prefix="/wifi", tags=["WiFi"])
 api_router.include_router(vpn.router, prefix="/vpn", tags=["VPN"])
 api_router.include_router(hotspot.router, prefix="/hotspot", tags=["Hotspot"])
 api_router.include_router(system.router, prefix="/system", tags=["System"])
+api_router.include_router(websocket.router, tags=["WebSocket"])
+api_router.include_router(backup.router, tags=["Backup"])
+api_router.include_router(metrics.router, tags=["Metrics"])
+api_router.include_router(speedtest.router, tags=["SpeedTest"])
+api_router.include_router(ssl.router, tags=["SSL"])
 
 __all__ = ["api_router"]
