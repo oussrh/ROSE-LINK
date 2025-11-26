@@ -19,17 +19,19 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from models import HotspotConfig
 from services.hotspot_service import HotspotService
 from services.interface_service import InterfaceService
 from exceptions import HotspotConfigurationError, ValidationError
 from api.dependencies import require_auth
+from api.routes.auth import get_limiter
 
 logger = logging.getLogger("rose-link.api.hotspot")
 
 router = APIRouter()
+limiter = get_limiter()
 
 
 @router.get("/status")
@@ -45,9 +47,13 @@ async def get_status() -> dict[str, Any]:
 
 
 @router.get("/clients")
-async def get_clients() -> dict[str, Any]:
+async def get_clients(
+    authenticated: bool = Depends(require_auth),
+) -> dict[str, Any]:
     """
     Get list of connected clients to the hotspot.
+
+    Requires authentication.
 
     Returns:
         List of connected clients with MAC address, signal strength,
@@ -64,7 +70,9 @@ async def get_clients() -> dict[str, Any]:
 
 
 @router.post("/apply")
+@limiter.limit("5/minute")
 async def apply_config(
+    request: Request,
     config: HotspotConfig,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, Any]:
@@ -110,7 +118,9 @@ async def apply_config(
 
 
 @router.post("/restart")
+@limiter.limit("5/minute")
 async def restart_hotspot(
+    request: Request,
     authenticated: bool = Depends(require_auth),
 ) -> dict[str, str]:
     """

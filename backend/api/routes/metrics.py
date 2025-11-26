@@ -38,6 +38,7 @@ from services.vpn_service import VPNService
 from services.hotspot_service import HotspotService
 from services.system_service import SystemService
 from services.bandwidth_service import BandwidthService
+from core.middleware import get_request_metrics
 
 logger = logging.getLogger("rose-link.metrics")
 
@@ -271,3 +272,21 @@ async def get_metrics() -> str:
     """
     metrics = _collect_metrics()
     return "\n\n".join(metrics) + "\n"
+
+
+@router.get("/metrics/performance")
+async def get_performance_metrics() -> dict:
+    """
+    Get application performance metrics.
+
+    Returns JSON with:
+    - total_requests: Total number of requests processed
+    - total_errors: Total number of 5xx errors
+    - error_rate: Error rate (0-1)
+    - latency_ms: Latency statistics (avg, min, max, p50, p95, p99)
+    - requests_by_path: Request count per endpoint
+
+    Returns:
+        Performance metrics dictionary
+    """
+    return get_request_metrics()
