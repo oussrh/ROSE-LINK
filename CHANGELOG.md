@@ -193,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Grafana metrics dashboard
 - [ ] Connected clients management
 
-## [1.0.0] - 2024-XX-XX
+## [1.0.0] - 2025-11-26
 
 ### Added
 - **AdGuard Home Integration**: DNS-level ad blocking built-in
@@ -264,6 +264,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2025-11-26
+
+### Added
+- **Performance Metrics Endpoint**: `/api/metrics/performance` for application monitoring
+  - Request latency statistics (avg, min, max, p50, p95, p99)
+  - Total request and error counts
+  - Error rate calculation
+  - Per-endpoint request tracking
+
+- **Request Timing Middleware**: Automatic latency tracking for all requests
+  - Thread-safe metrics collection
+  - Rolling sample window for percentile calculations
+  - X-Response-Time header on all responses
+
+- **Rate Limiting**: Protection against API abuse
+  - VPN upload: 10 requests/minute
+  - WiFi/Hotspot configuration: 5 requests/minute
+  - System reboot: 2 requests/minute
+  - Per-IP throttling using slowapi
+
+- **Comprehensive E2E Test Suite**: Playwright tests for critical user flows
+  - VPN management tests (profile upload, activation, status)
+  - WiFi WAN tests (scanning, connection, status display)
+  - Hotspot tests (configuration, channel selection, clients)
+  - Accessibility tests (keyboard navigation, ARIA labels)
+
+- **API Contract Tests**: Schema validation for API responses
+  - Health endpoint contracts
+  - VPN, WiFi, Hotspot endpoint contracts
+  - System and metrics endpoint contracts
+  - Error response format validation
+
+- **HTTP/2 Server Push**: Nginx configured for critical asset preloading
+  - Push CSS, JavaScript, and images on page load
+  - Improved First Contentful Paint (FCP)
+
+### Changed
+- **Authentication**: Added `require_auth` to sensitive endpoints
+  - `/api/vpn/profiles` - now requires authentication
+  - `/api/wifi/scan`, `/api/wifi/connect` - now require authentication
+  - `/api/hotspot/clients`, `/api/hotspot/apply` - now require authentication
+  - `/api/system/logs`, `/api/system/reboot` - now require authentication
+  - `/api/settings/vpn` - now requires authentication
+
+- **Frontend Error Handling**: Complete rewrite of `api.js`
+  - New `ApiError` class with status and detail
+  - `apiAction()` utility for consistent error handling
+  - Request timeout support via AbortController (30s default)
+  - Eliminates duplicate error handling code
+
+- **ESLint Configuration**: Migrated to ESLint v9+ flat config
+  - New `eslint.config.js` with modern format
+  - Updated dependencies (@eslint/js, globals)
+
+- **Test Coverage Threshold**: Increased from 70% to 90%
+  - Backend pytest coverage: 90% minimum
+  - Frontend Jest coverage: 90% minimum (branches, functions, lines, statements)
+
+### Improved
+- Documentation with authentication annotations on all endpoints
+- French README (README.fr.md) aligned with English version
+- DEVELOPMENT.md updated with new coverage requirements
+
+---
+
 ## [Unreleased]
 
 ### Planned for 1.x
@@ -275,6 +340,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.1.0
 [1.0.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.0.0
 [0.3.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.3.0
 [0.2.1]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.1
