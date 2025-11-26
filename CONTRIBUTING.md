@@ -57,7 +57,7 @@ Feature requests are welcome! Please create an issue with:
 
 ```bash
 # Clone the repository
-git clone https://github.com/USERNAME/ROSE-LINK.git
+git clone https://github.com/oussrh/ROSE-LINK.git
 cd ROSE-LINK
 
 # Backend setup
