@@ -863,6 +863,56 @@ async def vpn_list_profiles() -> dict[str, list]:
     return {"profiles": profiles}
 
 
+@app.delete("/api/vpn/profiles/{profile_name}", tags=["VPN"])
+async def vpn_delete_profile(
+    profile_name: str,
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, str]:
+    """
+    Delete a VPN profile.
+
+    Requires authentication.
+    Cannot delete the currently active profile.
+
+    Args:
+        profile_name: Name of the profile to delete (without .conf extension)
+
+    Returns:
+        Deletion status
+    """
+    # Sanitize the profile name
+    try:
+        safe_name = sanitize_filename(profile_name)
+        if safe_name.endswith('.conf'):
+            safe_name = safe_name[:-5]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid profile name")
+
+    profile_path = WG_PROFILES_DIR / f"{safe_name}.conf"
+
+    if not profile_path.exists():
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Check if this profile is currently active
+    if WG_ACTIVE_CONF.exists() or WG_ACTIVE_CONF.is_symlink():
+        try:
+            if WG_ACTIVE_CONF.resolve() == profile_path.resolve():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot delete active profile. Activate another profile first."
+                )
+        except OSError:
+            pass
+
+    try:
+        profile_path.unlink()
+        logger.info(f"VPN profile deleted: {safe_name}")
+        return {"status": "deleted", "name": safe_name}
+    except (IOError, OSError) as e:
+        logger.error(f"Failed to delete VPN profile: {e}")
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+
+
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize a filename to prevent path traversal attacks.
