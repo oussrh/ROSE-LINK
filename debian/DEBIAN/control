@@ -1,29 +1,60 @@
 Package: rose-link-pro
-Version: 0.1.0-1
+Version: 0.2.0-1
 Section: net
 Priority: optional
-Architecture: armhf arm64
-Depends: python3 (>= 3.9), python3-pip, python3-venv, nginx, hostapd, dnsmasq, wireguard, wireguard-tools, iptables, iptables-persistent, network-manager, iw, rfkill, openssl
-Maintainer: ROSE Link <rose@example.com>
+Architecture: all
+Pre-Depends: dpkg (>= 1.17.5)
+Depends: python3 (>= 3.9),
+         python3-pip,
+         python3-venv,
+         python3-dev,
+         nginx (>= 1.18),
+         hostapd (>= 2.9),
+         dnsmasq (>= 2.80),
+         wireguard (>= 1.0) | wireguard-dkms,
+         wireguard-tools (>= 1.0),
+         iptables (>= 1.8),
+         iptables-persistent,
+         network-manager (>= 1.22),
+         iw (>= 5.0),
+         rfkill,
+         openssl (>= 1.1),
+         ca-certificates,
+         procps,
+         curl
+Recommends: avahi-daemon
+Suggests: htop, vnstat, iftop
+Conflicts: rose-link
+Replaces: rose-link
+Provides: rose-link
+Installed-Size: 2048
+Maintainer: ROSE Link Team <contact@roselink.dev>
 Homepage: https://github.com/oussrh/ROSE-LINK
-Description: ROSE Link - Routeur VPN domestique sur Raspberry Pi
- Transforme une Raspberry Pi (3, 4, 5, Zero 2W) en routeur/point d'accès Wi-Fi:
-  - Se connecte à Internet via RJ45 (priorité) ou Wi-Fi client (fallback)
-  - Établit un tunnel WireGuard vers votre Fritz!Box ou serveur VPN
-  - Crée un hotspot Wi-Fi local pour vos appareils (2.4GHz et 5GHz)
-  - Fait passer tout le trafic par le VPN
-  - Offre une interface Web moderne pour la configuration
+Vcs-Git: https://github.com/oussrh/ROSE-LINK.git
+Vcs-Browser: https://github.com/oussrh/ROSE-LINK
+Description: ROSE Link - Home VPN Router for Raspberry Pi
+ ROSE Link transforms your Raspberry Pi (3, 4, 5, Zero 2W) into a secure
+ VPN router and WiFi access point for your home network.
  .
- Modèles supportés:
-  - Raspberry Pi 5 (support complet, 5GHz)
-  - Raspberry Pi 4 (support complet, 5GHz)
-  - Raspberry Pi 3 (2.4GHz uniquement)
-  - Raspberry Pi Zero 2 W (usage léger)
+ Key Features:
+  * Connect to Internet via Ethernet (priority) or WiFi client (fallback)
+  * Establish WireGuard VPN tunnel to your Fritz!Box or VPN server
+  * Create a local WiFi hotspot for your devices (2.4GHz and 5GHz)
+  * Route all client traffic through the VPN tunnel
+  * Modern web interface for easy configuration
  .
- Fonctionnalités Pro:
-  - Détection automatique du matériel et des interfaces
-  - Support WiFi 5GHz / 802.11ac (si matériel compatible)
-  - Multi-profils VPN WireGuard
-  - Configuration hotspot avancée (WPA3, canal, pays)
-  - Kill-switch automatique
-  - Watchdog VPN avec reconnexion automatique
+ Supported Hardware:
+  * Raspberry Pi 5 - Full support with WiFi 6 and 5GHz
+  * Raspberry Pi 4 - Full support with WiFi 5 and 5GHz
+  * Raspberry Pi 3 - Limited support (2.4GHz WiFi only)
+  * Raspberry Pi Zero 2 W - Basic support (light usage)
+ .
+ Security Features:
+  * Automatic kill-switch (blocks traffic if VPN disconnects)
+  * VPN watchdog with auto-reconnection
+  * WPA2/WPA3 WiFi encryption
+  * HTTPS web interface with TLS 1.2/1.3
+  * Minimal sudo permissions for service account
+ .
+ Compatible with Debian 11 (Bullseye), Debian 12 (Bookworm), and
+ Raspberry Pi OS based on these versions.
