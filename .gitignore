@@ -45,3 +45,18 @@ tmp/
 # Debian packaging
 debian/opt/
 debian/etc/
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+coverage.xml
+coverage_html/
+htmlcov/
+.hypothesis/
+*.cover
+*.coverage
+
+# Node.js (frontend)
+node_modules/
+package-lock.json
+.npm/
