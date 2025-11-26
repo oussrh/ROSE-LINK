@@ -16,7 +16,11 @@ License: MIT
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from threading import Lock
+from typing import TYPE_CHECKING, Dict, List
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -30,6 +34,110 @@ from starlette.responses import Response
 from config import Security
 
 logger = logging.getLogger("rose-link.middleware")
+
+
+@dataclass
+class RequestMetrics:
+    """Container for request performance metrics."""
+    total_requests: int = 0
+    total_errors: int = 0
+    total_latency_ms: float = 0.0
+    latency_samples: List[float] = field(default_factory=list)
+    requests_by_path: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    latency_by_path: Dict[str, List[float]] = field(default_factory=lambda: defaultdict(list))
+    max_samples: int = 1000  # Keep last N samples for percentile calculation
+
+
+# Global metrics instance with thread-safe access
+_metrics = RequestMetrics()
+_metrics_lock = Lock()
+
+
+class RequestTimingMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to measure and track request latency.
+
+    Tracks:
+    - Total request count
+    - Error count (5xx responses)
+    - Request latency (min, max, avg, p50, p95, p99)
+    - Per-endpoint metrics
+    """
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        start_time = time.perf_counter()
+
+        response = await call_next(request)
+
+        # Calculate latency
+        latency_ms = (time.perf_counter() - start_time) * 1000
+        path = request.url.path
+
+        # Update metrics thread-safely
+        with _metrics_lock:
+            _metrics.total_requests += 1
+            _metrics.total_latency_ms += latency_ms
+
+            # Track errors
+            if response.status_code >= 500:
+                _metrics.total_errors += 1
+
+            # Track latency samples (limited to prevent memory growth)
+            if len(_metrics.latency_samples) >= _metrics.max_samples:
+                _metrics.latency_samples.pop(0)
+            _metrics.latency_samples.append(latency_ms)
+
+            # Track per-path metrics
+            _metrics.requests_by_path[path] += 1
+            if len(_metrics.latency_by_path[path]) >= 100:
+                _metrics.latency_by_path[path].pop(0)
+            _metrics.latency_by_path[path].append(latency_ms)
+
+        # Add timing header for debugging
+        response.headers["X-Response-Time"] = f"{latency_ms:.2f}ms"
+
+        return response
+
+
+def get_request_metrics() -> dict:
+    """
+    Get current request performance metrics.
+
+    Returns:
+        Dictionary containing performance metrics
+    """
+    with _metrics_lock:
+        samples = sorted(_metrics.latency_samples) if _metrics.latency_samples else [0]
+
+        def percentile(p: float) -> float:
+            if not samples:
+                return 0.0
+            k = (len(samples) - 1) * p / 100
+            f = int(k)
+            c = f + 1 if f + 1 < len(samples) else f
+            return samples[f] + (k - f) * (samples[c] - samples[f])
+
+        return {
+            "total_requests": _metrics.total_requests,
+            "total_errors": _metrics.total_errors,
+            "error_rate": _metrics.total_errors / max(_metrics.total_requests, 1),
+            "latency_ms": {
+                "avg": _metrics.total_latency_ms / max(_metrics.total_requests, 1),
+                "min": min(samples) if samples else 0,
+                "max": max(samples) if samples else 0,
+                "p50": percentile(50),
+                "p95": percentile(95),
+                "p99": percentile(99),
+            },
+            "requests_by_path": dict(_metrics.requests_by_path),
+        }
+
+
+def reset_request_metrics() -> None:
+    """Reset all request metrics. Useful for testing."""
+    global _metrics
+    with _metrics_lock:
+        _metrics = RequestMetrics()
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -94,6 +202,7 @@ def configure_middleware(app: FastAPI) -> None:
     Configure all middleware for the application.
 
     Middleware configured (in order of execution):
+    - Request Timing: Track request latency and performance
     - Security Headers: Add security headers to all responses
     - GZip: Compress responses for bandwidth savings (~70%)
     - CORS: Restricted to local network only for security
@@ -107,6 +216,7 @@ def configure_middleware(app: FastAPI) -> None:
     _configure_cors(app)
     _configure_gzip(app)
     _configure_security_headers(app)
+    _configure_request_timing(app)
     logger.debug("Middleware configuration complete")
 
 
@@ -159,6 +269,17 @@ def _configure_security_headers(app: FastAPI) -> None:
     """
     app.add_middleware(SecurityHeadersMiddleware)
     logger.debug("Security headers middleware enabled")
+
+
+def _configure_request_timing(app: FastAPI) -> None:
+    """
+    Configure request timing middleware.
+
+    Tracks request latency and performance metrics for monitoring.
+    Metrics can be retrieved via get_request_metrics().
+    """
+    app.add_middleware(RequestTimingMiddleware)
+    logger.debug("Request timing middleware enabled")
 
 
 def get_cors_config() -> dict:
