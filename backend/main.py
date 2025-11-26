@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
 ROSE Link - Backend API
-Routeur VPN domestique sur Raspberry Pi 4
+Routeur VPN domestique sur Raspberry Pi (3, 4, 5, Zero 2W)
 """
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import subprocess
@@ -95,7 +94,7 @@ def get_interface_config() -> dict:
                         config["wifi_wan"] = value
                     elif key == "WIFI_AP_INTERFACE" and value:
                         config["wifi_ap"] = value
-        except:
+        except (IOError, OSError, ValueError):
             pass
 
     # Fallback: detect interfaces if config is missing
@@ -630,7 +629,7 @@ async def system_info():
                 info["model_short"] = "Zero 2W"
             elif "Raspberry Pi" in info["model"]:
                 info["model_short"] = "Pi"
-    except:
+    except (IOError, OSError):
         pass
 
     # Get architecture
@@ -650,7 +649,7 @@ async def system_info():
                 if line.startswith("PRETTY_NAME="):
                     info["os_version"] = line.split("=", 1)[1].strip().strip('"')
                     break
-    except:
+    except (IOError, OSError):
         pass
 
     # Get RAM info
@@ -678,7 +677,7 @@ async def system_info():
     try:
         with open("/sys/class/thermal/thermal_zone0/temp", 'r') as f:
             info["cpu_temp_c"] = int(f.read().strip()) // 1000
-    except:
+    except (IOError, OSError, ValueError):
         pass
 
     # Get CPU usage
@@ -695,7 +694,7 @@ async def system_info():
     try:
         with open("/proc/uptime", 'r') as f:
             info["uptime_seconds"] = int(float(f.read().split()[0]))
-    except:
+    except (IOError, OSError, ValueError):
         pass
 
     # Get interface configuration
@@ -757,7 +756,7 @@ async def system_interfaces():
                     device_path = ""
                     try:
                         device_path = os.readlink(f"/sys/class/net/{name}/device")
-                    except:
+                    except OSError:
                         pass
                     iface_info["type"] = "builtin" if "mmc" in device_path or "soc" in device_path else "usb"
 
@@ -765,7 +764,7 @@ async def system_interfaces():
                     try:
                         driver_path = os.readlink(f"/sys/class/net/{name}/device/driver")
                         iface_info["driver"] = os.path.basename(driver_path)
-                    except:
+                    except OSError:
                         iface_info["driver"] = "unknown"
 
                     interfaces["wifi"].append(iface_info)
@@ -810,7 +809,7 @@ def load_vpn_settings() -> dict:
                         settings["ping_host"] = value
                     elif key == "check_interval":
                         settings["check_interval"] = int(value)
-        except:
+        except (IOError, OSError, ValueError):
             pass
 
     return settings
@@ -834,7 +833,7 @@ CHECK_INTERVAL={settings.get('check_interval', 60)}
         # Restart watchdog to apply new settings
         run_command(["sudo", "systemctl", "restart", "rose-watchdog"], check=False)
         return True
-    except:
+    except (IOError, OSError):
         return False
 
 

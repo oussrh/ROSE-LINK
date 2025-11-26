@@ -48,11 +48,11 @@ Official APT repository for ROSE Link VPN Router.
 
 ```bash
 # Add GPG key
-curl -fsSL https://YOUR-USERNAME.github.io/roselink-repo/ROSELINK-REPO.gpg \
+curl -fsSL https://oussrh.github.io/roselink-repo/ROSELINK-REPO.gpg \
   | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/roselink.gpg
 
 # Add repository
-echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] https://YOUR-USERNAME.github.io/roselink-repo bookworm main" \
+echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] https://oussrh.github.io/roselink-repo bookworm main" \
   | sudo tee /etc/apt/sources.list.d/roselink.list
 
 # Update and install
@@ -63,7 +63,7 @@ sudo apt install -y rose-link-pro
 ### Quick Install (one-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR-USERNAME/roselink-repo/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/oussrh/roselink-repo/main/install.sh | sudo bash
 ```
 
 ## About ROSE Link
@@ -93,8 +93,8 @@ After installation:
 
 ## Support
 
-- Documentation: [GitHub Wiki](https://github.com/YOUR-USERNAME/roselink-repo/wiki)
-- Issues: [GitHub Issues](https://github.com/YOUR-USERNAME/roselink-repo/issues)
+- Documentation: [GitHub Wiki](https://github.com/oussrh/roselink-repo/wiki)
+- Issues: [GitHub Issues](https://github.com/oussrh/roselink-repo/issues)
 
 ---
 

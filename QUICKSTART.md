@@ -14,14 +14,14 @@ Get up and running with ROSE Link in 10 minutes!
 ### Option 1: One-Line Install (Easiest)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USERNAME/ROSE-LINK/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install.sh | sudo bash
 ```
 
 ### Option 2: Download and Install
 
 ```bash
 # Download
-wget https://github.com/USERNAME/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
 
 # Extract
 tar -xzf rose-link-pro.tar.gz
@@ -34,7 +34,7 @@ sudo bash install.sh
 ### Option 3: Debian Package
 
 ```bash
-wget https://github.com/USERNAME/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_0.1.0-1_all.deb
 sudo apt install ./rose-link-pro_0.1.0-1_all.deb
 ```
 
@@ -224,8 +224,8 @@ journalctl -u rose-backend -f
 ## 🆘 Get Help
 
 - 📖 [Full Documentation](README.md)
-- 🐛 [Report Issues](https://github.com/USERNAME/ROSE-LINK/issues)
-- 💬 [Discussions](https://github.com/USERNAME/ROSE-LINK/discussions)
+- 🐛 [Report Issues](https://github.com/oussrh/ROSE-LINK/issues)
+- 💬 [Discussions](https://github.com/oussrh/ROSE-LINK/discussions)
 
 ---
 
