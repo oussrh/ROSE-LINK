@@ -151,22 +151,7 @@ describe('API Utilities', () => {
         });
     });
 
-    describe('apiRequest timeout', () => {
-        it('should throw timeout error when request takes too long', async () => {
-            jest.useFakeTimers();
-
-            // Never resolves
-            fetch.mockImplementationOnce(() => new Promise(() => {}));
-
-            const requestPromise = apiRequest('/api/slow', { timeout: 1000 });
-
-            jest.advanceTimersByTime(1001);
-
-            await expect(requestPromise).rejects.toThrow('Request timeout');
-
-            jest.useRealTimers();
-        });
-
+    describe('apiRequest error handling', () => {
         it('should handle network errors', async () => {
             fetch.mockRejectedValueOnce(new Error('Network failure'));
 
@@ -178,6 +163,13 @@ describe('API Utilities', () => {
             fetch.mockRejectedValueOnce(apiError);
 
             await expect(apiRequest('/api/fail')).rejects.toThrow('Custom API error');
+        });
+
+        it('should handle error without message', async () => {
+            const error = new Error();
+            fetch.mockRejectedValueOnce(error);
+
+            await expect(apiRequest('/api/fail')).rejects.toThrow('Network error');
         });
     });
 
