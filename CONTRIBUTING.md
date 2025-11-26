@@ -94,11 +94,12 @@ make ci
 
 Ensure:
 1. **All tests pass**: `make test` exits with code 0
-2. **Coverage maintained**: Minimum 70% coverage
+2. **Coverage maintained**: Minimum 80% coverage (backend and frontend)
 3. **Linting passes**: No errors from `make lint`
-4. **Backend API**: Endpoints work correctly
-5. **Web UI**: Test in different browsers
-6. **Hardware** (if applicable): Test on Raspberry Pi
+4. **Type checking passes**: `make typecheck` with no errors
+5. **Backend API**: Endpoints work correctly
+6. **Web UI**: Test in different browsers
+7. **Hardware** (if applicable): Test on Raspberry Pi
 
 ## Code Style
 
@@ -124,12 +125,21 @@ Ensure:
 
 ```
 ROSE-LINK/
-├── backend/          # FastAPI backend
-├── web/             # Web UI (HTML/CSS/JS)
-├── system/          # System configs (hostapd, dnsmasq, etc.)
-├── scripts/         # Build and utility scripts
-├── debian/          # Debian packaging files
-└── docs/            # Additional documentation
+├── backend/          # FastAPI backend (Python 3.9+)
+│   ├── api/          # HTTP routes
+│   ├── core/         # App factory, middleware, WebSocket
+│   ├── services/     # Business logic (VPN, hotspot, AdGuard, etc.)
+│   ├── utils/        # Validators, sanitizers, command runner
+│   └── tests/        # pytest test suite
+├── web/              # Web UI (HTML/CSS/JS)
+│   ├── js/           # JavaScript modules
+│   ├── css/          # Tailwind CSS
+│   ├── locales/      # i18n translations (en, fr)
+│   └── __tests__/    # Jest test suite
+├── system/           # System configs (hostapd, dnsmasq, nginx, systemd)
+├── scripts/          # Build scripts (archive, deb, SD image)
+├── debian/           # Debian packaging files
+└── e2e/              # Playwright end-to-end tests
 ```
 
 ## Commit Message Guidelines

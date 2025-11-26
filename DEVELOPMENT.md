@@ -298,8 +298,8 @@ def test_vpn_status_connected(mock_service, mock_executor):
 
 ### Coverage Requirements
 
-- **Backend (Python)**: 90% minimum across all metrics
-- **Frontend (JavaScript)**: 90% minimum across all metrics (branches, functions, lines, statements)
+- **Backend (Python)**: 80% minimum coverage
+- **Frontend (JavaScript)**: 65-80% minimum across metrics (branches 65%, functions 80%, lines 70%, statements 70%)
 - CI fails if coverage drops below threshold
 
 ---
@@ -421,10 +421,10 @@ All checks are blocking - the CI pipeline fails if any check does not pass.
 
 | Check | Tool | Threshold |
 |-------|------|-----------|
-| Backend Tests | pytest | 90% coverage minimum |
+| Backend Tests | pytest | 80% coverage minimum |
 | Backend Linting | Ruff | Zero errors |
 | Backend Type Checking | mypy | Zero type errors |
-| Frontend Tests | Jest | 90% coverage minimum |
+| Frontend Tests | Jest | 65-80% coverage minimum |
 | Frontend Linting | ESLint | Zero errors |
 | Shell Script Linting | ShellCheck | Zero warnings |
 | Security Scan | Bandit | Zero high/medium issues |

@@ -1,4 +1,42 @@
+# ROSE Link - Product Features
+
+> **Version 1.1.0** - VPN Router + Ad Blocking on Raspberry Pi
+
+## Overview
+
+ROSE Link transforms your Raspberry Pi into a professional VPN router and WiFi access point, providing secure remote access to your home network from anywhere in the world.
+
+---
+
+## Core Features
+
+### WAN Connectivity
+
+#### Ethernet (Priority)
+- **Gigabit support**: Full speed on Pi 4/5
+- **Auto-detection**: Plug and play configuration
+- **DHCP client**: Automatic IP assignment
+
+#### WiFi Client (Fallback)
+- **Network scanning**: Discover available networks
+- **Secure connection**: WPA2/WPA3 support
+- **Auto-failover**: Seamless switch from Ethernet
 - **Status tracking**: Monitor connection state and signal strength
+
+### VPN Support
+
+#### WireGuard
+- **Multi-profile management**: Import and switch between configurations
+- **Fritz!Box compatible**: Direct .conf file import
+- **Kill-switch**: Block all traffic if VPN disconnects
+- **Watchdog service**: Automatic reconnection on failure
+- **Transfer statistics**: Real-time TX/RX monitoring
+
+#### OpenVPN
+- **Profile upload**: Import .ovpn configuration files
+- **Embedded certificates**: Full certificate chain support
+- **Username/password auth**: Interactive authentication support
+- **Provider abstraction**: Unified API for both VPN types
 
 ### Hotspot Configuration
 
@@ -9,61 +47,100 @@
 - **Channel selection**: Optimize for 2.4GHz (channels 1, 6, 11) or 5GHz bands
 - **Client monitoring**: Real-time connected device count
 
-### User Interface
+### AdGuard Home Integration
 
-#### Responsive Web Design
+- **DNS-level ad blocking**: Network-wide protection
+- **Statistics dashboard**: Blocked queries, top clients
+- **Filter management**: Enable/disable from web UI
+- **Automatic DNS configuration**: Seamless setup
+
+### Connected Clients Management
+
+- **Real-time tracking**: See all connected devices
+- **Device identification**: MAC-based manufacturer detection
+- **Custom naming**: Label devices for easy identification
+- **Access control**: Block/unblock/kick clients
+- **Traffic statistics**: Per-client bandwidth usage
+- **Connection history**: Track device activity over time
+
+### QoS (Quality of Service)
+
+- **VPN traffic prioritization**: Ensure stable VPN performance
+- **tc-based shaping**: Linux traffic control integration
+- **Simple toggle**: Enable/disable from dashboard
+
+---
+
+## User Interface
+
+### Responsive Web Design
 - **Dark mode**: Elegant, eye-friendly interface
 - **Cross-device support**: Optimized for desktop, tablet, and mobile
-- **Real-time updates**: Automatic status refresh
+- **Real-time updates**: WebSocket-based status refresh
 - **Bilingual**: English and French language support
 
-#### Modern Technologies
-- **htmx**: Dynamic HTML interactions without full page reloads
+### Modern Technologies
+- **htmx 2.0**: Dynamic HTML interactions without full page reloads
 - **Tailwind CSS**: Utility-first responsive styling
 - **Lucide Icons**: Consistent iconography
 - **Toast notifications**: User feedback for actions
 - **Loading spinners**: Visual feedback during operations
-- **Accessibility baseline**: Keyboard navigation and semantic structure respected across views
+- **Accessibility**: Keyboard navigation and semantic HTML
 
-#### Device Management
-- **Profile presets**: Pre-defined VPN, WAN, and hotspot defaults for quick onboarding
-- **Config export/import**: Backup or restore device settings through the UI
-- **Session-safe edits**: Pending changes staged until explicitly applied
+### First-Time Setup Wizard
+- **Guided configuration**: Step-by-step network, VPN, hotspot setup
+- **Language selection**: Choose EN or FR on first boot
+- **Skip option**: For advanced users
+- **First-run detection**: Automatic wizard trigger
 
 ---
 
 ## Security Architecture
 
 ### Backend Isolation
-- **Nginx reverse proxy**: API accessible only through Nginx, not directly exposed
-- **HTTPS by default**: Self-signed certificate for encrypted connections
+- **Nginx reverse proxy**: API accessible only through Nginx (127.0.0.1)
+- **HTTPS by default**: Self-signed certificate with RSA 4096-bit
 - **CORS configuration**: Controlled cross-origin access
+- **Rate limiting**: Protection against API abuse
 
 ### System Security
-- **Restricted sudoers**: Minimal sudo permissions for required system commands only
-- **Protected configurations**: VPN files stored with mode 600 (owner read/write only)
-- **iptables kill-switch**: Firewall rules prevent traffic leaks when VPN is down
+- **Restricted sudoers**: Minimal sudo permissions for required commands
+- **Protected configurations**: VPN files stored with mode 600
+- **iptables kill-switch**: Firewall rules prevent traffic leaks
+- **No root services**: All services run under dedicated `rose` user
+- **systemd hardening**: ProtectSystem, PrivateTmp, NoNewPrivileges
 
 ### Input Validation
 - **Pydantic models**: Type-safe request/response validation
 - **Input sanitization**: Security sanitizers for user-provided data
-- **Command abstraction**: System calls isolated through CommandRunner class
+- **Command abstraction**: System calls isolated through CommandRunner
 
 ---
 
 ## Backend Architecture
 
 ### Application Structure
-@@ -94,50 +100,51 @@ backend/
-│   ├── wan.py           # WAN connectivity
-│   ├── hotspot.py       # WiFi access point
-│   ├── system.py        # System monitoring
-│   └── interface.py     # Network interface detection
+
+```
+backend/
+├── api/                 # HTTP endpoint routes
+│   └── routes/          # Feature-specific endpoints
+├── core/                # Application infrastructure
+│   ├── app_factory.py   # FastAPI app creation
+│   ├── lifespan.py      # Startup/shutdown events
+│   ├── middleware.py    # CORS, rate limiting, timing
+│   └── websocket.py     # Real-time connection manager
+├── services/            # Business logic layer
+│   ├── vpn/             # VPN provider abstraction
+│   ├── adguard_service.py
+│   ├── clients_service.py
+│   ├── hotspot_service.py
+│   └── ...
 ├── utils/               # Shared utilities
-│   ├── command_runner.py  # System command execution
-│   ├── validators.py    # Input validation helpers
-│   └── sanitizers.py    # Security sanitization
-├── tests/               # Test suite
+│   ├── command_runner.py
+│   ├── validators.py
+│   └── sanitizers.py
+├── tests/               # Test suite (80%+ coverage)
 ├── config.py            # Configuration management
 ├── models.py            # Pydantic data models
 └── main.py              # Application entry point
@@ -71,78 +148,41 @@
 
 ### Design Principles
 
-1. **Application Factory Pattern**: `create_app()` function enables test isolation and configuration flexibility
-2. **Service Layer Separation**: Business logic in `services/`, HTTP routes handle only request/response
-3. **Dependency Injection**: FastAPI's `Depends()` for authentication, configuration, and services
-4. **Command Abstraction**: `CommandRunner` class isolates system calls for testability and security
+1. **Application Factory Pattern**: `create_app()` enables test isolation
+2. **Service Layer Separation**: Business logic in `services/`, routes handle HTTP only
+3. **Dependency Injection**: FastAPI's `Depends()` for auth, config, services
+4. **Command Abstraction**: `CommandRunner` isolates system calls for testability
 
 ### Key Technologies
 - **FastAPI 0.115+**: High-performance async Python framework
 - **Pydantic 2.10+**: Data validation and serialization
 - **Uvicorn**: ASGI server for production deployment
-- **Redis**: Caching layer for connection metrics and UI presence indicators
+- **pytest**: Test framework with 80%+ coverage
 
 ---
 
-## Developer Experience
-
-### Makefile Automation
-
-| Target | Purpose |
-|--------|---------|
-| `setup-dev` | Initialize development environment (venv, dependencies) |
-| `dev` | Run backend in development mode with auto-reload |
-| `test` | Execute test suite |
-| `test-cov` | Run tests with coverage report generation |
-| `lint` | Check code style with Ruff |
-| `lint-fix` | Auto-fix linting issues |
-| `typecheck` | Run mypy type checking |
-| `security` | Execute Bandit security scan |
-| `archive` | Build tar.gz distribution |
-| `deb` | Build Debian package |
-| `clean` | Remove build artifacts and caches |
-
-### Local CI Simulation
-```bash
-# Run full CI pipeline locally
-make ci
-@@ -157,50 +164,64 @@ make ci
-| Python type checking | mypy | Yes | Zero errors |
-| Backend tests | pytest | Yes | 70% coverage |
-| Frontend linting | ESLint | Yes | Zero errors |
-| Frontend tests | Jest | Yes | 70% coverage |
-| Shell scripts | ShellCheck | Yes | Zero warnings |
-| Security scan | Bandit | Yes | Zero high/medium issues |
-
-### Workflow Structure
-
-```yaml
-# .github/workflows/ci.yml
-jobs:
-  test-backend:     # Python tests, linting, types, coverage
-  test-frontend:    # JavaScript tests, linting, coverage
-  lint-shell:       # Shell script validation
-  security-scan:    # Bandit security analysis
-  build-test:       # Artifact creation verification
-```
-
-### Coverage Requirements
-- **Backend (Python)**: Minimum 70% coverage, target 80%+ for new code
-- **Frontend (JavaScript)**: Minimum 70% coverage across branches, functions, lines, statements
-
----
-
-## Observability & Maintenance
+## Monitoring & Observability
 
 ### System Insights
-- **Live metrics**: CPU, RAM, disk, and temperature surfaced in the UI
-- **Network telemetry**: WAN uptime, VPN handshake stats, and hotspot client counts
-- **Log streaming**: Tail recent backend logs for support diagnostics
+- **Live metrics**: CPU, RAM, disk, and temperature in UI
+- **Network telemetry**: WAN uptime, VPN handshake stats, client counts
+- **Log streaming**: Tail recent backend logs for diagnostics
 
-### Backup & Updates
-- **Configuration backups**: Downloadable tarball containing VPN profiles and network settings
-- **Offline update flow**: Upload signed bundle to upgrade without internet connectivity
-- **Safety nets**: Update pre-checks verify disk space, signatures, and version compatibility
+### Prometheus Metrics
+- **Endpoint**: `/api/metrics` in standard Prometheus format
+- **VPN metrics**: Connection status, transfer bytes, handshake time
+- **System metrics**: CPU usage, memory, disk, temperature
+- **Hotspot metrics**: Connected clients, interface stats
+
+### Speed Test Integration
+- **Multiple backends**: speedtest-cli, Ookla, basic ping fallback
+- **History tracking**: Store and compare results
+- **Async execution**: Non-blocking tests
+
+### Backup & Restore
+- **Configuration backups**: VPN profiles, hotspot config, system settings
+- **Download/Upload**: Manage backups through web UI
+- **Selective restore**: Choose which components to restore
 
 ---
 
@@ -156,9 +196,16 @@ jobs:
 ### Endpoint Categories
 - **Health/Status**: System health checks and global status
 - **WiFi WAN**: Network scanning and connection management
-- **VPN**: Profile management, connection control, status monitoring
+- **VPN**: Profile management, connection control, status
 - **Hotspot**: Access point configuration and control
-- **Settings**: Watchdog and system configuration
+- **AdGuard**: Ad blocking management
+- **Clients**: Connected device management
+- **QoS**: Traffic prioritization
+- **Setup**: First-time configuration wizard
+- **Backup**: Configuration backup/restore
+- **SSL**: Certificate management
+- **Speed Test**: Internet speed testing
+- **Metrics**: Prometheus metrics and performance stats
 - **System**: Hardware info, interfaces, logs, reboot
 
 ---
@@ -169,5 +216,80 @@ jobs:
 
 | Model | Support Level | WiFi Bands | Notes |
 |-------|--------------|------------|-------|
-| Raspberry Pi 5 | Full | 2.4GHz + 5GHz | Optimal performance |
-| Raspberry Pi 4 | Full | 2.4GHz + 5GHz | Recommended |
+| Raspberry Pi 5 | Full | 2.4GHz + 5GHz | Optimal performance, WiFi 6 |
+| Raspberry Pi 4 | Full | 2.4GHz + 5GHz | Recommended, WiFi 5 |
+| Raspberry Pi 3 B+ | Limited | 2.4GHz only | Reduced performance |
+| Raspberry Pi Zero 2 W | Basic | 2.4GHz only | Light usage only |
+
+### Requirements
+- **RAM**: 512MB minimum, 1GB+ recommended
+- **Storage**: 300MB minimum, 500MB+ recommended
+- **OS**: Raspberry Pi OS (Bullseye/Bookworm) or Debian 11/12
+
+### Hardware Detection
+- **Auto-detection**: Model, interfaces, WiFi capabilities
+- **Dynamic configuration**: Adapts to available hardware
+- **5GHz auto-enable**: When hardware supports it
+
+---
+
+## Installation Methods
+
+### Method 1: One-Line Install
+```bash
+curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install.sh | sudo bash
+```
+
+### Method 2: Download and Install
+```bash
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
+tar -xzf rose-link-pro.tar.gz && cd rose-link
+sudo bash install.sh
+```
+
+### Method 3: Debian Package
+```bash
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.1.0-1_all.deb
+sudo apt install ./rose-link-pro_1.1.0-1_all.deb
+```
+
+### Method 4: Ready-to-Flash SD Image
+- Pre-configured Raspberry Pi OS image
+- First-boot auto-setup
+- Setup WiFi hotspot for initial configuration
+
+---
+
+## Developer Experience
+
+### Makefile Automation
+
+| Target | Purpose |
+|--------|---------|
+| `setup-dev` | Initialize development environment |
+| `dev` | Run backend with auto-reload |
+| `test` | Execute test suite |
+| `test-cov` | Run tests with coverage report |
+| `lint` | Check code style with Ruff |
+| `typecheck` | Run mypy type checking |
+| `security` | Execute Bandit security scan |
+| `archive` | Build tar.gz distribution |
+| `deb` | Build Debian package |
+
+### CI/CD Pipeline
+
+| Check | Tool | Threshold |
+|-------|------|-----------|
+| Backend Tests | pytest | 80% coverage |
+| Backend Linting | Ruff | Zero errors |
+| Type Checking | mypy | Zero errors |
+| Frontend Tests | Jest | 65-80% coverage |
+| Frontend Linting | ESLint | Zero errors |
+| Shell Scripts | ShellCheck | Zero warnings |
+| Security Scan | Bandit | Zero high/medium |
+
+---
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
