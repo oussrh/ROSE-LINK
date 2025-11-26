@@ -185,7 +185,36 @@
                 os: "OS",
                 recommended: "Recommended",
                 success: "Success",
-                failed: "Failed"
+                failed: "Failed",
+                delete: "Delete",
+                confirm_delete: "Are you sure you want to delete",
+                deleted: "Deleted",
+                disconnect: "Disconnect",
+                confirm_disconnect: "Disconnect from WiFi?",
+                wifi_disconnected: "WiFi disconnected",
+                wifi_not_connected: "WiFi not connected",
+                scan_to_connect: "Use Scan to find available networks",
+                wan_priority_ethernet: "Ethernet has priority - WiFi fallback disabled",
+                wifi_connected_to: "Connected to",
+                connection_failed: "Connection failed",
+                vpn_activated: "VPN activated",
+                activation_failed: "VPN activation failed",
+                delete_failed: "Delete failed",
+                upload_success: "Profile uploaded",
+                upload_failed: "Upload failed",
+                settings_save_failed: "Failed to save settings",
+                reboot_initiated: "Reboot initiated",
+                vpn_restarted: "VPN restarted",
+                vpn_stopped: "VPN stopped",
+                vpn_started: "VPN started",
+                hotspot_restarted: "Hotspot restarted",
+                connected_clients_title: "Connected Clients",
+                no_clients: "No clients connected",
+                client_hostname: "Hostname",
+                client_ip: "IP",
+                client_mac: "MAC",
+                client_signal: "Signal",
+                client_traffic: "Traffic"
             },
             fr: {
                 // Header
@@ -294,7 +323,36 @@
                 os: "OS",
                 recommended: "Recommande",
                 success: "Succes",
-                failed: "Echec"
+                failed: "Echec",
+                delete: "Supprimer",
+                confirm_delete: "Voulez-vous vraiment supprimer",
+                deleted: "Supprime",
+                disconnect: "Deconnecter",
+                confirm_disconnect: "Deconnecter du WiFi?",
+                wifi_disconnected: "WiFi deconnecte",
+                wifi_not_connected: "WiFi non connecte",
+                scan_to_connect: "Utilisez Scan pour trouver les reseaux disponibles",
+                wan_priority_ethernet: "Ethernet prioritaire - WiFi de secours desactive",
+                wifi_connected_to: "Connecte a",
+                connection_failed: "Connexion echouee",
+                vpn_activated: "VPN active",
+                activation_failed: "Activation VPN echouee",
+                delete_failed: "Suppression echouee",
+                upload_success: "Profil telecharge",
+                upload_failed: "Telechargement echoue",
+                settings_save_failed: "Echec de la sauvegarde",
+                reboot_initiated: "Redemarrage lance",
+                vpn_restarted: "VPN redemarre",
+                vpn_stopped: "VPN arrete",
+                vpn_started: "VPN demarre",
+                hotspot_restarted: "Hotspot redemarre",
+                connected_clients_title: "Clients Connectes",
+                no_clients: "Aucun client connecte",
+                client_hostname: "Nom d'hote",
+                client_ip: "IP",
+                client_mac: "MAC",
+                client_signal: "Signal",
+                client_traffic: "Trafic"
             }
         };
 
@@ -441,6 +499,11 @@
                         <span data-i18n="wifi_wan_title">WiFi Connection (WAN)</span>
                     </h2>
 
+                    <!-- Current WiFi Status -->
+                    <div id="wifi-current-status" class="mb-4" hx-get="/api/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                        <div class="animate-pulse text-gray-400 text-sm" data-i18n="loading">Loading...</div>
+                    </div>
+
                     <button id="wifi-scan-btn"
                         hx-post="/api/wifi/scan"
                         hx-target="#wifi-networks"
@@ -522,7 +585,9 @@
 
             <!-- Hotspot Tab -->
             <section id="content-hotspot" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-hotspot">
-                <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700 max-w-2xl">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Hotspot Configuration -->
+                <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                     <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
                         <span aria-hidden="true">📶</span>
                         <span data-i18n="hotspot_config_title">Hotspot Configuration</span>
@@ -590,13 +655,25 @@
                             <label for="wpa3" class="text-sm" data-i18n="wpa3_label">Enable WPA3 (if supported)</label>
                         </div>
 
-                        <button type="submit"
+                        <button type="submit" id="hotspot-submit-btn"
                             class="w-full px-4 py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
                             ✅ <span data-i18n="apply_config">Apply Configuration</span>
                         </button>
                     </form>
 
                     <div id="hotspot-message" class="mt-4" role="alert" aria-live="polite"></div>
+                </div>
+
+                <!-- Connected Clients -->
+                <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                        <span aria-hidden="true">👥</span>
+                        <span data-i18n="connected_clients_title">Connected Clients</span>
+                    </h2>
+                    <div id="connected-clients" hx-get="/api/hotspot/clients" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                        <div class="animate-pulse text-gray-400" data-i18n="loading">Loading...</div>
+                    </div>
+                </div>
                 </div>
             </section>
 
@@ -636,7 +713,7 @@
                                     class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-smooth">
                             </div>
 
-                            <button type="submit"
+                            <button type="submit" id="vpn-settings-submit-btn"
                                 class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
                                 💾 <span data-i18n="save_vpn_settings">Save Settings</span>
                             </button>
@@ -770,18 +847,26 @@
             const vpn = data.vpn;
             const ap = data.ap;
 
-            const wanStatus = wan.ethernet.connected
-                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div><span class="text-xs sm:text-base">${t('ethernet_connected')}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${wan.ethernet.ip || ''}</p>`
-                : wan.wifi.connected
-                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div><span class="text-xs sm:text-base truncate">${wan.wifi.ssid}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${wan.wifi.ip || ''}</p>`
+            // Escape all API data to prevent XSS
+            const ethIp = escapeHtml(wan.ethernet?.ip || '');
+            const wifiSsid = escapeHtml(wan.wifi?.ssid || '');
+            const wifiIp = escapeHtml(wan.wifi?.ip || '');
+            const vpnReceived = escapeHtml(vpn.transfer?.received || '0 B');
+            const apSsid = escapeHtml(ap.ssid || '');
+            const apClients = parseInt(ap.clients) || 0;
+
+            const wanStatus = wan.ethernet?.connected
+                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div><span class="text-xs sm:text-base">${t('ethernet_connected')}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${ethIp}</p>`
+                : wan.wifi?.connected
+                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div><span class="text-xs sm:text-base truncate">${wifiSsid}</span></div><p class="text-xs text-gray-400 mt-1 truncate">${wifiIp}</p>`
                 : `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div><span class="text-xs sm:text-base">${t('disconnected')}</span></div>`;
 
             const vpnStatus = vpn.active
-                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full pulse-slow"></div><span class="text-xs sm:text-base">${t('vpn_active')}</span></div><p class="text-xs text-gray-400 mt-1">↓${vpn.transfer.received}</p>`
+                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full pulse-slow"></div><span class="text-xs sm:text-base">${t('vpn_active')}</span></div><p class="text-xs text-gray-400 mt-1">↓${vpnReceived}</p>`
                 : `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div><span class="text-xs sm:text-base">${t('vpn_inactive')}</span></div>`;
 
             const apStatus = ap.active
-                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full pulse-slow"></div><span class="text-xs sm:text-base truncate">${ap.ssid || t('hotspot_active')}</span></div><p class="text-xs text-gray-400 mt-1">${ap.clients} ${t('clients_connected')}</p>`
+                ? `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full pulse-slow"></div><span class="text-xs sm:text-base truncate">${apSsid || t('hotspot_active')}</span></div><p class="text-xs text-gray-400 mt-1">${apClients} ${t('clients_connected')}</p>`
                 : `<div class="flex items-center gap-1 sm:gap-2"><div class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div><span class="text-xs sm:text-base">${t('hotspot_inactive')}</span></div>`;
 
             document.getElementById('status-cards').innerHTML = `
@@ -807,13 +892,18 @@
                 return;
             }
 
+            // Escape for JS string context (prevent quote/backslash injection)
+            function escapeJs(str) {
+                return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            }
+
             container.innerHTML = networks.map(net => `
                 <div class="bg-gray-700 rounded-lg p-3 sm:p-4 flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <div class="font-medium truncate text-sm sm:text-base">${escapeHtml(net.ssid)}</div>
-                        <div class="text-xs sm:text-sm text-gray-400">${net.security} | ${net.signal}%</div>
+                        <div class="text-xs sm:text-sm text-gray-400">${escapeHtml(net.security)} | ${net.signal}%</div>
                     </div>
-                    <button onclick="connectToWifi('${escapeHtml(net.ssid)}')"
+                    <button onclick="connectToWifi('${escapeJs(net.ssid)}', this)"
                         class="flex-shrink-0 px-2 sm:px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-xs sm:text-sm transition-smooth focus-ring touch-manipulation">
                         ${t('connect')}
                     </button>
@@ -836,15 +926,21 @@
                 return;
             }
 
+            // Escape all API data to prevent XSS
+            const endpoint = data.endpoint ? escapeHtml(data.endpoint) : '';
+            const handshake = data.latest_handshake ? escapeHtml(data.latest_handshake) : '';
+            const received = escapeHtml(data.transfer?.received || '0 B');
+            const sent = escapeHtml(data.transfer?.sent || '0 B');
+
             container.innerHTML = `
                 <div class="bg-gray-700 rounded-lg p-4 space-y-2">
                     <div class="flex items-center gap-2 text-green-400">
                         <div class="w-3 h-3 bg-green-500 rounded-full pulse-slow"></div>
                         <span class="font-medium">${t('vpn_active')}</span>
                     </div>
-                    ${data.endpoint ? `<p class="text-sm"><strong>${t('endpoint')}:</strong> ${escapeHtml(data.endpoint)}</p>` : ''}
-                    ${data.latest_handshake ? `<p class="text-sm"><strong>${t('last_handshake')}:</strong> ${escapeHtml(data.latest_handshake)}</p>` : ''}
-                    <p class="text-sm"><strong>${t('transfer')}:</strong> ↓ ${data.transfer.received} | ↑ ${data.transfer.sent}</p>
+                    ${endpoint ? `<p class="text-sm"><strong>${t('endpoint')}:</strong> ${endpoint}</p>` : ''}
+                    ${handshake ? `<p class="text-sm"><strong>${t('last_handshake')}:</strong> ${handshake}</p>` : ''}
+                    <p class="text-sm"><strong>${t('transfer')}:</strong> ↓ ${received} | ↑ ${sent}</p>
                 </div>
             `;
         }
@@ -856,48 +952,68 @@
                 return;
             }
 
-            container.innerHTML = profiles.map(prof => `
-                <div class="bg-gray-700 rounded-lg p-3 mb-2 flex items-center justify-between">
-                    <div class="flex items-center gap-2 min-w-0">
+            // Escape for JS string context
+            function escapeJs(str) {
+                return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            }
+
+            container.innerHTML = profiles.map(prof => {
+                const safeName = escapeHtml(prof.name);
+                const jsName = escapeJs(prof.name);
+                return `
+                <div class="bg-gray-700 rounded-lg p-3 mb-2 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
                         <div class="w-2 h-2 ${prof.active ? 'bg-green-500 pulse-slow' : 'bg-gray-500'} rounded-full flex-shrink-0"></div>
-                        <span class="font-medium truncate">${escapeHtml(prof.name)}</span>
+                        <span class="font-medium truncate">${safeName}</span>
                     </div>
-                    ${!prof.active
-                        ? `<button onclick="activateProfile('${escapeHtml(prof.name)}')" class="flex-shrink-0 px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>`
-                        : `<span class="text-xs text-green-400 flex-shrink-0">${t('active')}</span>`}
+                    <div class="flex gap-2 flex-shrink-0">
+                        ${!prof.active
+                            ? `<button onclick="activateProfile('${jsName}', this)" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>
+                               <button onclick="deleteProfile('${jsName}', this)" class="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation" title="${t('delete')}">🗑️</button>`
+                            : `<span class="text-xs text-green-400 px-2">${t('active')}</span>`}
+                    </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function renderSystemInfo(data) {
             const uptimeHours = Math.floor(data.uptime_seconds / 3600);
             const uptimeMinutes = Math.floor((data.uptime_seconds % 3600) / 60);
 
+            // Escape all user-controlled/API data to prevent XSS
+            const modelShort = escapeHtml(data.model_short || data.model || t('unknown'));
+            const architecture = escapeHtml(data.architecture || t('unknown'));
+            const ramFree = parseInt(data.ram_free_mb) || 0;
+            const ramTotal = parseInt(data.ram_mb) || 0;
+            const diskFree = parseInt(data.disk_free_gb) || 0;
+            const diskTotal = parseInt(data.disk_total_gb) || 0;
+            const cpuTemp = parseInt(data.cpu_temp_c) || 0;
+
             document.getElementById('system-info').innerHTML = `
                 <div class="space-y-2 sm:space-y-3 text-sm">
                     <div class="grid grid-cols-2 gap-2">
                         <div class="bg-gray-700 rounded p-2 sm:p-3">
                             <div class="text-gray-400 text-xs">${t('model')}</div>
-                            <div class="font-medium text-sm truncate">${data.model_short || data.model || t('unknown')}</div>
+                            <div class="font-medium text-sm truncate">${modelShort}</div>
                         </div>
                         <div class="bg-gray-700 rounded p-2 sm:p-3">
                             <div class="text-gray-400 text-xs">${t('architecture')}</div>
-                            <div class="font-medium text-sm">${data.architecture || t('unknown')}</div>
+                            <div class="font-medium text-sm">${architecture}</div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-gray-700 rounded p-2 sm:p-3">
                             <div class="text-gray-400 text-xs">${t('ram')}</div>
-                            <div class="font-medium text-xs sm:text-sm">${data.ram_free_mb}/${data.ram_mb}MB</div>
+                            <div class="font-medium text-xs sm:text-sm">${ramFree}/${ramTotal}MB</div>
                         </div>
                         <div class="bg-gray-700 rounded p-2 sm:p-3">
                             <div class="text-gray-400 text-xs">${t('disk')}</div>
-                            <div class="font-medium text-xs sm:text-sm">${data.disk_free_gb}/${data.disk_total_gb}GB</div>
+                            <div class="font-medium text-xs sm:text-sm">${diskFree}/${diskTotal}GB</div>
                         </div>
                         <div class="bg-gray-700 rounded p-2 sm:p-3">
                             <div class="text-gray-400 text-xs">${t('cpu')}</div>
-                            <div class="font-medium text-xs sm:text-sm ${data.cpu_temp_c > 70 ? 'text-orange-400' : ''}">${data.cpu_temp_c}°C</div>
+                            <div class="font-medium text-xs sm:text-sm ${cpuTemp > 70 ? 'text-orange-400' : ''}">${cpuTemp}°C</div>
                         </div>
                     </div>
 
@@ -918,39 +1034,213 @@
             `;
         }
 
+        function renderConnectedClients(data) {
+            const container = document.getElementById('connected-clients');
+            if (!container) return;
+
+            const clients = data.clients || [];
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="text-gray-400 text-sm p-4 bg-gray-700/50 rounded-lg text-center">
+                        <span>📵</span> ${t('no_clients')}
+                    </div>
+                `;
+                return;
+            }
+
+            // Format bytes to human readable
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            container.innerHTML = `
+                <div class="space-y-2">
+                    ${clients.map(client => `
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                    <span class="font-medium truncate">${escapeHtml(client.hostname || client.ip || 'Unknown')}</span>
+                                </div>
+                                <span class="text-xs text-gray-400 flex-shrink-0">${escapeHtml(client.signal || '')}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-xs text-gray-400">
+                                <div>
+                                    <span class="text-gray-500">${t('client_ip')}:</span> ${escapeHtml(client.ip || 'N/A')}
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">${t('client_mac')}:</span> ${escapeHtml(client.mac || 'N/A')}
+                                </div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                ${t('client_traffic')}: ↓${formatBytes(client.rx_bytes || 0)} ↑${formatBytes(client.tx_bytes || 0)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-3 text-xs text-gray-500 text-center">
+                    ${clients.length} ${t('clients_connected')}
+                </div>
+            `;
+        }
+
         // =================================================================
         // API Functions
         // =================================================================
-        function connectToWifi(ssid) {
+        function connectToWifi(ssid, btn) {
             const password = prompt(`${t('password_for')} ${ssid}:`);
             if (!password) return;
 
+            setButtonLoading(btn, true);
             fetch('/api/wifi/connect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ssid, password })
             })
-            .then(r => r.ok ? r.json() : Promise.reject(r))
-            .then(() => {
-                showToast(`${t('success')}: ${ssid}`, 'success');
-                htmx.trigger('#status-cards', 'htmx:load');
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
             })
-            .catch(() => showToast(`${t('failed')}: ${ssid}`, 'error'));
+            .then(() => {
+                showToast(`${t('wifi_connected_to')} ${escapeHtml(ssid)}`, 'success');
+                htmx.trigger('#status-cards', 'htmx:load');
+                htmx.trigger('#wifi-current-status', 'htmx:load');
+            })
+            .catch((err) => {
+                const msg = err.detail || `${t('connection_failed')}: ${escapeHtml(ssid)}`;
+                showToast(msg, 'error');
+            })
+            .finally(() => setButtonLoading(btn, false));
         }
 
-        function activateProfile(name) {
+        function activateProfile(name, btn) {
+            setButtonLoading(btn, true);
             fetch('/api/vpn/activate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
             })
-            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
             .then(() => {
-                showToast(`${t('active')}: ${name}`, 'success');
+                showToast(`${t('vpn_activated')}: ${escapeHtml(name)}`, 'success');
                 htmx.trigger('#vpn-profiles', 'htmx:load');
                 htmx.trigger('#vpn-status-detail', 'htmx:load');
             })
-            .catch(() => showToast(t('error'), 'error'));
+            .catch((err) => {
+                const msg = err.detail || t('activation_failed');
+                showToast(msg, 'error');
+            })
+            .finally(() => setButtonLoading(btn, false));
+        }
+
+        function deleteProfile(name, btn) {
+            if (!confirm(`${t('confirm_delete')} "${name}"?`)) {
+                return;
+            }
+
+            setButtonLoading(btn, true);
+            fetch(`/api/vpn/profiles/${encodeURIComponent(name)}`, {
+                method: 'DELETE'
+            })
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
+            .then(() => {
+                showToast(`${t('deleted')}: ${name}`, 'success');
+                htmx.trigger('#vpn-profiles', 'htmx:load');
+            })
+            .catch((err) => {
+                const msg = err.detail || t('delete_failed');
+                showToast(msg, 'error');
+            })
+            .finally(() => setButtonLoading(btn, false));
+        }
+
+        function disconnectWifi(btn) {
+            if (!confirm(t('confirm_disconnect'))) {
+                return;
+            }
+
+            setButtonLoading(btn, true);
+            fetch('/api/wifi/disconnect', {
+                method: 'POST'
+            })
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
+            .then(() => {
+                showToast(t('wifi_disconnected'), 'success');
+                htmx.trigger('#status-cards', 'htmx:load');
+                htmx.trigger('#wifi-current-status', 'htmx:load');
+            })
+            .catch((err) => {
+                const msg = err.detail || t('error');
+                showToast(msg, 'error');
+            })
+            .finally(() => setButtonLoading(btn, false));
+        }
+
+        function renderWifiCurrentStatus(data) {
+            const container = document.getElementById('wifi-current-status');
+            if (!container) return;
+
+            const wan = data.wan;
+            const ethConnected = wan.ethernet?.connected;
+            const wifiConnected = wan.wifi?.connected;
+
+            if (ethConnected) {
+                const ethIp = escapeHtml(wan.ethernet?.ip || '');
+                container.innerHTML = `
+                    <div class="bg-green-900/30 border border-green-700 rounded-lg p-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="font-medium">${t('ethernet_connected')}</span>
+                            </div>
+                            <span class="text-sm text-gray-400">${ethIp}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">${t('wan_priority_ethernet')}</p>
+                    </div>
+                `;
+            } else if (wifiConnected) {
+                const wifiSsid = escapeHtml(wan.wifi?.ssid || '');
+                const wifiIp = escapeHtml(wan.wifi?.ip || '');
+                container.innerHTML = `
+                    <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <span class="font-medium truncate">${wifiSsid}</span>
+                                <span class="text-sm text-gray-400">${wifiIp}</span>
+                            </div>
+                            <button onclick="disconnectWifi(this)"
+                                class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center gap-1">
+                                <span>📴</span>
+                                <span>${t('disconnect')}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="bg-gray-700/50 border border-gray-600 rounded-lg p-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                            <span class="text-gray-400">${t('wifi_not_connected')}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">${t('scan_to_connect')}</p>
+                    </div>
+                `;
+            }
         }
 
         async function loadVPNSettings() {
@@ -975,11 +1265,19 @@
             const colors = {
                 success: 'bg-green-600',
                 error: 'bg-red-600',
-                info: 'bg-blue-600'
+                info: 'bg-blue-600',
+                warning: 'bg-yellow-600'
             };
 
             const toast = document.createElement('div');
-            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white text-sm ${colors[type]} shadow-lg z-50 transition-all transform translate-y-0 opacity-100`;
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white text-sm ${colors[type] || colors.info} shadow-lg z-50 transition-all transform translate-y-0 opacity-100`;
+
+            // Accessibility attributes
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+            toast.setAttribute('aria-atomic', 'true');
+
+            // Use textContent to prevent XSS
             toast.textContent = message;
             document.body.appendChild(toast);
 
@@ -998,6 +1296,30 @@
             return div.innerHTML;
         }
 
+        // Button loading state helper
+        const spinnerSvg = `<svg class="w-4 h-4 spin-slow" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>`;
+
+        function setButtonLoading(button, isLoading) {
+            if (!button) return;
+
+            if (isLoading) {
+                button.disabled = true;
+                button.dataset.originalContent = button.innerHTML;
+                button.innerHTML = spinnerSvg + ' ' + t('loading');
+                button.classList.add('opacity-75', 'cursor-not-allowed');
+            } else {
+                button.disabled = false;
+                if (button.dataset.originalContent) {
+                    button.innerHTML = button.dataset.originalContent;
+                    delete button.dataset.originalContent;
+                }
+                button.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
         // =================================================================
         // Event Handlers
         // =================================================================
@@ -1012,6 +1334,9 @@
                     case 'status-cards':
                         renderStatusCards(data);
                         break;
+                    case 'wifi-current-status':
+                        renderWifiCurrentStatus(data);
+                        break;
                     case 'wifi-networks':
                         renderWifiNetworks(data.networks);
                         break;
@@ -1024,6 +1349,9 @@
                     case 'system-info':
                         renderSystemInfo(data);
                         break;
+                    case 'connected-clients':
+                        renderConnectedClients(data);
+                        break;
                 }
             } catch (e) {
                 // Non-JSON response, ignore
@@ -1033,6 +1361,7 @@
         // Hotspot form submission
         document.getElementById('hotspot-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
+            const btn = document.getElementById('hotspot-submit-btn');
             const formData = new FormData(e.target);
             const data = {
                 ssid: formData.get('ssid'),
@@ -1043,12 +1372,16 @@
                 wpa3: formData.get('wpa3') === 'on'
             };
 
+            setButtonLoading(btn, true);
             fetch('/api/hotspot/apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
             .then(() => {
                 document.getElementById('hotspot-message').innerHTML = `
                     <div class="p-3 bg-green-900 border border-green-700 rounded-lg text-green-200 text-sm">
@@ -1056,33 +1389,44 @@
                     </div>`;
                 setTimeout(() => htmx.trigger('#status-cards', 'htmx:load'), 3000);
             })
-            .catch(() => {
+            .catch((err) => {
+                const msg = err.detail || t('error');
                 document.getElementById('hotspot-message').innerHTML = `
                     <div class="p-3 bg-red-900 border border-red-700 rounded-lg text-red-200 text-sm">
-                        ❌ ${t('error')}
+                        ❌ ${escapeHtml(msg)}
                     </div>`;
-            });
+            })
+            .finally(() => setButtonLoading(btn, false));
         });
 
         // VPN settings form submission
         document.getElementById('vpn-settings-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
+            const btn = document.getElementById('vpn-settings-submit-btn');
             const formData = new FormData(e.target);
             const data = {
                 ping_host: formData.get('ping_host'),
                 check_interval: parseInt(formData.get('check_interval'))
             };
 
+            setButtonLoading(btn, true);
             fetch('/api/settings/vpn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(r => {
+                if (r.ok) return r.json();
+                return r.json().then(data => Promise.reject(data));
+            })
             .then(() => {
                 showToast(t('vpn_settings_saved'), 'success');
             })
-            .catch(() => showToast(t('error'), 'error'));
+            .catch((err) => {
+                const msg = err.detail || t('settings_save_failed');
+                showToast(msg, 'error');
+            })
+            .finally(() => setButtonLoading(btn, false));
         });
 
         // =================================================================

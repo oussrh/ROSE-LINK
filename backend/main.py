@@ -15,23 +15,42 @@ Features:
 
 Author: ROSE Link Team
 License: MIT
-Version: 0.2.0
+Version: 0.2.1
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
+import logging
 import os
 import re
+import secrets
 import subprocess
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+    ]
+)
+logger = logging.getLogger("rose-link")
 
 # =============================================================================
 # Application Configuration
@@ -40,19 +59,193 @@ from pydantic import BaseModel, Field, field_validator
 app = FastAPI(
     title="ROSE Link API",
     description="REST API for ROSE Link VPN Router",
-    version="0.2.0",
+    version="0.2.1",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
 
-# CORS middleware for development and external access
+# =============================================================================
+# Security Configuration
+# =============================================================================
+
+# CORS - Restricted to local network only (security fix)
+# Only allow requests from the local network and localhost
+ALLOWED_ORIGINS = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://127.0.0.1",
+    "http://127.0.0.1:8000",
+    "https://localhost",
+    "https://127.0.0.1",
+    "http://192.168.50.1",
+    "https://192.168.50.1",
+    "https://roselink.local",
+    "http://roselink.local",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
+
+# =============================================================================
+# API Key Authentication
+# =============================================================================
+
+# API key file path
+API_KEY_FILE = Path("/opt/rose-link/system/.api_key")
+API_KEY_HASH_FILE = Path("/opt/rose-link/system/.api_key_hash")
+
+# Session tokens (in-memory, reset on restart)
+_active_sessions: dict[str, datetime] = {}
+SESSION_DURATION = timedelta(hours=24)
+
+
+def get_or_create_api_key() -> str:
+    """
+    Get existing API key or create a new one.
+
+    Returns:
+        The API key string
+    """
+    if API_KEY_FILE.exists():
+        try:
+            return API_KEY_FILE.read_text().strip()
+        except (IOError, OSError):
+            pass
+
+    # Generate new API key
+    api_key = secrets.token_urlsafe(32)
+
+    try:
+        API_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        API_KEY_FILE.write_text(api_key)
+        os.chmod(API_KEY_FILE, 0o600)
+
+        # Store hash for verification
+        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        API_KEY_HASH_FILE.write_text(key_hash)
+        os.chmod(API_KEY_HASH_FILE, 0o600)
+
+        logger.info("Generated new API key")
+    except (IOError, OSError) as e:
+        logger.warning(f"Could not persist API key: {e}")
+
+    return api_key
+
+
+def verify_api_key(api_key: str) -> bool:
+    """
+    Verify an API key against the stored hash.
+
+    Args:
+        api_key: The API key to verify
+
+    Returns:
+        True if valid, False otherwise
+    """
+    if not api_key:
+        return False
+
+    try:
+        if API_KEY_HASH_FILE.exists():
+            stored_hash = API_KEY_HASH_FILE.read_text().strip()
+            provided_hash = hashlib.sha256(api_key.encode()).hexdigest()
+            return hmac.compare_digest(stored_hash, provided_hash)
+        elif API_KEY_FILE.exists():
+            stored_key = API_KEY_FILE.read_text().strip()
+            return hmac.compare_digest(stored_key, api_key)
+    except (IOError, OSError):
+        pass
+
+    return False
+
+
+def create_session_token() -> str:
+    """Create a new session token."""
+    token = secrets.token_urlsafe(32)
+    _active_sessions[token] = datetime.now() + SESSION_DURATION
+
+    # Clean up expired sessions
+    now = datetime.now()
+    expired = [t for t, exp in _active_sessions.items() if exp < now]
+    for t in expired:
+        del _active_sessions[t]
+
+    return token
+
+
+def verify_session_token(token: str) -> bool:
+    """Verify a session token is valid and not expired."""
+    if not token or token not in _active_sessions:
+        return False
+
+    if _active_sessions[token] < datetime.now():
+        del _active_sessions[token]
+        return False
+
+    return True
+
+
+async def require_auth(
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    authorization: Optional[str] = Header(None),
+) -> bool:
+    """
+    Dependency to require authentication for sensitive endpoints.
+
+    Accepts either:
+    - X-API-Key header with the API key
+    - Authorization: Bearer <session_token>
+
+    Raises:
+        HTTPException: If authentication fails
+    """
+    # Check API key
+    if x_api_key and verify_api_key(x_api_key):
+        logger.debug("Authenticated via API key")
+        return True
+
+    # Check session token
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+        if verify_session_token(token):
+            logger.debug("Authenticated via session token")
+            return True
+
+    logger.warning("Authentication failed")
+    raise HTTPException(
+        status_code=401,
+        detail="Authentication required. Provide X-API-Key header or valid session token.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+async def optional_auth(
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    authorization: Optional[str] = Header(None),
+) -> bool:
+    """
+    Optional authentication - returns True if authenticated, False otherwise.
+    Does not raise exceptions.
+    """
+    if x_api_key and verify_api_key(x_api_key):
+        return True
+
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+        if verify_session_token(token):
+            return True
+
+    return False
+
+
+# Initialize API key on startup
+_api_key = get_or_create_api_key()
+logger.info(f"API key available at {API_KEY_FILE}")
 
 # =============================================================================
 # Path Constants
@@ -427,7 +620,90 @@ async def health_check() -> dict[str, str]:
     Returns:
         Status information for the ROSE Link service
     """
-    return {"status": "ok", "service": "ROSE Link", "version": "0.2.0"}
+    return {"status": "ok", "service": "ROSE Link", "version": "0.2.1"}
+
+
+# =============================================================================
+# API Endpoints - Authentication
+# =============================================================================
+
+
+class LoginRequest(BaseModel):
+    """Request model for login."""
+
+    api_key: str = Field(..., min_length=1, description="API key for authentication")
+
+
+class LoginResponse(BaseModel):
+    """Response model for successful login."""
+
+    token: str
+    expires_in: int
+    message: str
+
+
+@app.post("/api/auth/login", tags=["Auth"], response_model=LoginResponse)
+async def auth_login(request: LoginRequest) -> LoginResponse:
+    """
+    Authenticate with API key and receive a session token.
+
+    The session token can be used for subsequent requests via
+    the Authorization: Bearer <token> header.
+
+    Args:
+        request: Login credentials with API key
+
+    Returns:
+        Session token and expiration info
+    """
+    if not verify_api_key(request.api_key):
+        logger.warning("Login attempt with invalid API key")
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    token = create_session_token()
+    logger.info("User authenticated successfully")
+
+    return LoginResponse(
+        token=token,
+        expires_in=int(SESSION_DURATION.total_seconds()),
+        message="Authentication successful"
+    )
+
+
+@app.post("/api/auth/logout", tags=["Auth"])
+async def auth_logout(
+    authorization: Optional[str] = Header(None),
+) -> dict[str, str]:
+    """
+    Invalidate the current session token.
+
+    Args:
+        authorization: Bearer token header
+
+    Returns:
+        Logout confirmation
+    """
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+        if token in _active_sessions:
+            del _active_sessions[token]
+            logger.info("User logged out")
+
+    return {"status": "logged_out"}
+
+
+@app.get("/api/auth/check", tags=["Auth"])
+async def auth_check(authenticated: bool = Depends(optional_auth)) -> dict[str, Any]:
+    """
+    Check if current request is authenticated.
+
+    Returns:
+        Authentication status
+    """
+    return {
+        "authenticated": authenticated,
+        "message": "Authenticated" if authenticated else "Not authenticated"
+    }
 
 
 @app.get("/api/status", tags=["Status"])
@@ -487,9 +763,14 @@ async def wifi_scan() -> dict[str, list]:
 
 
 @app.post("/api/wifi/connect", tags=["WiFi"])
-async def wifi_connect(request: WifiConnectRequest) -> dict[str, str]:
+async def wifi_connect(
+    request: WifiConnectRequest,
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, str]:
     """
     Connect to a WiFi network as WAN.
+
+    Requires authentication.
 
     Args:
         request: WiFi connection credentials
@@ -497,22 +778,26 @@ async def wifi_connect(request: WifiConnectRequest) -> dict[str, str]:
     Returns:
         Connection status
     """
+    logger.info(f"WiFi connection requested: SSID={request.ssid}")
     ret, out, err = run_command([
         "sudo", "nmcli", "device", "wifi", "connect",
         request.ssid, "password", request.password
     ], check=False)
 
     if ret != 0:
+        logger.error(f"WiFi connection failed: {err}")
         raise HTTPException(status_code=500, detail=f"Connection failed: {err}")
 
+    logger.info(f"WiFi connected successfully: SSID={request.ssid}")
     return {"status": "connected", "ssid": request.ssid}
 
 
 @app.post("/api/wifi/disconnect", tags=["WiFi"])
-async def wifi_disconnect() -> dict[str, str]:
+async def wifi_disconnect(authenticated: bool = Depends(require_auth)) -> dict[str, str]:
     """
     Disconnect from WiFi WAN.
 
+    Requires authentication.
     Uses the configured WiFi WAN interface from interfaces.conf.
 
     Returns:
@@ -522,12 +807,14 @@ async def wifi_disconnect() -> dict[str, str]:
     iface_config = get_interface_config()
     wifi_wan_iface = iface_config["wifi_wan"]
 
+    logger.info(f"WiFi disconnect requested: interface={wifi_wan_iface}")
     ret, out, err = run_command(
         ["sudo", "nmcli", "device", "disconnect", wifi_wan_iface],
         check=False
     )
 
     if ret != 0:
+        logger.error(f"WiFi disconnect failed: {err}")
         raise HTTPException(status_code=500, detail=f"Disconnect failed: {err}")
 
     return {"status": "disconnected"}
@@ -576,10 +863,137 @@ async def vpn_list_profiles() -> dict[str, list]:
     return {"profiles": profiles}
 
 
+@app.delete("/api/vpn/profiles/{profile_name}", tags=["VPN"])
+async def vpn_delete_profile(
+    profile_name: str,
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, str]:
+    """
+    Delete a VPN profile.
+
+    Requires authentication.
+    Cannot delete the currently active profile.
+
+    Args:
+        profile_name: Name of the profile to delete (without .conf extension)
+
+    Returns:
+        Deletion status
+    """
+    # Sanitize the profile name
+    try:
+        safe_name = sanitize_filename(profile_name)
+        if safe_name.endswith('.conf'):
+            safe_name = safe_name[:-5]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid profile name")
+
+    profile_path = WG_PROFILES_DIR / f"{safe_name}.conf"
+
+    if not profile_path.exists():
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Check if this profile is currently active
+    if WG_ACTIVE_CONF.exists() or WG_ACTIVE_CONF.is_symlink():
+        try:
+            if WG_ACTIVE_CONF.resolve() == profile_path.resolve():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot delete active profile. Activate another profile first."
+                )
+        except OSError:
+            pass
+
+    try:
+        profile_path.unlink()
+        logger.info(f"VPN profile deleted: {safe_name}")
+        return {"status": "deleted", "name": safe_name}
+    except (IOError, OSError) as e:
+        logger.error(f"Failed to delete VPN profile: {e}")
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+
+
+def sanitize_filename(filename: str) -> str:
+    """
+    Sanitize a filename to prevent path traversal attacks.
+
+    Args:
+        filename: The original filename
+
+    Returns:
+        Sanitized filename with only alphanumeric, dash, underscore, and dot
+
+    Raises:
+        ValueError: If filename is invalid
+    """
+    if not filename:
+        raise ValueError("Filename is required")
+
+    # Get only the base name (remove any path components)
+    basename = os.path.basename(filename)
+
+    # Remove any potentially dangerous characters
+    # Only allow alphanumeric, dash, underscore, and dot
+    sanitized = re.sub(r'[^a-zA-Z0-9._-]', '_', basename)
+
+    # Ensure it doesn't start with a dot (hidden file)
+    if sanitized.startswith('.'):
+        sanitized = '_' + sanitized[1:]
+
+    # Ensure reasonable length
+    if len(sanitized) > 100:
+        sanitized = sanitized[:100]
+
+    if not sanitized:
+        raise ValueError("Invalid filename")
+
+    return sanitized
+
+
+def validate_wireguard_config(content: bytes) -> bool:
+    """
+    Basic validation of WireGuard configuration file.
+
+    Args:
+        content: File content as bytes
+
+    Returns:
+        True if valid, False otherwise
+    """
+    try:
+        text = content.decode('utf-8')
+
+        # Must contain [Interface] section
+        if '[Interface]' not in text:
+            return False
+
+        # Check for required fields in Interface section
+        if 'PrivateKey' not in text:
+            return False
+
+        # Should have at least one peer (for client config)
+        # Note: Server configs might not have peers initially
+        # if '[Peer]' not in text:
+        #     return False
+
+        return True
+    except (UnicodeDecodeError, AttributeError):
+        return False
+
+
+# Maximum file size for VPN profiles (1 MB)
+MAX_VPN_PROFILE_SIZE = 1024 * 1024
+
+
 @app.post("/api/vpn/upload", tags=["VPN"])
-async def vpn_upload_profile(file: UploadFile = File(...)) -> dict[str, str]:
+async def vpn_upload_profile(
+    file: UploadFile = File(...),
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, str]:
     """
     Upload a new VPN profile without activating it.
+
+    Requires authentication.
 
     Args:
         file: WireGuard .conf file
@@ -590,25 +1004,50 @@ async def vpn_upload_profile(file: UploadFile = File(...)) -> dict[str, str]:
     if not file.filename or not file.filename.endswith(".conf"):
         raise HTTPException(status_code=400, detail="File must be a .conf file")
 
-    profile_path = WG_PROFILES_DIR / file.filename
-
     try:
+        # Sanitize filename to prevent path traversal
+        safe_filename = sanitize_filename(file.filename)
+        if not safe_filename.endswith('.conf'):
+            safe_filename += '.conf'
+
+        # Read content with size limit
         content = await file.read()
+        if len(content) > MAX_VPN_PROFILE_SIZE:
+            raise HTTPException(status_code=400, detail="File too large (max 1MB)")
+
+        # Validate WireGuard config format
+        if not validate_wireguard_config(content):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid WireGuard configuration file"
+            )
+
+        profile_path = WG_PROFILES_DIR / safe_filename
+
         with open(profile_path, "wb") as f:
             f.write(content)
 
         # Set secure permissions (readable only by root/owner)
         os.chmod(profile_path, 0o600)
 
-        return {"status": "uploaded", "name": file.filename}
+        logger.info(f"VPN profile uploaded: {safe_filename}")
+        return {"status": "uploaded", "name": safe_filename}
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"VPN profile upload failed: {e}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @app.post("/api/vpn/import", tags=["VPN"])
-async def vpn_import_profile(file: UploadFile = File(...)) -> dict[str, str]:
+async def vpn_import_profile(
+    file: UploadFile = File(...),
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, str]:
     """
     Import and immediately activate a VPN profile.
+
+    Requires authentication.
 
     Args:
         file: WireGuard .conf file
@@ -620,9 +1059,25 @@ async def vpn_import_profile(file: UploadFile = File(...)) -> dict[str, str]:
         raise HTTPException(status_code=400, detail="File must be a .conf file")
 
     try:
-        # Save to profiles directory
-        profile_path = WG_PROFILES_DIR / file.filename
+        # Sanitize filename to prevent path traversal
+        safe_filename = sanitize_filename(file.filename)
+        if not safe_filename.endswith('.conf'):
+            safe_filename += '.conf'
+
+        # Read content with size limit
         content = await file.read()
+        if len(content) > MAX_VPN_PROFILE_SIZE:
+            raise HTTPException(status_code=400, detail="File too large (max 1MB)")
+
+        # Validate WireGuard config format
+        if not validate_wireguard_config(content):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid WireGuard configuration file"
+            )
+
+        # Save to profiles directory
+        profile_path = WG_PROFILES_DIR / safe_filename
 
         with open(profile_path, "wb") as f:
             f.write(content)
@@ -639,15 +1094,24 @@ async def vpn_import_profile(file: UploadFile = File(...)) -> dict[str, str]:
         # Start WireGuard with new profile
         run_command(["sudo", "systemctl", "start", "wg-quick@wg0"], check=False)
 
-        return {"status": "imported", "name": file.filename}
+        logger.info(f"VPN profile imported and activated: {safe_filename}")
+        return {"status": "imported", "name": safe_filename}
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"VPN profile import failed: {e}")
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 
 @app.post("/api/vpn/activate", tags=["VPN"])
-async def vpn_activate_profile(profile: VPNProfile) -> dict[str, str]:
+async def vpn_activate_profile(
+    profile: VPNProfile,
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, str]:
     """
     Activate an existing VPN profile.
+
+    Requires authentication.
 
     Args:
         profile: Profile name to activate
@@ -655,7 +1119,12 @@ async def vpn_activate_profile(profile: VPNProfile) -> dict[str, str]:
     Returns:
         Activation status
     """
-    profile_path = WG_PROFILES_DIR / f"{profile.name}.conf"
+    # Sanitize profile name to prevent path traversal
+    safe_name = sanitize_filename(profile.name)
+    if safe_name.endswith('.conf'):
+        safe_name = safe_name[:-5]  # Remove .conf if present
+
+    profile_path = WG_PROFILES_DIR / f"{safe_name}.conf"
 
     if not profile_path.exists():
         raise HTTPException(status_code=404, detail="Profile not found")
@@ -672,48 +1141,56 @@ async def vpn_activate_profile(profile: VPNProfile) -> dict[str, str]:
         # Start VPN with new profile
         run_command(["sudo", "systemctl", "start", "wg-quick@wg0"], check=False)
 
-        return {"status": "activated", "name": profile.name}
+        logger.info(f"VPN profile activated: {safe_name}")
+        return {"status": "activated", "name": safe_name}
     except Exception as e:
+        logger.error(f"VPN profile activation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Activation failed: {str(e)}")
 
 
 @app.post("/api/vpn/restart", tags=["VPN"])
-async def vpn_restart() -> dict[str, str]:
-    """Restart the VPN connection."""
+async def vpn_restart(authenticated: bool = Depends(require_auth)) -> dict[str, str]:
+    """Restart the VPN connection. Requires authentication."""
+    logger.info("VPN restart requested")
     ret, out, err = run_command(
         ["sudo", "systemctl", "restart", "wg-quick@wg0"],
         check=False
     )
 
     if ret != 0:
+        logger.error(f"VPN restart failed: {err}")
         raise HTTPException(status_code=500, detail=f"Restart failed: {err}")
 
     return {"status": "restarted"}
 
 
 @app.post("/api/vpn/stop", tags=["VPN"])
-async def vpn_stop() -> dict[str, str]:
-    """Stop the VPN connection."""
+async def vpn_stop(authenticated: bool = Depends(require_auth)) -> dict[str, str]:
+    """Stop the VPN connection. Requires authentication."""
+    logger.info("VPN stop requested")
     ret, out, err = run_command(
         ["sudo", "systemctl", "stop", "wg-quick@wg0"],
         check=False
     )
 
     if ret != 0:
+        logger.error(f"VPN stop failed: {err}")
         raise HTTPException(status_code=500, detail=f"Stop failed: {err}")
 
     return {"status": "stopped"}
 
 
 @app.post("/api/vpn/start", tags=["VPN"])
-async def vpn_start() -> dict[str, str]:
-    """Start the VPN connection."""
+async def vpn_start(authenticated: bool = Depends(require_auth)) -> dict[str, str]:
+    """Start the VPN connection. Requires authentication."""
+    logger.info("VPN start requested")
     ret, out, err = run_command(
         ["sudo", "systemctl", "start", "wg-quick@wg0"],
         check=False
     )
 
     if ret != 0:
+        logger.error(f"VPN start failed: {err}")
         raise HTTPException(status_code=500, detail=f"Start failed: {err}")
 
     return {"status": "started"}
@@ -734,11 +1211,171 @@ async def hotspot_status() -> dict[str, Any]:
     return get_ap_status()
 
 
+@app.get("/api/hotspot/clients", tags=["Hotspot"])
+async def hotspot_clients() -> dict[str, Any]:
+    """
+    Get list of connected clients to the hotspot.
+
+    Returns:
+        List of connected clients with MAC address, signal strength, and traffic stats
+    """
+    logger.info("Getting connected clients list")
+    ap_iface = detect_ap_interface()
+    clients: list[dict[str, Any]] = []
+
+    if not ap_iface:
+        logger.warning("No AP interface detected")
+        return {"clients": clients, "count": 0}
+
+    # Get station information from iw
+    ret, out, _ = run_command(["iw", "dev", ap_iface, "station", "dump"], check=False)
+    if ret != 0 or not out:
+        return {"clients": clients, "count": 0}
+
+    # Parse the output
+    current_client: dict[str, Any] = {}
+    for line in out.split('\n'):
+        line = line.strip()
+        if line.startswith("Station "):
+            # New client entry
+            if current_client:
+                clients.append(current_client)
+            # Extract MAC address
+            parts = line.split()
+            if len(parts) >= 2:
+                current_client = {"mac": parts[1], "rx_bytes": 0, "tx_bytes": 0, "signal": "N/A"}
+        elif ":" in line and current_client:
+            # Parse property lines
+            key, _, value = line.partition(":")
+            key = key.strip().lower().replace(" ", "_")
+            value = value.strip()
+            if key == "signal":
+                current_client["signal"] = value
+            elif key == "rx_bytes":
+                try:
+                    current_client["rx_bytes"] = int(value)
+                except ValueError:
+                    pass
+            elif key == "tx_bytes":
+                try:
+                    current_client["tx_bytes"] = int(value)
+                except ValueError:
+                    pass
+            elif key == "inactive_time":
+                current_client["inactive_time"] = value
+
+    # Add last client
+    if current_client:
+        clients.append(current_client)
+
+    # Try to get hostnames from DHCP leases
+    try:
+        leases_file = "/var/lib/misc/dnsmasq.leases"
+        if os.path.exists(leases_file):
+            with open(leases_file, "r") as f:
+                for lease_line in f:
+                    parts = lease_line.strip().split()
+                    if len(parts) >= 4:
+                        lease_mac = parts[1].lower()
+                        lease_ip = parts[2]
+                        lease_hostname = parts[3] if parts[3] != "*" else ""
+                        # Match with our clients
+                        for client in clients:
+                            if client["mac"].lower() == lease_mac:
+                                client["ip"] = lease_ip
+                                client["hostname"] = lease_hostname
+    except (IOError, OSError) as e:
+        logger.debug(f"Could not read DHCP leases: {e}")
+
+    logger.info(f"Found {len(clients)} connected clients")
+    return {"clients": clients, "count": len(clients)}
+
+
+def escape_hostapd_value(value: str) -> str:
+    """
+    Escape a value for safe use in hostapd configuration.
+
+    Removes or escapes characters that could break config parsing
+    or enable injection attacks.
+
+    Args:
+        value: The value to escape
+
+    Returns:
+        Escaped value safe for hostapd config
+    """
+    # Remove newlines and carriage returns (could inject new config lines)
+    value = value.replace('\n', '').replace('\r', '')
+    # Remove null bytes
+    value = value.replace('\x00', '')
+    # Remove comment characters at start
+    value = value.lstrip('#')
+    return value
+
+
+def validate_ssid(ssid: str) -> str:
+    """
+    Validate and sanitize SSID.
+
+    Args:
+        ssid: The SSID to validate
+
+    Returns:
+        Sanitized SSID
+
+    Raises:
+        ValueError: If SSID is invalid
+    """
+    if not ssid or len(ssid) < 1:
+        raise ValueError("SSID cannot be empty")
+    if len(ssid) > 32:
+        raise ValueError("SSID cannot exceed 32 characters")
+
+    # Escape dangerous characters
+    ssid = escape_hostapd_value(ssid)
+
+    if not ssid:
+        raise ValueError("Invalid SSID")
+
+    return ssid
+
+
+def validate_wpa_password(password: str) -> str:
+    """
+    Validate and sanitize WPA password.
+
+    Args:
+        password: The password to validate
+
+    Returns:
+        Sanitized password
+
+    Raises:
+        ValueError: If password is invalid
+    """
+    if not password or len(password) < 8:
+        raise ValueError("Password must be at least 8 characters")
+    if len(password) > 63:
+        raise ValueError("Password cannot exceed 63 characters")
+
+    # Escape dangerous characters
+    password = escape_hostapd_value(password)
+
+    if len(password) < 8:
+        raise ValueError("Invalid password after sanitization")
+
+    return password
+
+
 @app.post("/api/hotspot/apply", tags=["Hotspot"])
-async def hotspot_apply(config: HotspotConfig) -> dict[str, Any]:
+async def hotspot_apply(
+    config: HotspotConfig,
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, Any]:
     """
     Apply new hotspot configuration.
 
+    Requires authentication.
     Supports both 2.4GHz and 5GHz bands with automatic channel validation.
 
     Args:
@@ -748,6 +1385,18 @@ async def hotspot_apply(config: HotspotConfig) -> dict[str, Any]:
         Applied configuration status
     """
     try:
+        # Validate and sanitize SSID and password
+        try:
+            safe_ssid = validate_ssid(config.ssid)
+            safe_password = validate_wpa_password(config.password)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        # Validate country code (2 uppercase letters)
+        safe_country = config.country.upper()[:2]
+        if not re.match(r'^[A-Z]{2}$', safe_country):
+            safe_country = "US"  # Default
+
         # Get dynamic interface name
         iface_config = get_interface_config()
         ap_iface = iface_config["wifi_ap"]
@@ -786,7 +1435,7 @@ ieee80211w=1"""
             wpa_config = """wpa=2
 wpa_key_mgmt=WPA-PSK"""
 
-        # Generate hostapd configuration
+        # Generate hostapd configuration with escaped values
         hostapd_config = f"""# ROSE Link Hotspot Configuration
 # Auto-generated via Web API
 # Band: {config.band}
@@ -795,10 +1444,10 @@ interface={ap_iface}
 driver=nl80211
 
 # Network settings
-ssid={config.ssid}
+ssid={safe_ssid}
 hw_mode={hw_mode}
 channel={config.channel}
-country_code={config.country}
+country_code={safe_country}
 
 # 802.11n support
 ieee80211n=1
@@ -808,7 +1457,7 @@ wmm_enabled=1
 # Security
 auth_algs=1
 {wpa_config}
-wpa_passphrase={config.password}
+wpa_passphrase={safe_password}
 rsn_pairwise=CCMP
 
 # Logging
@@ -824,22 +1473,28 @@ logger_syslog_level=2
         run_command(["sudo", "systemctl", "restart", "hostapd"], check=False)
         run_command(["sudo", "systemctl", "restart", "dnsmasq"], check=False)
 
+        logger.info(f"Hotspot configuration applied: SSID={safe_ssid}, channel={config.channel}")
         return {
             "status": "applied",
             "config": config.model_dump(),
             "interface": ap_iface
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Hotspot configuration failed: {e}")
         raise HTTPException(status_code=500, detail=f"Apply failed: {str(e)}")
 
 
 @app.post("/api/hotspot/restart", tags=["Hotspot"])
-async def hotspot_restart() -> dict[str, str]:
-    """Restart the hotspot services (hostapd and dnsmasq)."""
+async def hotspot_restart(authenticated: bool = Depends(require_auth)) -> dict[str, str]:
+    """Restart the hotspot services (hostapd and dnsmasq). Requires authentication."""
+    logger.info("Hotspot restart requested")
     ret1, _, err1 = run_command(["sudo", "systemctl", "restart", "hostapd"], check=False)
     ret2, _, err2 = run_command(["sudo", "systemctl", "restart", "dnsmasq"], check=False)
 
     if ret1 != 0 or ret2 != 0:
+        logger.error(f"Hotspot restart failed: {err1} {err2}")
         raise HTTPException(status_code=500, detail=f"Restart failed: {err1} {err2}")
 
     return {"status": "restarted"}
@@ -1060,13 +1715,16 @@ async def system_interfaces() -> dict[str, list]:
 
 
 @app.post("/api/system/reboot", tags=["System"])
-async def system_reboot() -> dict[str, str]:
+async def system_reboot(authenticated: bool = Depends(require_auth)) -> dict[str, str]:
     """
     Reboot the Raspberry Pi.
+
+    Requires authentication.
 
     Returns:
         Reboot confirmation status
     """
+    logger.info("System reboot requested")
     run_command(["sudo", "reboot"], check=False)
     return {"status": "rebooting"}
 
@@ -1149,10 +1807,51 @@ async def get_vpn_settings() -> dict[str, Any]:
     return load_vpn_settings()
 
 
+def validate_ping_host(host: str) -> str:
+    """
+    Validate a ping host to ensure it's safe.
+
+    Args:
+        host: IP address or hostname
+
+    Returns:
+        Validated host string
+
+    Raises:
+        ValueError: If host is invalid
+    """
+    if not host:
+        raise ValueError("Ping host is required")
+
+    # Remove any whitespace
+    host = host.strip()
+
+    # Check for valid IPv4 address
+    ipv4_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    # Check for valid hostname (alphanumeric, dots, hyphens)
+    hostname_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$'
+
+    if not (re.match(ipv4_pattern, host) or re.match(hostname_pattern, host)):
+        raise ValueError("Invalid IP address or hostname")
+
+    # Prevent command injection by checking for shell metacharacters
+    dangerous_chars = ['&', '|', ';', '$', '`', '(', ')', '{', '}', '[', ']', '<', '>', '!', '\n', '\r']
+    for char in dangerous_chars:
+        if char in host:
+            raise ValueError("Invalid characters in ping host")
+
+    return host
+
+
 @app.post("/api/settings/vpn", tags=["Settings"])
-async def update_vpn_settings(settings: VPNSettings) -> dict[str, Any]:
+async def update_vpn_settings(
+    settings: VPNSettings,
+    authenticated: bool = Depends(require_auth)
+) -> dict[str, Any]:
     """
     Update VPN watchdog settings.
+
+    Requires authentication.
 
     Args:
         settings: New VPN watchdog configuration
@@ -1160,14 +1859,22 @@ async def update_vpn_settings(settings: VPNSettings) -> dict[str, Any]:
     Returns:
         Confirmation with saved settings
     """
+    # Validate ping host
+    try:
+        safe_ping_host = validate_ping_host(settings.ping_host)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     settings_dict = {
-        "ping_host": settings.ping_host,
+        "ping_host": safe_ping_host,
         "check_interval": settings.check_interval
     }
 
     if save_vpn_settings(settings_dict):
+        logger.info(f"VPN settings updated: ping_host={safe_ping_host}, interval={settings.check_interval}")
         return {"status": "saved", "settings": settings_dict}
     else:
+        logger.error("Failed to save VPN settings")
         raise HTTPException(status_code=500, detail="Failed to save settings")
 
 
