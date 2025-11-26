@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌹 ROSE Link - Routeur VPN</title>
+    <title>🌹 ROSE Link - VPN Router</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
     <!-- Tailwind CSS -->
@@ -39,6 +39,250 @@
                 }
             }
         }
+
+        // Internationalization (i18n)
+        const translations = {
+            en: {
+                // Header
+                title: "ROSE Link",
+                subtitle: "Home VPN Router",
+                online: "Online",
+
+                // Tabs
+                tab_wifi: "WiFi WAN",
+                tab_vpn: "VPN",
+                tab_hotspot: "Hotspot",
+                tab_system: "System",
+
+                // Status cards
+                status_wan: "WAN",
+                status_vpn: "VPN",
+                status_hotspot: "Hotspot",
+                ethernet_connected: "Ethernet connected",
+                wifi_connected: "WiFi",
+                disconnected: "Disconnected",
+                vpn_active: "VPN active",
+                vpn_inactive: "VPN inactive",
+                hotspot_active: "Hotspot active",
+                hotspot_inactive: "Hotspot inactive",
+                clients_connected: "client(s) connected",
+
+                // WiFi WAN
+                wifi_wan_title: "WiFi Connection (WAN)",
+                scan_networks: "Scan networks",
+                click_scan: "Click \"Scan\" to see available networks",
+                no_networks: "No networks found",
+                connect: "Connect",
+                password_for: "Password for",
+
+                // VPN
+                vpn_status_title: "VPN Status",
+                vpn_profiles_title: "VPN Profiles",
+                import_profile: "Import WireGuard profile (.conf)",
+                import_activate: "Import and Activate",
+                restart: "Restart",
+                stop: "Stop",
+                start: "Start",
+                endpoint: "Endpoint",
+                last_handshake: "Last handshake",
+                transfer: "Transfer",
+                import_profile_hint: "Import a .conf file to start",
+                no_profiles: "No VPN profiles. Import a .conf file above.",
+                activate: "Activate",
+                active: "Active",
+
+                // Hotspot
+                hotspot_config_title: "Hotspot Configuration",
+                ssid_label: "SSID (network name)",
+                password_label: "Password (minimum 8 characters)",
+                country_label: "Country (WiFi regulation)",
+                band_label: "WiFi Band",
+                channel_label: "Channel",
+                wpa3_label: "Enable WPA3 (if supported by hardware)",
+                apply_config: "Apply configuration",
+                config_applied: "Configuration applied! Hotspot restarting...",
+                band: "Band",
+                channel: "Channel",
+
+                // System
+                system_info_title: "System Information",
+                vpn_config_title: "VPN Configuration",
+                ping_host_label: "IP/Host to ping to verify VPN",
+                ping_host_hint: "Remote network IP or public server to check VPN connectivity",
+                check_interval_label: "Check interval (seconds)",
+                save_vpn_settings: "Save VPN settings",
+                vpn_settings_saved: "VPN settings saved!",
+                system_actions_title: "System Actions",
+                reboot_pi: "Reboot Raspberry Pi",
+                restart_vpn: "Restart VPN",
+                restart_hotspot: "Restart Hotspot",
+                confirm_reboot: "Are you sure you want to reboot?",
+                guide_title: "Quick Guide",
+                guide_1: "Connect to ROSE Link network via WiFi hotspot",
+                guide_2: "Configure your WAN connection (RJ45 priority, WiFi fallback)",
+                guide_3: "Import your WireGuard profile (.conf) from your VPN router",
+                guide_4: "Configure the ping IP for VPN watchdog",
+                guide_5: "All client traffic goes through VPN tunnel",
+                guide_6: "Kill-switch active: auto-block if VPN drops",
+                version: "Version",
+                compatible: "Compatible: Raspberry Pi 3, 4, 5, Zero 2W",
+
+                // Footer
+                footer_title: "Home VPN Router on Raspberry Pi",
+                footer_subtitle: "Secure access to your remote network from anywhere",
+
+                // Common
+                error: "Error",
+                loading: "Loading...",
+                unknown: "Unknown",
+                model: "Model",
+                architecture: "Architecture",
+                ram: "RAM",
+                disk: "Disk",
+                cpu: "CPU",
+                interfaces: "Interfaces",
+                wifi_capabilities: "WiFi Capabilities",
+                uptime: "Uptime",
+                os: "OS",
+                recommended: "Recommended"
+            },
+            fr: {
+                // Header
+                title: "ROSE Link",
+                subtitle: "Routeur VPN domestique",
+                online: "En ligne",
+
+                // Tabs
+                tab_wifi: "WiFi WAN",
+                tab_vpn: "VPN",
+                tab_hotspot: "Hotspot",
+                tab_system: "Système",
+
+                // Status cards
+                status_wan: "WAN",
+                status_vpn: "VPN",
+                status_hotspot: "Hotspot",
+                ethernet_connected: "Ethernet connecté",
+                wifi_connected: "WiFi",
+                disconnected: "Déconnecté",
+                vpn_active: "VPN actif",
+                vpn_inactive: "VPN inactif",
+                hotspot_active: "Hotspot actif",
+                hotspot_inactive: "Hotspot inactif",
+                clients_connected: "client(s) connecté(s)",
+
+                // WiFi WAN
+                wifi_wan_title: "Connexion WiFi (WAN)",
+                scan_networks: "Scanner les réseaux",
+                click_scan: "Cliquez sur \"Scanner\" pour voir les réseaux disponibles",
+                no_networks: "Aucun réseau trouvé",
+                connect: "Se connecter",
+                password_for: "Mot de passe pour",
+
+                // VPN
+                vpn_status_title: "Statut VPN",
+                vpn_profiles_title: "Profils VPN",
+                import_profile: "Importer un profil WireGuard (.conf)",
+                import_activate: "Importer et Activer",
+                restart: "Redémarrer",
+                stop: "Arrêter",
+                start: "Démarrer",
+                endpoint: "Endpoint",
+                last_handshake: "Dernier handshake",
+                transfer: "Transfert",
+                import_profile_hint: "Importez un profil WireGuard pour démarrer",
+                no_profiles: "Aucun profil VPN. Importez un fichier .conf ci-dessus.",
+                activate: "Activer",
+                active: "Actif",
+
+                // Hotspot
+                hotspot_config_title: "Configuration Hotspot",
+                ssid_label: "SSID (nom du réseau)",
+                password_label: "Mot de passe (minimum 8 caractères)",
+                country_label: "Pays (régulation WiFi)",
+                band_label: "Bande WiFi",
+                channel_label: "Canal",
+                wpa3_label: "Activer WPA3 (si supporté par le matériel)",
+                apply_config: "Appliquer la configuration",
+                config_applied: "Configuration appliquée ! Le hotspot redémarre...",
+                band: "Bande",
+                channel: "Canal",
+
+                // System
+                system_info_title: "Informations Système",
+                vpn_config_title: "Configuration VPN",
+                ping_host_label: "IP/Hôte à pinger pour vérifier le VPN",
+                ping_host_hint: "Adresse IP du réseau distant ou serveur public pour vérifier la connectivité VPN",
+                check_interval_label: "Intervalle de vérification (secondes)",
+                save_vpn_settings: "Enregistrer les paramètres VPN",
+                vpn_settings_saved: "Paramètres VPN enregistrés !",
+                system_actions_title: "Actions Système",
+                reboot_pi: "Redémarrer la Raspberry Pi",
+                restart_vpn: "Redémarrer le VPN",
+                restart_hotspot: "Redémarrer le Hotspot",
+                confirm_reboot: "Êtes-vous sûr de vouloir redémarrer ?",
+                guide_title: "Guide Rapide",
+                guide_1: "Connectez-vous au réseau ROSE Link via le hotspot WiFi",
+                guide_2: "Configurez votre connexion WAN (RJ45 prioritaire, WiFi en fallback)",
+                guide_3: "Importez votre profil WireGuard (.conf) depuis votre routeur VPN",
+                guide_4: "Configurez l'IP de ping pour le watchdog VPN",
+                guide_5: "Tout le trafic des clients passe par le tunnel VPN",
+                guide_6: "Kill-switch actif : blocage automatique si le VPN tombe",
+                version: "Version",
+                compatible: "Compatible: Raspberry Pi 3, 4, 5, Zero 2W",
+
+                // Footer
+                footer_title: "Routeur VPN domestique sur Raspberry Pi",
+                footer_subtitle: "Accès sécurisé à votre réseau distant depuis n'importe où",
+
+                // Common
+                error: "Erreur",
+                loading: "Chargement...",
+                unknown: "Inconnu",
+                model: "Modèle",
+                architecture: "Architecture",
+                ram: "RAM",
+                disk: "Disque",
+                cpu: "CPU",
+                interfaces: "Interfaces",
+                wifi_capabilities: "Capacités WiFi",
+                uptime: "Uptime",
+                os: "OS",
+                recommended: "Recommandé"
+            }
+        };
+
+        // Current language (default: English, or browser preference)
+        let currentLang = localStorage.getItem('rose-lang') ||
+            (navigator.language.startsWith('fr') ? 'fr' : 'en');
+
+        function t(key) {
+            return translations[currentLang][key] || translations['en'][key] || key;
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('rose-lang', lang);
+            document.documentElement.lang = lang;
+            updateAllTranslations();
+        }
+
+        function updateAllTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                el.title = t(key);
+            });
+            // Update page title
+            document.title = `🌹 ROSE Link - ${t('subtitle')}`;
+        }
     </script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
@@ -49,13 +293,21 @@
                 <div class="flex items-center gap-3">
                     <div class="text-4xl">🌹</div>
                     <div>
-                        <h1 class="text-2xl font-bold text-rose-500">ROSE Link</h1>
-                        <p class="text-sm text-gray-400">Routeur VPN domestique</p>
+                        <h1 class="text-2xl font-bold text-rose-500" data-i18n="title">ROSE Link</h1>
+                        <p class="text-sm text-gray-400" data-i18n="subtitle">Home VPN Router</p>
                     </div>
                 </div>
-                <div id="status-badge" class="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg">
-                    <div class="w-3 h-3 bg-green-500 rounded-full pulse-slow"></div>
-                    <span class="text-sm">En ligne</span>
+                <div class="flex items-center gap-3">
+                    <!-- Language Switcher -->
+                    <div class="flex items-center gap-1 bg-gray-700 rounded-lg p-1">
+                        <button onclick="setLanguage('en')" id="lang-en" class="px-2 py-1 rounded text-xs font-medium transition hover:bg-gray-600">EN</button>
+                        <button onclick="setLanguage('fr')" id="lang-fr" class="px-2 py-1 rounded text-xs font-medium transition hover:bg-gray-600">FR</button>
+                    </div>
+                    <!-- Status Badge -->
+                    <div id="status-badge" class="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg">
+                        <div class="w-3 h-3 bg-green-500 rounded-full pulse-slow"></div>
+                        <span class="text-sm" data-i18n="online">Online</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -86,16 +338,16 @@
         <div class="mb-6">
             <div class="flex gap-2 border-b border-gray-700">
                 <button onclick="showTab('wifi')" id="tab-wifi" class="tab-btn px-6 py-3 font-medium border-b-2 border-rose-500 text-rose-500">
-                    📡 WiFi WAN
+                    📡 <span data-i18n="tab_wifi">WiFi WAN</span>
                 </button>
                 <button onclick="showTab('vpn')" id="tab-vpn" class="tab-btn px-6 py-3 font-medium text-gray-400 hover:text-gray-200 border-b-2 border-transparent">
-                    🔐 VPN
+                    🔐 <span data-i18n="tab_vpn">VPN</span>
                 </button>
                 <button onclick="showTab('hotspot')" id="tab-hotspot" class="tab-btn px-6 py-3 font-medium text-gray-400 hover:text-gray-200 border-b-2 border-transparent">
-                    📶 Hotspot
+                    📶 <span data-i18n="tab_hotspot">Hotspot</span>
                 </button>
                 <button onclick="showTab('system')" id="tab-system" class="tab-btn px-6 py-3 font-medium text-gray-400 hover:text-gray-200 border-b-2 border-transparent">
-                    ⚙️ Système
+                    ⚙️ <span data-i18n="tab_system">System</span>
                 </button>
             </div>
         </div>
@@ -202,24 +454,42 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-2">Pays</label>
+                                <label class="block text-sm font-medium mb-2">Pays (régulation WiFi)</label>
                                 <select name="country" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500">
                                     <option value="BE">🇧🇪 Belgique</option>
-                                    <option value="MA">🇲🇦 Maroc</option>
                                     <option value="FR">🇫🇷 France</option>
-                                    <option value="US">🇺🇸 États-Unis</option>
+                                    <option value="DE">🇩🇪 Allemagne</option>
+                                    <option value="NL">🇳🇱 Pays-Bas</option>
+                                    <option value="ES">🇪🇸 Espagne</option>
+                                    <option value="IT">🇮🇹 Italie</option>
                                     <option value="GB">🇬🇧 Royaume-Uni</option>
+                                    <option value="CH">🇨🇭 Suisse</option>
+                                    <option value="MA">🇲🇦 Maroc</option>
+                                    <option value="TN">🇹🇳 Tunisie</option>
+                                    <option value="DZ">🇩🇿 Algérie</option>
+                                    <option value="US">🇺🇸 États-Unis</option>
+                                    <option value="CA">🇨🇦 Canada</option>
+                                    <option value="AU">🇦🇺 Australie</option>
+                                    <option value="JP">🇯🇵 Japon</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-2">Canal</label>
-                                <select name="channel" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500">
-                                    <option value="1">1</option>
-                                    <option value="6" selected>6</option>
-                                    <option value="11">11</option>
+                                <label class="block text-sm font-medium mb-2">Bande WiFi</label>
+                                <select name="band" id="wifi-band" onchange="updateChannels()" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500">
+                                    <option value="2.4GHz">2.4 GHz</option>
+                                    <option value="5GHz">5 GHz (si supporté)</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Canal</label>
+                            <select name="channel" id="wifi-channel" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500">
+                                <option value="1">1 (2.4GHz)</option>
+                                <option value="6" selected>6 (2.4GHz) - Recommandé</option>
+                                <option value="11">11 (2.4GHz)</option>
+                            </select>
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -238,42 +508,93 @@
 
             <!-- System Tab -->
             <div id="content-system" class="tab-content hidden">
-                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span>⚙️</span> Système
-                    </h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- System Info -->
+                    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span>📊</span> Informations Système
+                        </h2>
+                        <div id="system-info" hx-get="/api/system/info" hx-trigger="load, every 30s" hx-swap="innerHTML">
+                            <div class="animate-pulse">Chargement...</div>
+                        </div>
+                    </div>
 
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="font-medium mb-2">Actions système</h3>
+                    <!-- VPN Settings -->
+                    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span>🔐</span> Configuration VPN
+                        </h2>
+
+                        <form id="vpn-settings-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">IP/Hôte à pinger pour vérifier le VPN</label>
+                                <input type="text" name="ping_host" id="vpn-ping-host" value="8.8.8.8" placeholder="ex: 192.168.1.1 ou 8.8.8.8"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent">
+                                <p class="text-xs text-gray-400 mt-1">Adresse IP du réseau distant ou serveur public pour vérifier la connectivité VPN</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Intervalle de vérification (secondes)</label>
+                                <input type="number" name="check_interval" id="vpn-check-interval" value="60" min="30" max="300"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent">
+                            </div>
+
+                            <button type="submit" class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg font-medium transition">
+                                💾 Enregistrer les paramètres VPN
+                            </button>
+                        </form>
+                        <div id="vpn-settings-message" class="mt-2"></div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span>⚙️</span> Actions Système
+                        </h2>
+
+                        <div class="space-y-3">
                             <button
                                 hx-post="/api/system/reboot"
                                 hx-confirm="Êtes-vous sûr de vouloir redémarrer ?"
-                                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-medium transition">
+                                class="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-medium transition">
                                 🔄 Redémarrer la Raspberry Pi
                             </button>
-                        </div>
 
-                        <div>
-                            <h3 class="font-medium mb-2">Informations</h3>
-                            <div class="bg-gray-700 rounded-lg p-4 text-sm font-mono">
-                                <p><strong>Version:</strong> ROSE Link Pro v0.1.0</p>
-                                <p><strong>Plateforme:</strong> Raspberry Pi 4</p>
-                                <p><strong>Interface WAN:</strong> eth0 (RJ45) / wlan0 (WiFi)</p>
-                                <p><strong>Interface AP:</strong> wlan1 (Hotspot)</p>
-                                <p><strong>VPN:</strong> WireGuard (wg0)</p>
-                            </div>
-                        </div>
+                            <button
+                                hx-post="/api/vpn/restart"
+                                hx-target="#system-action-message"
+                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition">
+                                🔐 Redémarrer le VPN
+                            </button>
 
-                        <div>
-                            <h3 class="font-medium mb-2">Documentation</h3>
-                            <ul class="list-disc list-inside text-sm text-gray-400 space-y-1">
-                                <li>Connectez-vous au réseau ROSE Link via le hotspot</li>
-                                <li>Configurez votre connexion WAN (RJ45 prioritaire, WiFi en fallback)</li>
-                                <li>Importez votre profil WireGuard depuis la Fritz!Box</li>
-                                <li>Tout le trafic passe par le VPN vers la Belgique</li>
-                                <li>Kill-switch actif : pas de fuite si le VPN tombe</li>
-                            </ul>
+                            <button
+                                hx-post="/api/hotspot/restart"
+                                hx-target="#system-action-message"
+                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition">
+                                📶 Redémarrer le Hotspot
+                            </button>
+                        </div>
+                        <div id="system-action-message" class="mt-2"></div>
+                    </div>
+
+                    <!-- Documentation -->
+                    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span>📖</span> Guide Rapide
+                        </h2>
+
+                        <ul class="list-disc list-inside text-sm text-gray-400 space-y-2">
+                            <li>Connectez-vous au réseau ROSE Link via le hotspot WiFi</li>
+                            <li>Configurez votre connexion WAN (RJ45 prioritaire, WiFi en fallback)</li>
+                            <li>Importez votre profil WireGuard (.conf) depuis votre routeur VPN</li>
+                            <li>Configurez l'IP de ping pour le watchdog VPN</li>
+                            <li>Tout le trafic des clients passe par le tunnel VPN</li>
+                            <li>Kill-switch actif : blocage automatique si le VPN tombe</li>
+                        </ul>
+
+                        <div class="mt-4 p-3 bg-gray-700 rounded-lg">
+                            <p class="text-sm"><strong>Version:</strong> ROSE Link v0.1.0</p>
+                            <p class="text-sm text-gray-400">Compatible: Raspberry Pi 3, 4, 5, Zero 2W</p>
                         </div>
                     </div>
                 </div>
@@ -284,8 +605,8 @@
     <!-- Footer -->
     <footer class="bg-gray-800 border-t border-gray-700 mt-12">
         <div class="container mx-auto px-4 py-6 text-center text-sm text-gray-400">
-            <p>🌹 <strong>ROSE Link</strong> - Routeur VPN domestique sur Raspberry Pi 4</p>
-            <p class="mt-1">Accès sécurisé au réseau belge depuis le Maroc</p>
+            <p>🌹 <strong>ROSE Link</strong> - <span data-i18n="footer_title">Home VPN Router on Raspberry Pi</span></p>
+            <p class="mt-1" data-i18n="footer_subtitle">Secure access to your remote network from anywhere</p>
         </div>
     </footer>
 
@@ -320,8 +641,112 @@
             } else if (event.detail.target.id === 'vpn-profiles') {
                 const data = JSON.parse(event.detail.xhr.responseText);
                 renderVPNProfiles(data.profiles);
+            } else if (event.detail.target.id === 'system-info') {
+                const data = JSON.parse(event.detail.xhr.responseText);
+                renderSystemInfo(data);
             }
         });
+
+        // Update channel options based on band selection
+        function updateChannels() {
+            const band = document.getElementById('wifi-band').value;
+            const channelSelect = document.getElementById('wifi-channel');
+
+            if (band === '5GHz') {
+                channelSelect.innerHTML = `
+                    <option value="36">36 (5GHz) - Recommandé</option>
+                    <option value="40">40 (5GHz)</option>
+                    <option value="44">44 (5GHz)</option>
+                    <option value="48">48 (5GHz)</option>
+                    <option value="149">149 (5GHz)</option>
+                    <option value="153">153 (5GHz)</option>
+                    <option value="157">157 (5GHz)</option>
+                    <option value="161">161 (5GHz)</option>
+                `;
+            } else {
+                channelSelect.innerHTML = `
+                    <option value="1">1 (2.4GHz)</option>
+                    <option value="6" selected>6 (2.4GHz) - Recommandé</option>
+                    <option value="11">11 (2.4GHz)</option>
+                `;
+            }
+        }
+
+        // Render system info
+        function renderSystemInfo(data) {
+            const uptimeHours = Math.floor(data.uptime_seconds / 3600);
+            const uptimeMinutes = Math.floor((data.uptime_seconds % 3600) / 60);
+
+            document.getElementById('system-info').innerHTML = `
+                <div class="space-y-3 text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-gray-700 rounded p-3">
+                            <div class="text-gray-400">Modèle</div>
+                            <div class="font-medium">${data.model_short || data.model || 'Inconnu'}</div>
+                        </div>
+                        <div class="bg-gray-700 rounded p-3">
+                            <div class="text-gray-400">Architecture</div>
+                            <div class="font-medium">${data.architecture || 'Inconnu'}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-gray-700 rounded p-3">
+                            <div class="text-gray-400">RAM</div>
+                            <div class="font-medium">${data.ram_free_mb || 0} / ${data.ram_mb || 0} MB</div>
+                        </div>
+                        <div class="bg-gray-700 rounded p-3">
+                            <div class="text-gray-400">Disque</div>
+                            <div class="font-medium">${data.disk_free_gb || 0} / ${data.disk_total_gb || 0} GB</div>
+                        </div>
+                        <div class="bg-gray-700 rounded p-3">
+                            <div class="text-gray-400">CPU</div>
+                            <div class="font-medium ${data.cpu_temp_c > 70 ? 'text-orange-400' : ''}">${data.cpu_temp_c || 0}°C</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-700 rounded p-3">
+                        <div class="text-gray-400 mb-1">Interfaces</div>
+                        <div class="text-xs space-y-1">
+                            <div>Ethernet: <span class="text-green-400">${data.interfaces?.ethernet || 'eth0'}</span></div>
+                            <div>WiFi AP: <span class="text-blue-400">${data.interfaces?.wifi_ap || 'wlan0'}</span></div>
+                            <div>WiFi WAN: <span class="text-purple-400">${data.interfaces?.wifi_wan || 'wlan0'}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-700 rounded p-3">
+                        <div class="text-gray-400 mb-1">Capacités WiFi</div>
+                        <div class="flex gap-2 flex-wrap">
+                            ${data.wifi_capabilities?.supports_5ghz ? '<span class="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">5GHz</span>' : '<span class="px-2 py-1 bg-gray-600 text-gray-400 rounded text-xs">5GHz</span>'}
+                            ${data.wifi_capabilities?.supports_ac ? '<span class="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">802.11ac</span>' : ''}
+                            ${data.wifi_capabilities?.supports_ax ? '<span class="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">WiFi 6</span>' : ''}
+                            ${data.wifi_capabilities?.ap_mode ? '<span class="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">AP Mode</span>' : ''}
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-gray-500">
+                        Uptime: ${uptimeHours}h ${uptimeMinutes}m | OS: ${data.os_version || 'Inconnu'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load VPN settings on page load
+        async function loadVPNSettings() {
+            try {
+                const response = await fetch('/api/settings/vpn');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('vpn-ping-host').value = data.ping_host || '8.8.8.8';
+                    document.getElementById('vpn-check-interval').value = data.check_interval || 60;
+                }
+            } catch (e) {
+                console.log('Could not load VPN settings');
+            }
+        }
+
+        // Call on page load
+        loadVPNSettings();
 
         function renderStatusCards(data) {
             const wan = data.wan;
@@ -474,6 +899,7 @@
                 password: formData.get('password'),
                 country: formData.get('country'),
                 channel: parseInt(formData.get('channel')),
+                band: formData.get('band'),
                 wpa3: formData.get('wpa3') === 'on'
             };
 
@@ -487,6 +913,7 @@
                 document.getElementById('hotspot-message').innerHTML = `
                     <div class="p-4 bg-green-900 border border-green-700 rounded-lg text-green-200">
                         ✅ Configuration appliquée ! Le hotspot redémarre...
+                        <br><small>Bande: ${data.band} | Canal: ${data.channel}</small>
                     </div>
                 `;
                 setTimeout(() => {
@@ -500,6 +927,71 @@
                     </div>
                 `;
             });
+        });
+
+        // VPN settings form submission
+        document.getElementById('vpn-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                ping_host: formData.get('ping_host'),
+                check_interval: parseInt(formData.get('check_interval'))
+            };
+
+            fetch('/api/settings/vpn', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(result => {
+                document.getElementById('vpn-settings-message').innerHTML = `
+                    <div class="p-3 bg-green-900 border border-green-700 rounded-lg text-green-200 text-sm">
+                        ✅ ${t('vpn_settings_saved')}
+                    </div>
+                `;
+                setTimeout(() => {
+                    document.getElementById('vpn-settings-message').innerHTML = '';
+                }, 3000);
+            })
+            .catch(err => {
+                document.getElementById('vpn-settings-message').innerHTML = `
+                    <div class="p-3 bg-red-900 border border-red-700 rounded-lg text-red-200 text-sm">
+                        ❌ ${t('error')}: ${err.message}
+                    </div>
+                `;
+            });
+        });
+
+        // Update language button styles
+        function updateLanguageButtons() {
+            const enBtn = document.getElementById('lang-en');
+            const frBtn = document.getElementById('lang-fr');
+
+            if (currentLang === 'en') {
+                enBtn.classList.add('bg-rose-600', 'text-white');
+                enBtn.classList.remove('text-gray-400');
+                frBtn.classList.remove('bg-rose-600', 'text-white');
+                frBtn.classList.add('text-gray-400');
+            } else {
+                frBtn.classList.add('bg-rose-600', 'text-white');
+                frBtn.classList.remove('text-gray-400');
+                enBtn.classList.remove('bg-rose-600', 'text-white');
+                enBtn.classList.add('text-gray-400');
+            }
+        }
+
+        // Override setLanguage to also update button styles
+        const originalSetLanguage = setLanguage;
+        setLanguage = function(lang) {
+            originalSetLanguage(lang);
+            updateLanguageButtons();
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAllTranslations();
+            updateLanguageButtons();
         });
     </script>
 </body>

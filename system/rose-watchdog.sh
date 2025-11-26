@@ -2,14 +2,42 @@
 #
 # ROSE Link VPN Watchdog
 # Monitors WireGuard connection and restarts if needed
+# Settings can be configured via web interface or /opt/rose-link/system/vpn-settings.conf
 #
 
 set -euo pipefail
 
 INTERFACE="wg0"
-CHECK_INTERVAL=60  # seconds
-PING_HOST="192.168.178.1"  # Fritz!Box (adjust if needed)
 LOG_TAG="rose-watchdog"
+SETTINGS_FILE="/opt/rose-link/system/vpn-settings.conf"
+
+# Default values (can be overridden by config file)
+CHECK_INTERVAL=60
+PING_HOST="8.8.8.8"
+
+# Load settings from config file if it exists
+load_settings() {
+    if [ -f "$SETTINGS_FILE" ]; then
+        while IFS='=' read -r key value; do
+            # Skip comments and empty lines
+            [[ "$key" =~ ^#.*$ ]] && continue
+            [[ -z "$key" ]] && continue
+
+            # Remove leading/trailing whitespace
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs | tr -d '"')
+
+            case "$key" in
+                PING_HOST)
+                    PING_HOST="$value"
+                    ;;
+                CHECK_INTERVAL)
+                    CHECK_INTERVAL="$value"
+                    ;;
+            esac
+        done < "$SETTINGS_FILE"
+    fi
+}
 
 log() {
     logger -t "$LOG_TAG" "$@"
@@ -70,9 +98,16 @@ restart_vpn() {
 }
 
 main() {
+    # Load settings from config file
+    load_settings
+
     log "ROSE Link VPN Watchdog started"
+    log "Configuration: PING_HOST=$PING_HOST, CHECK_INTERVAL=${CHECK_INTERVAL}s"
 
     while true; do
+        # Reload settings each cycle to pick up changes without restart
+        load_settings
+
         if ! check_wg_interface; then
             log "WARNING: WireGuard interface $INTERFACE is down"
             restart_vpn
@@ -83,7 +118,7 @@ main() {
             log "WARNING: Cannot reach $PING_HOST through VPN"
             restart_vpn
         else
-            log "VPN status: OK"
+            log "VPN status: OK (ping to $PING_HOST successful)"
         fi
 
         sleep "$CHECK_INTERVAL"

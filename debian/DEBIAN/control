@@ -2,18 +2,27 @@ Package: rose-link-pro
 Version: 0.1.0-1
 Section: net
 Priority: optional
-Architecture: all
+Architecture: armhf arm64
 Depends: python3 (>= 3.9), python3-pip, python3-venv, nginx, hostapd, dnsmasq, wireguard, wireguard-tools, iptables, iptables-persistent, network-manager, iw, rfkill, openssl
 Maintainer: ROSE Link <rose@example.com>
-Description: ROSE Link - Routeur VPN domestique sur Raspberry Pi 4
- Transforme une Raspberry Pi 4 en routeur/point d'accès Wi-Fi qui:
+Homepage: https://github.com/oussrh/ROSE-LINK
+Description: ROSE Link - Routeur VPN domestique sur Raspberry Pi
+ Transforme une Raspberry Pi (3, 4, 5, Zero 2W) en routeur/point d'accès Wi-Fi:
   - Se connecte à Internet via RJ45 (priorité) ou Wi-Fi client (fallback)
-  - Établit un tunnel WireGuard vers votre Fritz!Box en Belgique
-  - Crée un hotspot Wi-Fi local pour vos appareils
-  - Fait passer tout le trafic par la Belgique
+  - Établit un tunnel WireGuard vers votre Fritz!Box ou serveur VPN
+  - Crée un hotspot Wi-Fi local pour vos appareils (2.4GHz et 5GHz)
+  - Fait passer tout le trafic par le VPN
   - Offre une interface Web moderne pour la configuration
  .
+ Modèles supportés:
+  - Raspberry Pi 5 (support complet, 5GHz)
+  - Raspberry Pi 4 (support complet, 5GHz)
+  - Raspberry Pi 3 (2.4GHz uniquement)
+  - Raspberry Pi Zero 2 W (usage léger)
+ .
  Fonctionnalités Pro:
+  - Détection automatique du matériel et des interfaces
+  - Support WiFi 5GHz / 802.11ac (si matériel compatible)
   - Multi-profils VPN WireGuard
   - Configuration hotspot avancée (WPA3, canal, pays)
   - Kill-switch automatique
