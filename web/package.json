@@ -1,23 +1,31 @@
 {
   "name": "rose-link-web",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "ROSE Link Web Interface",
   "private": true,
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint js/**/*.js",
-    "lint:fix": "eslint js/**/*.js --fix"
+    "lint": "eslint js/**/*.js js/**/*.ts",
+    "lint:fix": "eslint js/**/*.js js/**/*.ts --fix",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "build:types": "tsc --declaration --emitDeclarationOnly"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
+    "@babel/preset-typescript": "^7.24.0",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.4.0",
+    "@types/jest": "^29.5.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest-environment-jsdom": "^29.7.0",
+    "typescript": "^5.4.0"
   },
   "jest": {
     "testEnvironment": "jsdom",

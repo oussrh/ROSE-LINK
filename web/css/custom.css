@@ -217,3 +217,32 @@
     animation: spin-slow 1s linear infinite;
     margin-left: 0.5rem;
 }
+
+/* =================================================================
+   Accessibility: Reduced Motion
+   For users with vestibular disorders or motion sensitivity
+   ================================================================= */
+@media (prefers-reduced-motion: reduce) {
+    /* Disable all animations */
+    .pulse-slow,
+    .spin-slow,
+    .animate-pulse,
+    .chart-loading::after {
+        animation: none;
+    }
+
+    /* Disable transitions */
+    .transition-smooth {
+        transition: none;
+    }
+
+    /* Replace animated indicators with static alternatives */
+    .pulse-slow {
+        opacity: 1;
+    }
+
+    /* Ensure visibility without animation */
+    .spin-slow {
+        transform: none;
+    }
+}
