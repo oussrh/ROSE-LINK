@@ -492,4 +492,102 @@ describe('WebSocket Utilities', () => {
             expect(result).toBe(false);
         });
     });
+
+    describe('status badge updates', () => {
+        beforeEach(() => {
+            // Set up status badge DOM
+            document.body.innerHTML = `
+                <div id="status-badge">
+                    <div class="indicator"></div>
+                    <span>Online</span>
+                </div>
+            `;
+        });
+
+        it('should update status badge to online when connected', () => {
+            initWebSocket();
+            const socket = MockWebSocket.instances[0];
+            socket.simulateOpen();
+
+            const badge = document.getElementById('status-badge');
+            const indicator = badge.querySelector('div');
+            const text = badge.querySelector('span');
+
+            expect(indicator.className).toContain('bg-green-500');
+            expect(text.getAttribute('data-i18n')).toBe('online');
+        });
+
+        it('should update status badge to offline when disconnected', () => {
+            initWebSocket();
+            const socket = MockWebSocket.instances[0];
+            socket.simulateOpen();
+            socket.simulateClose(1006, 'Connection lost', false);
+
+            const badge = document.getElementById('status-badge');
+            const indicator = badge.querySelector('div');
+            const text = badge.querySelector('span');
+
+            expect(indicator.className).toContain('bg-red-500');
+            expect(text.getAttribute('data-i18n')).toBe('offline');
+        });
+
+        it('should handle missing status badge gracefully', () => {
+            document.body.innerHTML = '';
+
+            expect(() => {
+                initWebSocket();
+                MockWebSocket.instances[0].simulateOpen();
+            }).not.toThrow();
+        });
+
+        it('should use window.t if available for translations', () => {
+            window.t = jest.fn(key => key === 'online' ? 'En ligne' : 'Hors ligne');
+
+            initWebSocket();
+            const socket = MockWebSocket.instances[0];
+            socket.simulateOpen();
+
+            const text = document.querySelector('#status-badge span');
+            expect(text.textContent).toBe('En ligne');
+
+            delete window.t;
+        });
+
+        it('should use fallback text if window.t is not available', () => {
+            delete window.t;
+
+            initWebSocket();
+            const socket = MockWebSocket.instances[0];
+            socket.simulateOpen();
+
+            const text = document.querySelector('#status-badge span');
+            expect(text.textContent).toBe('Online');
+        });
+
+        it('should handle missing indicator element', () => {
+            document.body.innerHTML = `
+                <div id="status-badge">
+                    <span>Online</span>
+                </div>
+            `;
+
+            expect(() => {
+                initWebSocket();
+                MockWebSocket.instances[0].simulateOpen();
+            }).not.toThrow();
+        });
+
+        it('should handle missing text element', () => {
+            document.body.innerHTML = `
+                <div id="status-badge">
+                    <div class="indicator"></div>
+                </div>
+            `;
+
+            expect(() => {
+                initWebSocket();
+                MockWebSocket.instances[0].simulateOpen();
+            }).not.toThrow();
+        });
+    });
 });
