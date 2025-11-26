@@ -1,6 +1,6 @@
 # Contributing to ROSE Link
 
-Thank you for considering contributing to ROSE Link! 🌹
+Thank you for considering contributing to ROSE Link!
 
 ## How to Contribute
 
@@ -20,6 +20,8 @@ Feature requests are welcome! Please create an issue with:
 - Use case / motivation
 - Possible implementation approach (if you have ideas)
 
+See [ROADMAP.md](ROADMAP.md) for planned features.
+
 ### Pull Requests
 
 1. **Fork** the repository
@@ -30,56 +32,73 @@ Feature requests are welcome! Please create an issue with:
 3. **Make your changes**:
    - Follow existing code style
    - Add comments for complex logic
+   - Add tests for new functionality
    - Test your changes on actual hardware if possible
-4. **Commit** with clear messages:
+4. **Run the test suite**:
+   ```bash
+   make test
+   make lint
+   ```
+5. **Commit** with clear messages:
    ```bash
    git commit -m "Add: description of feature"
    git commit -m "Fix: description of bug fix"
    ```
-5. **Push** to your fork:
+6. **Push** to your fork:
    ```bash
    git push origin feature/your-feature-name
    ```
-6. **Open a Pull Request** with:
+7. **Open a Pull Request** with:
    - Clear description of changes
    - Reference to related issues
    - Screenshots/logs if applicable
 
 ## Development Setup
 
-### Prerequisites
+For comprehensive development instructions, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-- Raspberry Pi 4 (for full testing) or any Debian-based Linux (for development)
-- Python 3.9+
-- Git
-
-### Local Development
+### Quick Start
 
 ```bash
 # Clone the repository
 git clone https://github.com/oussrh/ROSE-LINK.git
 cd ROSE-LINK
 
-# Backend setup
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+# Setup development environment (backend + dev tools)
+make setup-dev
 
-# Run backend (development)
-python main.py
+# Activate virtual environment
+source backend/venv/bin/activate
+
+# Run tests
+make test
+
+# Start development server
+make dev
 ```
 
 ### Testing
 
-Before submitting a PR, please test:
+Before submitting a PR:
 
-1. **Backend API**: Ensure all endpoints work
-2. **Web UI**: Test in different browsers
-3. **Installation**: Test install.sh on clean Raspberry Pi OS
-4. **Services**: Verify systemd services start correctly
-5. **VPN**: Test with actual WireGuard configuration
-6. **Hotspot**: Test WiFi AP functionality
+```bash
+# Run all tests with coverage
+make test
+
+# Run linting
+make lint
+
+# Run full CI locally
+make ci
+```
+
+Ensure:
+1. **All tests pass**: `make test` exits with code 0
+2. **Coverage maintained**: Minimum 70% coverage
+3. **Linting passes**: No errors from `make lint`
+4. **Backend API**: Endpoints work correctly
+5. **Web UI**: Test in different browsers
+6. **Hardware** (if applicable): Test on Raspberry Pi
 
 ## Code Style
 
