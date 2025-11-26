@@ -1,6 +1,12 @@
-# 🌹 ROSE Link
+<div align="center">
+
+<img src="web/Logo.webp" alt="ROSE Link Logo" width="200">
+
+# ROSE Link
 
 **Routeur VPN domestique sur Raspberry Pi**
+
+<img src="web/icon.webp" alt="ROSE Link Icon" width="64">
 
 Transformez votre Raspberry Pi en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau distant, vous permettant d'accéder à vos ressources locales et d'obtenir l'IP publique de votre serveur VPN depuis n'importe où dans le monde.
 
@@ -9,6 +15,8 @@ Transformez votre Raspberry Pi en routeur/point d'accès Wi-Fi professionnel qui
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
 **[English Version](README.md)**
+
+</div>
 
 ---
 
