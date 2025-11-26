@@ -1,6 +1,6 @@
 {
   "name": "rose-link-web",
-  "version": "0.3.0",
+  "version": "1.1.0",
   "description": "ROSE Link Web Interface",
   "private": true,
   "type": "module",
