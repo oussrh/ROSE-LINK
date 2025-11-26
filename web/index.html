@@ -16,6 +16,9 @@
     <!-- htmx 2.0 (Latest stable) -->
     <script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
 
+    <!-- Lucide Icons (shadcn/ui compatible) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         /* Custom animations */
         @keyframes pulse-slow {
@@ -48,6 +51,14 @@
         /* Hide scrollbar but allow scrolling */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Lucide icon styles */
+        .lucide { display: inline-block; vertical-align: middle; }
+        .icon-sm { width: 1rem; height: 1rem; }
+        .icon-md { width: 1.25rem; height: 1.25rem; }
+        .icon-lg { width: 1.5rem; height: 1.5rem; }
+        .icon-xl { width: 2rem; height: 2rem; }
+        .icon-2xl { width: 2.5rem; height: 2.5rem; }
     </style>
 
     <script>
@@ -418,7 +429,7 @@
             <div class="flex items-center justify-between">
                 <!-- Logo & Title -->
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <div class="text-2xl sm:text-4xl" role="img" aria-label="Rose">🌹</div>
+                    <div class="text-rose-500" role="img" aria-label="Rose"><i data-lucide="flower-2" class="icon-xl sm:icon-2xl"></i></div>
                     <div>
                         <h1 class="text-lg sm:text-2xl font-bold text-rose-500" data-i18n="title">ROSE Link</h1>
                         <p class="text-xs sm:text-sm text-gray-400 hidden sm:block" data-i18n="subtitle">Home VPN Router</p>
@@ -472,19 +483,19 @@
             <div class="flex gap-1 sm:gap-2 border-b border-gray-700 overflow-x-auto scrollbar-hide">
                 <button onclick="showTab('wifi')" id="tab-wifi" role="tab" aria-selected="true" aria-controls="content-wifi"
                     class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base border-b-2 border-rose-500 text-rose-500 whitespace-nowrap transition-smooth focus-ring touch-manipulation">
-                    <span class="hidden sm:inline">📡 </span><span data-i18n="tab_wifi">WiFi</span>
+                    <span class="hidden sm:inline"><i data-lucide="wifi" class="icon-sm"></i> </span><span data-i18n="tab_wifi">WiFi</span>
                 </button>
                 <button onclick="showTab('vpn')" id="tab-vpn" role="tab" aria-selected="false" aria-controls="content-vpn"
                     class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
-                    <span class="hidden sm:inline">🔐 </span><span data-i18n="tab_vpn">VPN</span>
+                    <span class="hidden sm:inline"><i data-lucide="shield" class="icon-sm"></i> </span><span data-i18n="tab_vpn">VPN</span>
                 </button>
                 <button onclick="showTab('hotspot')" id="tab-hotspot" role="tab" aria-selected="false" aria-controls="content-hotspot"
                     class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
-                    <span class="hidden sm:inline">📶 </span><span data-i18n="tab_hotspot">Hotspot</span>
+                    <span class="hidden sm:inline"><i data-lucide="radio-tower" class="icon-sm"></i> </span><span data-i18n="tab_hotspot">Hotspot</span>
                 </button>
                 <button onclick="showTab('system')" id="tab-system" role="tab" aria-selected="false" aria-controls="content-system"
                     class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
-                    <span class="hidden sm:inline">⚙️ </span><span data-i18n="tab_system">System</span>
+                    <span class="hidden sm:inline"><i data-lucide="settings" class="icon-sm"></i> </span><span data-i18n="tab_system">System</span>
                 </button>
             </div>
         </nav>
@@ -495,7 +506,7 @@
             <section id="content-wifi" class="tab-content" role="tabpanel" aria-labelledby="tab-wifi">
                 <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                     <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                        <span aria-hidden="true">📡</span>
+                        <span aria-hidden="true" class="text-blue-400"><i data-lucide="wifi" class="icon-md"></i></span>
                         <span data-i18n="wifi_wan_title">WiFi Connection (WAN)</span>
                     </h2>
 
@@ -515,7 +526,7 @@
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         </span>
-                        <span>🔍</span>
+                        <i data-lucide="search" class="icon-sm"></i>
                         <span data-i18n="scan_networks">Scan</span>
                     </button>
 
@@ -531,7 +542,7 @@
                     <!-- VPN Status -->
                     <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                         <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                            <span aria-hidden="true">🔐</span>
+                            <span aria-hidden="true" class="text-green-400"><i data-lucide="shield-check" class="icon-md"></i></span>
                             <span data-i18n="vpn_status_title">VPN Status</span>
                         </h2>
                         <div id="vpn-status-detail" hx-get="/api/vpn/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
@@ -540,16 +551,16 @@
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             <button hx-post="/api/vpn/restart" hx-target="#vpn-message"
-                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation">
-                                🔄 <span data-i18n="restart">Restart</span>
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="refresh-cw" class="icon-sm"></i> <span data-i18n="restart">Restart</span>
                             </button>
                             <button hx-post="/api/vpn/stop" hx-target="#vpn-message"
-                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation">
-                                ⏹️ <span data-i18n="stop">Stop</span>
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="square" class="icon-sm"></i> <span data-i18n="stop">Stop</span>
                             </button>
                             <button hx-post="/api/vpn/start" hx-target="#vpn-message"
-                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation">
-                                ▶️ <span data-i18n="start">Start</span>
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="play" class="icon-sm"></i> <span data-i18n="start">Start</span>
                             </button>
                         </div>
                         <div id="vpn-message" class="mt-2" role="alert" aria-live="polite"></div>
@@ -558,7 +569,7 @@
                     <!-- VPN Profiles -->
                     <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                         <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                            <span aria-hidden="true">📁</span>
+                            <span aria-hidden="true" class="text-yellow-400"><i data-lucide="folder" class="icon-md"></i></span>
                             <span data-i18n="vpn_profiles_title">VPN Profiles</span>
                         </h2>
 
@@ -571,8 +582,8 @@
                                     file:bg-rose-600 file:text-white hover:file:bg-rose-700
                                     focus-ring touch-manipulation">
                             <button type="submit"
-                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
-                                📤 <span data-i18n="import_activate">Import & Activate</span>
+                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="upload" class="icon-sm"></i> <span data-i18n="import_activate">Import & Activate</span>
                             </button>
                         </form>
 
@@ -589,7 +600,7 @@
                 <!-- Hotspot Configuration -->
                 <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                     <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                        <span aria-hidden="true">📶</span>
+                        <span aria-hidden="true" class="text-purple-400"><i data-lucide="radio-tower" class="icon-md"></i></span>
                         <span data-i18n="hotspot_config_title">Hotspot Configuration</span>
                     </h2>
 
@@ -611,21 +622,21 @@
                                 <label for="hotspot-country" class="block text-sm font-medium mb-2" data-i18n="country_label">Country</label>
                                 <select id="hotspot-country" name="country"
                                     class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 transition-smooth">
-                                    <option value="BE">🇧🇪 Belgium</option>
-                                    <option value="FR">🇫🇷 France</option>
-                                    <option value="DE">🇩🇪 Germany</option>
-                                    <option value="NL">🇳🇱 Netherlands</option>
-                                    <option value="ES">🇪🇸 Spain</option>
-                                    <option value="IT">🇮🇹 Italy</option>
-                                    <option value="GB">🇬🇧 United Kingdom</option>
-                                    <option value="CH">🇨🇭 Switzerland</option>
-                                    <option value="MA">🇲🇦 Morocco</option>
-                                    <option value="TN">🇹🇳 Tunisia</option>
-                                    <option value="DZ">🇩🇿 Algeria</option>
-                                    <option value="US">🇺🇸 United States</option>
-                                    <option value="CA">🇨🇦 Canada</option>
-                                    <option value="AU">🇦🇺 Australia</option>
-                                    <option value="JP">🇯🇵 Japan</option>
+                                    <option value="BE">Belgium (BE)</option>
+                                    <option value="FR">France (FR)</option>
+                                    <option value="DE">Germany (DE)</option>
+                                    <option value="NL">Netherlands (NL)</option>
+                                    <option value="ES">Spain (ES)</option>
+                                    <option value="IT">Italy (IT)</option>
+                                    <option value="GB">United Kingdom (GB)</option>
+                                    <option value="CH">Switzerland (CH)</option>
+                                    <option value="MA">Morocco (MA)</option>
+                                    <option value="TN">Tunisia (TN)</option>
+                                    <option value="DZ">Algeria (DZ)</option>
+                                    <option value="US">United States (US)</option>
+                                    <option value="CA">Canada (CA)</option>
+                                    <option value="AU">Australia (AU)</option>
+                                    <option value="JP">Japan (JP)</option>
                                 </select>
                             </div>
 
@@ -656,8 +667,8 @@
                         </div>
 
                         <button type="submit" id="hotspot-submit-btn"
-                            class="w-full px-4 py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
-                            ✅ <span data-i18n="apply_config">Apply Configuration</span>
+                            class="w-full px-4 py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                            <i data-lucide="check" class="icon-sm"></i> <span data-i18n="apply_config">Apply Configuration</span>
                         </button>
                     </form>
 
@@ -667,7 +678,7 @@
                 <!-- Connected Clients -->
                 <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                     <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                        <span aria-hidden="true">👥</span>
+                        <span aria-hidden="true" class="text-cyan-400"><i data-lucide="users" class="icon-md"></i></span>
                         <span data-i18n="connected_clients_title">Connected Clients</span>
                     </h2>
                     <div id="connected-clients" hx-get="/api/hotspot/clients" hx-trigger="load, every 10s" hx-swap="innerHTML">
@@ -683,7 +694,7 @@
                     <!-- System Info -->
                     <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                         <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                            <span aria-hidden="true">📊</span>
+                            <span aria-hidden="true" class="text-blue-400"><i data-lucide="bar-chart-3" class="icon-md"></i></span>
                             <span data-i18n="system_info_title">System Information</span>
                         </h2>
                         <div id="system-info" hx-get="/api/system/info" hx-trigger="load, every 30s" hx-swap="innerHTML">
@@ -694,7 +705,7 @@
                     <!-- VPN Settings -->
                     <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                         <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                            <span aria-hidden="true">🔐</span>
+                            <span aria-hidden="true" class="text-orange-400"><i data-lucide="shield-alert" class="icon-md"></i></span>
                             <span data-i18n="vpn_config_title">VPN Watchdog</span>
                         </h2>
 
@@ -714,8 +725,8 @@
                             </div>
 
                             <button type="submit" id="vpn-settings-submit-btn"
-                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
-                                💾 <span data-i18n="save_vpn_settings">Save Settings</span>
+                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="icon-sm"></i> <span data-i18n="save_vpn_settings">Save Settings</span>
                             </button>
                         </form>
                         <div id="vpn-settings-message" class="mt-2" role="alert" aria-live="polite"></div>
@@ -724,24 +735,24 @@
                     <!-- Actions -->
                     <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                         <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                            <span aria-hidden="true">⚙️</span>
+                            <span aria-hidden="true" class="text-gray-400"><i data-lucide="settings" class="icon-md"></i></span>
                             <span data-i18n="system_actions_title">System Actions</span>
                         </h2>
 
                         <div class="space-y-2 sm:space-y-3">
                             <button hx-post="/api/system/reboot" hx-confirm="Are you sure you want to reboot?"
-                                class="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
-                                🔄 <span data-i18n="reboot_pi">Reboot Pi</span>
+                                class="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="rotate-cw" class="icon-sm"></i> <span data-i18n="reboot_pi">Reboot Pi</span>
                             </button>
 
                             <button hx-post="/api/vpn/restart" hx-target="#system-action-message"
-                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
-                                🔐 <span data-i18n="restart_vpn">Restart VPN</span>
+                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="shield" class="icon-sm"></i> <span data-i18n="restart_vpn">Restart VPN</span>
                             </button>
 
                             <button hx-post="/api/hotspot/restart" hx-target="#system-action-message"
-                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation">
-                                📶 <span data-i18n="restart_hotspot">Restart Hotspot</span>
+                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="radio-tower" class="icon-sm"></i> <span data-i18n="restart_hotspot">Restart Hotspot</span>
                             </button>
                         </div>
                         <div id="system-action-message" class="mt-2" role="alert" aria-live="polite"></div>
@@ -750,7 +761,7 @@
                     <!-- Quick Guide -->
                     <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
                         <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-                            <span aria-hidden="true">📖</span>
+                            <span aria-hidden="true" class="text-rose-400"><i data-lucide="book-open" class="icon-md"></i></span>
                             <span data-i18n="guide_title">Quick Guide</span>
                         </h2>
 
@@ -776,7 +787,7 @@
     <!-- Footer -->
     <footer class="bg-gray-800 border-t border-gray-700 mt-8 sm:mt-12">
         <div class="container mx-auto px-4 py-4 sm:py-6 text-center text-xs sm:text-sm text-gray-400">
-            <p>🌹 <strong>ROSE Link</strong> - <span data-i18n="footer_title">Home VPN Router on Raspberry Pi</span></p>
+            <p><span class="text-rose-500 inline-flex items-center"><i data-lucide="flower-2" class="icon-sm"></i></span> <strong>ROSE Link</strong> - <span data-i18n="footer_title">Home VPN Router on Raspberry Pi</span></p>
             <p class="mt-1" data-i18n="footer_subtitle">Secure remote network access from anywhere</p>
         </div>
     </footer>
@@ -840,6 +851,20 @@
         }
 
         // =================================================================
+        // Icon Helper Function
+        // =================================================================
+        function icon(name, className = 'icon-sm') {
+            return `<i data-lucide="${name}" class="${className}"></i>`;
+        }
+
+        // Reinitialize Lucide icons after dynamic content
+        function refreshIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        // =================================================================
         // Render Functions
         // =================================================================
         function renderStatusCards(data) {
@@ -871,18 +896,19 @@
 
             document.getElementById('status-cards').innerHTML = `
                 <div class="bg-gray-800 rounded-lg p-3 sm:p-6 border border-gray-700">
-                    <h3 class="text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">📡 ${t('status_wan')}</h3>
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2 flex items-center gap-1"><span class="text-blue-400">${icon('wifi')}</span> ${t('status_wan')}</h3>
                     <div class="text-sm sm:text-lg">${wanStatus}</div>
                 </div>
                 <div class="bg-gray-800 rounded-lg p-3 sm:p-6 border border-gray-700">
-                    <h3 class="text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">🔐 ${t('status_vpn')}</h3>
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2 flex items-center gap-1"><span class="text-green-400">${icon('shield-check')}</span> ${t('status_vpn')}</h3>
                     <div class="text-sm sm:text-lg">${vpnStatus}</div>
                 </div>
                 <div class="bg-gray-800 rounded-lg p-3 sm:p-6 border border-gray-700">
-                    <h3 class="text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">📶 ${t('status_hotspot')}</h3>
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2 flex items-center gap-1"><span class="text-purple-400">${icon('radio-tower')}</span> ${t('status_hotspot')}</h3>
                     <div class="text-sm sm:text-lg">${apStatus}</div>
                 </div>
             `;
+            refreshIcons();
         }
 
         function renderWifiNetworks(networks) {
@@ -969,11 +995,12 @@
                     <div class="flex gap-2 flex-shrink-0">
                         ${!prof.active
                             ? `<button onclick="activateProfile('${jsName}', this)" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm transition-smooth focus-ring touch-manipulation">${t('activate')}</button>
-                               <button onclick="deleteProfile('${jsName}', this)" class="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation" title="${t('delete')}">🗑️</button>`
+                               <button onclick="deleteProfile('${jsName}', this)" class="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center" title="${t('delete')}">${icon('trash-2')}</button>`
                             : `<span class="text-xs text-green-400 px-2">${t('active')}</span>`}
                     </div>
                 </div>
             `}).join('');
+            refreshIcons();
         }
 
         function renderSystemInfo(data) {
@@ -1041,10 +1068,11 @@
             const clients = data.clients || [];
             if (clients.length === 0) {
                 container.innerHTML = `
-                    <div class="text-gray-400 text-sm p-4 bg-gray-700/50 rounded-lg text-center">
-                        <span>📵</span> ${t('no_clients')}
+                    <div class="text-gray-400 text-sm p-4 bg-gray-700/50 rounded-lg text-center flex items-center justify-center gap-2">
+                        ${icon('wifi-off')} ${t('no_clients')}
                     </div>
                 `;
+                refreshIcons();
                 return;
             }
 
@@ -1224,12 +1252,13 @@
                             </div>
                             <button onclick="disconnectWifi(this)"
                                 class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-smooth focus-ring touch-manipulation flex items-center gap-1">
-                                <span>📴</span>
+                                ${icon('wifi-off')}
                                 <span>${t('disconnect')}</span>
                             </button>
                         </div>
                     </div>
                 `;
+                refreshIcons();
             } else {
                 container.innerHTML = `
                     <div class="bg-gray-700/50 border border-gray-600 rounded-lg p-3">
@@ -1384,17 +1413,19 @@
             })
             .then(() => {
                 document.getElementById('hotspot-message').innerHTML = `
-                    <div class="p-3 bg-green-900 border border-green-700 rounded-lg text-green-200 text-sm">
-                        ✅ ${t('config_applied')}
+                    <div class="p-3 bg-green-900 border border-green-700 rounded-lg text-green-200 text-sm flex items-center gap-2">
+                        ${icon('check-circle')} ${t('config_applied')}
                     </div>`;
+                refreshIcons();
                 setTimeout(() => htmx.trigger('#status-cards', 'htmx:load'), 3000);
             })
             .catch((err) => {
                 const msg = err.detail || t('error');
                 document.getElementById('hotspot-message').innerHTML = `
-                    <div class="p-3 bg-red-900 border border-red-700 rounded-lg text-red-200 text-sm">
-                        ❌ ${escapeHtml(msg)}
+                    <div class="p-3 bg-red-900 border border-red-700 rounded-lg text-red-200 text-sm flex items-center gap-2">
+                        ${icon('x-circle')} ${escapeHtml(msg)}
                     </div>`;
+                refreshIcons();
             })
             .finally(() => setButtonLoading(btn, false));
         });
@@ -1433,6 +1464,11 @@
         // Initialization
         // =================================================================
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
             // Initialize language
             updateAllTranslations();
             updateLanguageButtons();
