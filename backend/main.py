@@ -1211,6 +1211,86 @@ async def hotspot_status() -> dict[str, Any]:
     return get_ap_status()
 
 
+@app.get("/api/hotspot/clients", tags=["Hotspot"])
+async def hotspot_clients() -> dict[str, Any]:
+    """
+    Get list of connected clients to the hotspot.
+
+    Returns:
+        List of connected clients with MAC address, signal strength, and traffic stats
+    """
+    logger.info("Getting connected clients list")
+    ap_iface = detect_ap_interface()
+    clients: list[dict[str, Any]] = []
+
+    if not ap_iface:
+        logger.warning("No AP interface detected")
+        return {"clients": clients, "count": 0}
+
+    # Get station information from iw
+    ret, out, _ = run_command(["iw", "dev", ap_iface, "station", "dump"], check=False)
+    if ret != 0 or not out:
+        return {"clients": clients, "count": 0}
+
+    # Parse the output
+    current_client: dict[str, Any] = {}
+    for line in out.split('\n'):
+        line = line.strip()
+        if line.startswith("Station "):
+            # New client entry
+            if current_client:
+                clients.append(current_client)
+            # Extract MAC address
+            parts = line.split()
+            if len(parts) >= 2:
+                current_client = {"mac": parts[1], "rx_bytes": 0, "tx_bytes": 0, "signal": "N/A"}
+        elif ":" in line and current_client:
+            # Parse property lines
+            key, _, value = line.partition(":")
+            key = key.strip().lower().replace(" ", "_")
+            value = value.strip()
+            if key == "signal":
+                current_client["signal"] = value
+            elif key == "rx_bytes":
+                try:
+                    current_client["rx_bytes"] = int(value)
+                except ValueError:
+                    pass
+            elif key == "tx_bytes":
+                try:
+                    current_client["tx_bytes"] = int(value)
+                except ValueError:
+                    pass
+            elif key == "inactive_time":
+                current_client["inactive_time"] = value
+
+    # Add last client
+    if current_client:
+        clients.append(current_client)
+
+    # Try to get hostnames from DHCP leases
+    try:
+        leases_file = "/var/lib/misc/dnsmasq.leases"
+        if os.path.exists(leases_file):
+            with open(leases_file, "r") as f:
+                for lease_line in f:
+                    parts = lease_line.strip().split()
+                    if len(parts) >= 4:
+                        lease_mac = parts[1].lower()
+                        lease_ip = parts[2]
+                        lease_hostname = parts[3] if parts[3] != "*" else ""
+                        # Match with our clients
+                        for client in clients:
+                            if client["mac"].lower() == lease_mac:
+                                client["ip"] = lease_ip
+                                client["hostname"] = lease_hostname
+    except (IOError, OSError) as e:
+        logger.debug(f"Could not read DHCP leases: {e}")
+
+    logger.info(f"Found {len(clients)} connected clients")
+    return {"clients": clients, "count": len(clients)}
+
+
 def escape_hostapd_value(value: str) -> str:
     """
     Escape a value for safe use in hostapd configuration.
