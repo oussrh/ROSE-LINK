@@ -1,12 +1,12 @@
 # 🌹 ROSE Link
 
-**Routeur VPN domestique sur Raspberry Pi 4**
+**Routeur VPN domestique sur Raspberry Pi**
 
-Transformez votre Raspberry Pi 4 en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau en Belgique, vous permettant d'accéder à vos ressources locales et d'avoir une IP publique belge depuis n'importe où dans le monde.
+Transformez votre Raspberry Pi en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau en Belgique, vous permettant d'accéder à vos ressources locales et d'avoir une IP publique belge depuis n'importe où dans le monde.
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%204-red)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
 ---
 
@@ -240,23 +240,57 @@ sudo systemctl restart hostapd
 
 ---
 
-## 🔌 Matériel Recommandé
+## 🔌 Matériel Supporté
 
-### Configuration Standard
-- **Raspberry Pi 4** (2 Go minimum, 4 Go recommandé)
-- **Alimentation officielle** 5V 3A USB-C
-- **Carte microSD** classe A2, 32-64 Go
+### Modèles Raspberry Pi Compatibles
+
+| Modèle | Support | WiFi | Notes |
+|--------|---------|------|-------|
+| **Raspberry Pi 5** | ✅ Complet | 2.4GHz + 5GHz | Performances optimales, WiFi 802.11ac |
+| **Raspberry Pi 4** | ✅ Complet | 2.4GHz + 5GHz | Recommandé, bon équilibre prix/performance |
+| **Raspberry Pi 3 B+** | ✅ Avec limitations | 2.4GHz uniquement | Performances réduites, suffisant pour usage léger |
+| **Raspberry Pi Zero 2 W** | ⚠️ Basique | 2.4GHz uniquement | Ressources limitées, usage personnel uniquement |
+
+### Configuration Recommandée
+
+#### Raspberry Pi 5 / Pi 4 (Recommandé)
+- **RAM** : 2 Go minimum, 4 Go recommandé
+- **Alimentation** : 5V 3A USB-C (5V 5A pour Pi 5)
+- **Carte microSD** : Classe A2, 32-64 Go
 - **Boîtier avec ventilateur** (refroidissement actif recommandé)
 
-### Connectivité
-- **Ethernet RJ45** : Connexion WAN prioritaire
-- **WiFi intégré** : Utilisé pour le hotspot (AP)
-- **Dongle WiFi USB** (optionnel) : Pour WiFi WAN + AP simultanés
+#### Raspberry Pi 3
+- **RAM** : 1 Go (suffisant pour usage léger)
+- **Alimentation** : 5V 2.5A micro-USB
+- **Limitations** : WiFi 2.4GHz uniquement, performances VPN réduites
 
-### Notes
-- Le WiFi intégré du Pi 4 peut gérer AP + client, mais performances limitées
-- Un second dongle WiFi USB améliore la stabilité si vous utilisez WiFi WAN + AP
-- Pour un usage Ethernet WAN + Hotspot WiFi : le WiFi intégré suffit
+#### Raspberry Pi Zero 2 W
+- **RAM** : 512 Mo (usage très léger)
+- **Alimentation** : 5V 2A micro-USB
+- **Limitations** : Usage personnel uniquement, 2-3 clients max
+
+### Connectivité
+
+| Interface | Usage | Pi 5 | Pi 4 | Pi 3 | Zero 2W |
+|-----------|-------|------|------|------|---------|
+| **Ethernet RJ45** | WAN prioritaire | ✅ Gigabit | ✅ Gigabit | ✅ 100Mbps | ❌ |
+| **WiFi intégré** | Hotspot AP | ✅ 5GHz/ac | ✅ 5GHz/ac | ⚠️ 2.4GHz | ⚠️ 2.4GHz |
+| **Dongle WiFi USB** | WAN + AP séparés | ✅ | ✅ | ✅ | ✅ |
+
+### Détection Automatique du Matériel
+
+ROSE Link détecte automatiquement :
+- 🔍 **Modèle Raspberry Pi** et ses capacités
+- 🔍 **Interfaces réseau** (Ethernet, WiFi intégré, WiFi USB)
+- 🔍 **Capacités WiFi** (5GHz, 802.11ac/ax, mode AP)
+- 🔍 **Ressources système** (RAM, espace disque, température CPU)
+
+### Notes Importantes
+
+- **Pi 5 avec end0** : L'interface Ethernet s'appelle `end0` au lieu de `eth0` - détecté automatiquement
+- **Mode 5GHz** : Activé automatiquement si le matériel le supporte
+- **WiFi simultané** : Le WiFi intégré peut gérer AP + client, mais un dongle USB améliore les performances
+- **Ethernet recommandé** : Pour WAN, préférez Ethernet RJ45 (plus stable que WiFi)
 
 ---
 
@@ -486,6 +520,8 @@ sudo nmcli device wifi connect "SSID" password "PASSWORD"
 - `POST /api/hotspot/restart` - Redémarrer le hotspot
 
 #### Système
+- `GET /api/system/info` - Informations système (modèle Pi, RAM, CPU, WiFi)
+- `GET /api/system/interfaces` - Liste des interfaces réseau détectées
 - `GET /api/system/logs?service=xxx` - Logs d'un service
 - `POST /api/system/reboot` - Redémarrer le système
 
@@ -503,6 +539,42 @@ curl -k -X POST https://roselink.local/api/wifi/scan | jq
 
 # Statut VPN
 curl -k https://roselink.local/api/vpn/status | jq
+
+# Informations système (nouveau)
+curl -k https://roselink.local/api/system/info | jq
+
+# Interfaces réseau détectées (nouveau)
+curl -k https://roselink.local/api/system/interfaces | jq
+```
+
+### Exemple de réponse `/api/system/info`
+
+```json
+{
+  "model": "Raspberry Pi 4 Model B Rev 1.4",
+  "model_short": "Pi 4",
+  "architecture": "aarch64",
+  "ram_mb": 4096,
+  "ram_free_mb": 2048,
+  "disk_total_gb": 32,
+  "disk_free_gb": 20,
+  "cpu_temp_c": 45,
+  "cpu_usage_percent": 12.5,
+  "uptime_seconds": 86400,
+  "interfaces": {
+    "ethernet": "eth0",
+    "wifi_ap": "wlan0",
+    "wifi_wan": "wlan0"
+  },
+  "wifi_capabilities": {
+    "supports_5ghz": true,
+    "supports_ac": true,
+    "supports_ax": false,
+    "ap_mode": true
+  },
+  "kernel_version": "6.1.0-rpi7-rpi-v8",
+  "os_version": "Debian GNU/Linux 12 (bookworm)"
+}
 ```
 
 ---
