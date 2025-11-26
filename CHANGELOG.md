@@ -97,6 +97,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - UI/UX with consistent spacing and responsive breakpoints
 - Performance with optimized re-renders and lazy loading
 
+## [0.2.1] - 2025-11-26
+
+### Added
+- Product features documentation (PRODUCT_FEATURES.md)
+- Frontend tests execution in CI pipeline
+
+### Changed
+- **CI/CD**: Made mypy type checking blocking (was non-blocking with `|| true`)
+- **CI/CD**: Made frontend linting blocking (removed `continue-on-error`)
+- **CI/CD**: Made ShellCheck linting blocking (was non-blocking with `|| true`)
+- **CI/CD**: Made Bandit security scan blocking (was non-blocking with `|| true`)
+- **CI/CD**: Increased JavaScript test coverage threshold from 50% to 70%
+- **CI/CD**: Build job now depends on both backend and frontend tests
+
+### Improved
+- Updated DEVELOPMENT.md with comprehensive CI check documentation
+- All quality gates in CI pipeline are now strictly enforced
+
 ## [Unreleased]
 
 ### Planned for 0.3.0
@@ -122,5 +140,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.2.1]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.1
 [0.2.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.2.0
 [0.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.1.0
