@@ -8,6 +8,6 @@ Author: ROSE Link Team
 License: MIT
 """
 
-from . import auth, wifi, vpn, hotspot, system
+from . import auth, wifi, vpn, hotspot, system, health
 
-__all__ = ["auth", "wifi", "vpn", "hotspot", "system"]
+__all__ = ["auth", "wifi", "vpn", "hotspot", "system", "health"]
