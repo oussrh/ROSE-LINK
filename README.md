@@ -10,7 +10,7 @@
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
