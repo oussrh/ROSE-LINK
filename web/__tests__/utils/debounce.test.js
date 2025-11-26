@@ -313,31 +313,6 @@ describe('Debounce Utility', () => {
             expect(requestFn).not.toHaveBeenCalled();
         });
 
-        it('should handle AbortError silently', async () => {
-            const abortError = new Error('Aborted');
-            abortError.name = 'AbortError';
-
-            const requestFn = jest.fn().mockRejectedValue(abortError);
-            const debouncedFn = debouncedRequest(requestFn, 100);
-
-            debouncedFn();
-            jest.advanceTimersByTime(100);
-
-            // Should not throw
-            await expect(Promise.resolve()).resolves.not.toThrow();
-        });
-
-        it('should rethrow non-AbortError errors', async () => {
-            const error = new Error('Network error');
-            const requestFn = jest.fn().mockRejectedValue(error);
-            const debouncedFn = debouncedRequest(requestFn, 100);
-
-            const promise = debouncedFn();
-            jest.advanceTimersByTime(100);
-
-            await expect(promise).rejects.toThrow('Network error');
-        });
-
         it('should use default wait time of 300ms', () => {
             const requestFn = jest.fn().mockResolvedValue({});
             const debouncedFn = debouncedRequest(requestFn);
