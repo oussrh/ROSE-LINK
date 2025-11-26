@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 
 from api.dependencies import require_auth
 from services.speedtest_service import SpeedTestService
@@ -45,7 +45,7 @@ async def get_speedtest_status() -> Dict[str, Any]:
     }
 
 
-@router.post("/speedtest/run", dependencies=[require_auth])
+@router.post("/speedtest/run", dependencies=[Depends(require_auth)])
 async def run_speedtest(background_tasks: BackgroundTasks) -> Dict[str, Any]:
     """
     Start a speed test.
@@ -70,7 +70,7 @@ async def run_speedtest(background_tasks: BackgroundTasks) -> Dict[str, Any]:
     }
 
 
-@router.get("/speedtest/run-sync", dependencies=[require_auth])
+@router.get("/speedtest/run-sync", dependencies=[Depends(require_auth)])
 async def run_speedtest_sync() -> Dict[str, Any]:
     """
     Run a speed test synchronously.
@@ -129,7 +129,7 @@ async def get_last_speedtest() -> Dict[str, Any]:
     }
 
 
-@router.delete("/speedtest/history", dependencies=[require_auth])
+@router.delete("/speedtest/history", dependencies=[Depends(require_auth)])
 async def clear_speedtest_history() -> Dict[str, bool]:
     """
     Clear speed test history.
