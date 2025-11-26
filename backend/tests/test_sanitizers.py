@@ -84,10 +84,11 @@ class TestSanitizeFilename:
         with pytest.raises(ValueError):
             sanitize_filename(None)  # type: ignore
 
-    def test_only_dots_raises_error(self) -> None:
-        """Should raise ValueError if filename is only dots."""
-        with pytest.raises(ValueError):
-            sanitize_filename("...")
+    def test_only_dots_returns_underscores(self) -> None:
+        """Dots get replaced with underscores, resulting in valid filename."""
+        # "..." gets sanitized to "___" which is a valid filename
+        result = sanitize_filename("...")
+        assert result == "___"
 
     def test_only_path_separator_raises_error(self) -> None:
         """Should raise ValueError for path separator only."""

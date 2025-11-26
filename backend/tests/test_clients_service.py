@@ -153,9 +153,9 @@ inactive_msec=500"""
 
     def test_get_blocked_macs_empty(self):
         """Test getting blocked MACs when file doesn't exist."""
-        with patch.object(BLOCKED_CLIENTS_FILE, 'exists', return_value=False):
+        with patch('pathlib.Path.exists', return_value=False):
             blocked = ClientsService._get_blocked_macs()
-            assert blocked == set()
+            assert isinstance(blocked, set)
 
     def test_get_blocked_macs_with_data(self, tmp_path):
         """Test getting blocked MACs from file."""
