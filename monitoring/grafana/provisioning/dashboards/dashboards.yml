@@ -1,0 +1,15 @@
+# ROSE-LINK Grafana Dashboard Provisioning
+apiVersion: 1
+
+providers:
+  - name: 'ROSE-LINK Dashboards'
+    orgId: 1
+    folder: 'ROSE-LINK'
+    folderUid: 'rose-link'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

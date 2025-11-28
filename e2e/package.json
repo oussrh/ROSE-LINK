@@ -12,6 +12,10 @@
     "test:firefox": "playwright test --project=firefox",
     "test:webkit": "playwright test --project=webkit",
     "test:mobile": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
+    "test:grafana": "playwright test --project=grafana",
+    "test:grafana:headed": "playwright test --project=grafana --headed",
+    "test:grafana:firefox": "playwright test --project=grafana-firefox",
+    "test:grafana:all": "playwright test --project=grafana --project=grafana-firefox",
     "report": "playwright show-report",
     "install-browsers": "playwright install"
   },
