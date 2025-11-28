@@ -12,6 +12,36 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "expr": "ALERTS{alertstate=\"firing\", severity=\"critical\"}",
+        "hide": false,
+        "iconColor": "red",
+        "name": "Critical Alerts",
+        "step": "10s",
+        "tagKeys": "alertname,severity",
+        "titleFormat": "🚨 {{alertname}}",
+        "type": "prometheus"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "expr": "ALERTS{alertstate=\"firing\", severity=\"warning\"}",
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Warning Alerts",
+        "step": "10s",
+        "tagKeys": "alertname,severity",
+        "titleFormat": "⚠️ {{alertname}}",
+        "type": "prometheus"
       }
     ]
   },
@@ -408,6 +438,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "Current CPU temperature with min/max over the dashboard time range",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -437,7 +468,38 @@
           },
           "unit": "celsius"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max Temperature"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Min Temperature"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 4,
@@ -450,7 +512,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
-        "orientation": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -458,7 +520,9 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
       },
       "pluginVersion": "10.2.0",
       "targets": [
@@ -469,9 +533,33 @@
           },
           "editorMode": "code",
           "expr": "rose_link_cpu_temperature_celsius",
-          "legendFormat": "CPU Temp",
+          "legendFormat": "Current",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max_over_time(rose_link_cpu_temperature_celsius[$__range])",
+          "hide": false,
+          "legendFormat": "Max Temperature",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "min_over_time(rose_link_cpu_temperature_celsius[$__range])",
+          "hide": false,
+          "legendFormat": "Min Temperature",
+          "range": true,
+          "refId": "C"
         }
       ],
       "title": "CPU Temperature",
@@ -1017,6 +1105,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "Network throughput per interface with capacity threshold line. TX values are inverted for visual symmetry.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1024,7 +1113,7 @@
           },
           "custom": {
             "axisBorderShow": false,
-            "axisCenteredZero": false,
+            "axisCenteredZero": true,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1078,6 +1167,76 @@
                 "value": "negative-Y"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Link Capacity"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Link Capacity (TX)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.transform",
+                "value": "negative-Y"
+              }
+            ]
           }
         ]
       },
@@ -1111,7 +1270,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(rose_link_network_rx_bytes_total[1m])",
+          "expr": "rate(rose_link_network_rx_bytes_total{interface=~\"$interface\"}[1m])",
           "legendFormat": "RX {{ interface }}",
           "range": true,
           "refId": "A"
@@ -1122,11 +1281,35 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(rose_link_network_tx_bytes_total[1m])",
+          "expr": "rate(rose_link_network_tx_bytes_total{interface=~\"$interface\"}[1m])",
           "hide": false,
           "legendFormat": "TX {{ interface }}",
           "range": true,
           "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "$link_capacity * 1000000 / 8",
+          "hide": false,
+          "legendFormat": "Link Capacity",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "$link_capacity * 1000000 / 8",
+          "hide": false,
+          "legendFormat": "Link Capacity (TX)",
+          "range": true,
+          "refId": "D"
         }
       ],
       "title": "Network Throughput (Bytes/sec)",
@@ -1231,7 +1414,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(rose_link_network_rx_packets_total[1m])",
+          "expr": "rate(rose_link_network_rx_packets_total{interface=~\"$interface\"}[1m])",
           "legendFormat": "RX {{ interface }}",
           "range": true,
           "refId": "A"
@@ -1242,7 +1425,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(rose_link_network_tx_packets_total[1m])",
+          "expr": "rate(rose_link_network_tx_packets_total{interface=~\"$interface\"}[1m])",
           "hide": false,
           "legendFormat": "TX {{ interface }}",
           "range": true,
@@ -1337,7 +1520,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rose_link_network_rx_bytes_total",
+          "expr": "rose_link_network_rx_bytes_total{interface=~\"$interface\"}",
           "legendFormat": "RX {{ interface }}",
           "range": true,
           "refId": "A"
@@ -1348,7 +1531,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rose_link_network_tx_bytes_total",
+          "expr": "rose_link_network_tx_bytes_total{interface=~\"$interface\"}",
           "hide": false,
           "legendFormat": "TX {{ interface }}",
           "range": true,
@@ -1359,12 +1542,130 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Bandwidth utilization as percentage of link capacity. Based on selected Link Capacity variable.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Utilization %",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "(rate(rose_link_network_rx_bytes_total{interface=~\"$interface\"}[1m]) / ($link_capacity * 1000000 / 8)) * 100",
+          "legendFormat": "RX {{ interface }}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "(rate(rose_link_network_tx_bytes_total{interface=~\"$interface\"}[1m]) / ($link_capacity * 1000000 / 8)) * 100",
+          "hide": false,
+          "legendFormat": "TX {{ interface }}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Bandwidth Utilization (%)",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 43
       },
       "id": 103,
       "panels": [],
@@ -2009,6 +2310,108 @@
         "regex": "",
         "skipUrlSync": false,
         "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(rose_link_network_rx_bytes_total, interface)",
+        "description": "Network interface to filter by",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Interface",
+        "multi": true,
+        "name": "interface",
+        "options": [],
+        "query": {
+          "query": "label_values(rose_link_network_rx_bytes_total, interface)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(rose_link_info, instance)",
+        "description": "ROSE-LINK instance/node to monitor",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Instance",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(rose_link_info, instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "100",
+          "value": "100"
+        },
+        "description": "Interface capacity in Mbps for bandwidth utilization calculation",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Link Capacity (Mbps)",
+        "multi": false,
+        "name": "link_capacity",
+        "options": [
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": false,
+            "text": "1000",
+            "value": "1000"
+          },
+          {
+            "selected": false,
+            "text": "2500",
+            "value": "2500"
+          },
+          {
+            "selected": false,
+            "text": "10000",
+            "value": "10000"
+          }
+        ],
+        "query": "10,100,1000,2500,10000",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
