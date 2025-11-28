@@ -505,7 +505,11 @@ describe('VPN Component', () => {
             const button = document.querySelector('[data-action="activate-vpn"]');
             button.click();
 
-            expect(global.fetch).toHaveBeenCalledWith('/api/vpn/activate/TestProfile', expect.any(Object));
+            expect(global.fetch).toHaveBeenCalledWith('/api/vpn/activate', expect.objectContaining({
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'TestProfile' })
+            }));
         });
 
         it('should handle delete-vpn action when clicked', () => {
