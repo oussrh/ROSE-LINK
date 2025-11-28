@@ -9,8 +9,8 @@ module.exports = defineConfig({
     // Test directory
     testDir: './tests',
 
-    // Run tests in parallel
-    fullyParallel: true,
+    // Run tests in parallel (but not in CI to avoid flakiness)
+    fullyParallel: !process.env.CI,
 
     // Fail the build on CI if you accidentally left test.only in the source code
     forbidOnly: !!process.env.CI,
@@ -22,11 +22,13 @@ module.exports = defineConfig({
     workers: process.env.CI ? 1 : undefined,
 
     // Reporter configuration
-    reporter: [
-        ['html', { outputFolder: 'playwright-report' }],
-        ['json', { outputFile: 'test-results.json' }],
-        ['list']
-    ],
+    reporter: process.env.CI
+        ? [['list'], ['json', { outputFile: 'test-results.json' }]]
+        : [
+            ['html', { outputFolder: 'playwright-report' }],
+            ['json', { outputFile: 'test-results.json' }],
+            ['list']
+        ],
 
     // Shared settings for all projects
     use: {
@@ -39,11 +41,17 @@ module.exports = defineConfig({
         // Screenshot on failure
         screenshot: 'only-on-failure',
 
-        // Video on failure
-        video: 'on-first-retry',
+        // Video on failure (disabled in CI to save resources)
+        video: process.env.CI ? 'off' : 'on-first-retry',
 
         // Viewport
         viewport: { width: 1280, height: 720 },
+
+        // Slower actions in CI for stability
+        actionTimeout: process.env.CI ? 15000 : 10000,
+
+        // Navigation timeout
+        navigationTimeout: process.env.CI ? 30000 : 20000,
     },
 
     // Configure projects for major browsers
@@ -71,13 +79,17 @@ module.exports = defineConfig({
         },
     ],
 
-    // Timeout for each test
-    timeout: 30000,
+    // Timeout for each test (longer in CI)
+    timeout: process.env.CI ? 60000 : 30000,
 
     // Timeout for expect assertions
     expect: {
-        timeout: 5000,
+        timeout: process.env.CI ? 10000 : 5000,
     },
+
+    // Global setup/teardown
+    globalSetup: undefined,
+    globalTeardown: undefined,
 
     // Run local dev server before starting the tests
     // Uncomment if you want Playwright to start the server
