@@ -54,6 +54,31 @@ describe('Configuration Module', () => {
             }
         });
 
+        it('should actually configure tailwind global when defined before import', async () => {
+            // Save original state
+            const originalTailwind = global.tailwind;
+
+            // Set up tailwind before re-importing
+            global.tailwind = {};
+
+            // Clear module cache
+            jest.resetModules();
+
+            // Re-import the module to trigger the tailwind config block
+            await import('../js/config.js');
+
+            // Verify tailwind was configured
+            expect(global.tailwind.config).toBeDefined();
+            expect(global.tailwind.config.darkMode).toBe('class');
+
+            // Restore
+            if (originalTailwind) {
+                global.tailwind = originalTailwind;
+            } else {
+                delete global.tailwind;
+            }
+        });
+
         it('should configure rose color palette', () => {
             const originalTailwind = global.tailwind;
             global.tailwind = {};
