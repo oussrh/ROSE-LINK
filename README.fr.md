@@ -10,7 +10,7 @@
 
 Transformez votre Raspberry Pi en routeur/point d'accès Wi-Fi professionnel qui établit un tunnel VPN sécurisé vers votre réseau distant, vous permettant d'accéder à vos ressources locales et d'obtenir l'IP publique de votre serveur VPN depuis n'importe où dans le monde.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -64,6 +64,14 @@ ROSE Link crée une solution VPN complète qui :
 - ✅ **Configuration pays** : Canaux et puissance conformes à la réglementation
 - ✅ **Sélection canal** : Optimisez les performances
 - ✅ **Clients connectés** : Compteur en temps réel
+
+### 📊 Dashboard Grafana de Monitoring
+- ✅ **Stack Docker Compose** : Grafana + Prometheus + Node Exporter
+- ✅ **Vue d'ensemble** : VPN, WAN, Hotspot, Clients, Uptime, Température
+- ✅ **Ressources système** : Jauges et historiques CPU, Mémoire, Disque
+- ✅ **Trafic réseau** : Débit, paquets, trafic total par interface
+- ✅ **Alertes Prometheus** : VPN/WAN down, temp CPU élevée, disque faible
+- ✅ **Variables template** : Filtrage par interface, instance et capacité
 
 ### 🎨 Interface Utilisateur Moderne
 - ✅ **Dark mode** : Interface élégante et agréable pour les yeux
@@ -119,10 +127,10 @@ sudo bash install.sh --ssid "MonVPN" --country FR
 
 ```bash
 # Télécharger le paquet
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.1.0-1_all.deb
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.2.0-1_all.deb
 
 # Installer avec apt (gère les dépendances)
-sudo apt install ./rose-link-pro_1.1.0-1_all.deb
+sudo apt install ./rose-link-pro_1.2.0-1_all.deb
 ```
 
 ### Options d'installation
@@ -674,27 +682,43 @@ curl -k https://roselink.local/api/system/interfaces | jq
 
 ## 🛣️ Roadmap
 
-### Version 1.1.0 (Version Actuelle)
+### Version 1.2.0 (Version Actuelle)
+- [x] **Dashboard Grafana de Monitoring** : Stack de monitoring complète avec Docker Compose
+  - Grafana + Prometheus + Node Exporter
+  - Panneaux vue d'ensemble, ressources système, trafic réseau
+  - Variables template pour filtrage interface/instance
+  - Règles d'alertes Prometheus pré-configurées
+  - Suivi utilisation et capacité bande passante
+- [x] **Améliorations Tests E2E** : Tests Playwright complets pour toutes les fonctionnalités
+- [x] **Améliorations Accessibilité** : Navigation clavier, labels ARIA, benchmarks
+- [x] **90%+ Couverture Tests** : Couverture branches frontend atteint les seuils stricts
+
+### Version 1.1.0
+- [x] Endpoint métriques performance (`/api/metrics/performance`)
+- [x] Rate limiting protection contre abus API
+- [x] HTTP/2 Server Push pour assets critiques
+- [x] Authentification renforcée endpoints sensibles
+- [x] Réécriture gestion erreurs frontend
+
+### Version 1.0.0 (Production Ready)
 - [x] Intégration AdGuard Home (blocage DNS + pubs)
 - [x] Support OpenVPN en plus de WireGuard
 - [x] Gestion des clients connectés (historique, blocage, kick)
 - [x] QoS simple (priorisation trafic VPN)
 - [x] Image SD flashable prête à l'emploi
 - [x] Assistant de configuration première installation
-- [x] Suite de tests complète (80%+ couverture)
+- [x] Suite de tests complète (90%+ couverture)
 - [x] WebSocket pour mises à jour temps réel
 - [x] Sauvegarde/restauration configuration
 - [x] Certificats SSL Let's Encrypt
 - [x] Test de vitesse intégré
 - [x] Métriques Prometheus
 
-### Version 1.2.x (Future)
+### Versions Futures (v1.x)
 - [ ] Notifications email pour pannes VPN
 - [ ] Profils QoS complets (Gaming, Streaming, Travail)
-- [ ] Dashboard Grafana pré-configuré
 - [ ] Support multi-WAN (load balancing)
 - [ ] Mises à jour automatiques
-- [ ] Application mobile iOS/Android
 
 ---
 
