@@ -10,7 +10,7 @@
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -90,6 +90,14 @@ ROSE Link creates a complete VPN solution that:
 - VPN import: Upload VPN profile during setup
 - Hotspot configuration: Set SSID and password
 - Security setup: Configure admin password
+
+### Grafana Monitoring Dashboard
+- Docker Compose stack: Grafana + Prometheus + Node Exporter
+- Status overview: VPN, WAN, Hotspot, Clients, Uptime, Temperature
+- System resources: CPU, Memory, Disk gauges and history
+- Network traffic: Throughput, packets, total traffic per interface
+- Prometheus alerts: VPN/WAN down, high CPU temp, low disk space
+- Template variables: Filter by interface, instance, and link capacity
 
 ### Modern User Interface
 - Dark mode: Elegant and eye-friendly interface
@@ -390,7 +398,25 @@ curl -k https://roselink.local/api/system/info | jq
 
 ## Roadmap
 
-### Version 1.0.0 (Current - Production Ready)
+### Version 1.2.0 (Current - Latest)
+- [x] **Grafana Monitoring Dashboard**: Complete monitoring stack with Docker Compose
+  - Grafana + Prometheus + Node Exporter
+  - Status overview, system resources, network traffic panels
+  - Template variables for interface/instance filtering
+  - Pre-configured Prometheus alert rules
+  - Bandwidth utilization and capacity tracking
+- [x] **E2E Test Improvements**: Comprehensive Playwright tests for all features
+- [x] **Accessibility Enhancements**: Keyboard navigation, ARIA labels, benchmarks
+- [x] **90%+ Test Coverage**: Frontend branch coverage meets strict thresholds
+
+### Version 1.1.0
+- [x] Performance metrics endpoint (`/api/metrics/performance`)
+- [x] Rate limiting for API abuse protection
+- [x] HTTP/2 Server Push for critical assets
+- [x] Enhanced authentication on sensitive endpoints
+- [x] Frontend error handling rewrite
+
+### Version 1.0.0 (Production Ready)
 - [x] **AdGuard Home Integration**: DNS-level ad blocking with statistics
 - [x] **OpenVPN Support**: In addition to WireGuard (.ovpn file import)
 - [x] **Connected Clients Management**: Track, name, block/unblock devices
@@ -418,7 +444,6 @@ curl -k https://roselink.local/api/system/info | jq
 ### Future Releases (v1.x)
 - [ ] Email notifications for VPN failures
 - [ ] Full QoS profiles (Gaming, Streaming, Work)
-- [ ] Grafana metrics dashboard
 - [ ] Multi-WAN load balancing
 - [ ] Automatic updates
 
