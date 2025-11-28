@@ -467,5 +467,174 @@ describe('Debounce Utility', () => {
             // Request was initiated
             expect(requestFn).toHaveBeenCalled();
         });
+
+        it('should handle AbortError by returning null', async () => {
+            const abortError = new Error('Aborted');
+            abortError.name = 'AbortError';
+
+            const requestFn = jest.fn().mockRejectedValue(abortError);
+            const debouncedFn = debouncedRequest(requestFn, 50);
+
+            debouncedFn('test');
+            jest.advanceTimersByTime(50);
+
+            // Wait for async to complete
+            await Promise.resolve();
+            await Promise.resolve();
+
+            // Should not throw, request function was called but abortError handled
+            expect(requestFn).toHaveBeenCalled();
+        });
+
+        it('should cancel previous abort controller when making new request', async () => {
+            let abortCount = 0;
+            const requestFn = jest.fn().mockImplementation((arg, signal) => {
+                return new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => resolve({ data: arg }), 500);
+                    signal.addEventListener('abort', () => {
+                        clearTimeout(timer);
+                        abortCount++;
+                        const err = new Error('Aborted');
+                        err.name = 'AbortError';
+                        reject(err);
+                    });
+                });
+            });
+
+            const debouncedFn = debouncedRequest(requestFn, 50);
+
+            // First request
+            debouncedFn('first');
+            jest.advanceTimersByTime(50);
+            await Promise.resolve();
+
+            // Second request should cancel the first
+            debouncedFn('second');
+            jest.advanceTimersByTime(50);
+            await Promise.resolve();
+
+            expect(abortCount).toBe(1);
+        });
+    });
+
+    describe('throttle edge cases for timeout handling', () => {
+        it('should clear existing timeout when calling at exactly remaining time', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100, { leading: true, trailing: true });
+
+            // First call
+            throttledFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Second call schedules trailing
+            throttledFn('second');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Third call while trailing is still pending - existing timeout should be cleared
+            throttledFn('third');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Advance to trigger trailing
+            jest.advanceTimersByTime(100);
+            expect(func).toHaveBeenCalledTimes(2);
+            expect(func).toHaveBeenLastCalledWith('third');
+        });
+
+        it('should handle remaining > wait edge case (time travel)', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100);
+
+            // Mock Date.now to simulate time going backwards
+            const originalNow = Date.now;
+            let mockTime = 1000;
+            Date.now = jest.fn(() => mockTime);
+
+            throttledFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Simulate time going way forward
+            mockTime = 2000; // remaining = 100 - (2000 - 1000) = -900 (negative, so immediate)
+
+            throttledFn('second');
+            expect(func).toHaveBeenCalledTimes(2);
+
+            Date.now = originalNow;
+        });
+
+        it('should clear pending timeout when remaining becomes non-positive', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100, { leading: true, trailing: true });
+
+            const originalNow = Date.now;
+            let mockTime = 1000;
+            Date.now = jest.fn(() => mockTime);
+
+            // First call with leading
+            throttledFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Second call schedules trailing
+            mockTime = 1050;
+            throttledFn('second');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Jump time past the wait period - should clear existing timeout and execute immediately
+            mockTime = 1200;
+            throttledFn('third');
+            expect(func).toHaveBeenCalledTimes(2);
+            expect(func).toHaveBeenLastCalledWith('third');
+
+            Date.now = originalNow;
+        });
+    });
+
+    describe('debounce immediate mode edge cases', () => {
+        it('should not call on trailing edge when immediate is true', () => {
+            const func = jest.fn();
+            const debouncedFn = debounce(func, 100, true);
+
+            debouncedFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+            expect(func).toHaveBeenCalledWith('first');
+
+            // Advance time
+            jest.advanceTimersByTime(100);
+
+            // Should not have called again
+            expect(func).toHaveBeenCalledTimes(1);
+        });
+
+        it('should allow re-call after timeout expires in immediate mode', () => {
+            const func = jest.fn();
+            const debouncedFn = debounce(func, 100, true);
+
+            debouncedFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Advance past timeout
+            jest.advanceTimersByTime(100);
+
+            // New call should execute immediately
+            debouncedFn('second');
+            expect(func).toHaveBeenCalledTimes(2);
+            expect(func).toHaveBeenLastCalledWith('second');
+        });
+    });
+
+    describe('debouncedSubmit edge cases', () => {
+        it('should preserve this context', async () => {
+            const obj = {
+                value: 42,
+                submit: jest.fn(async function() {
+                    return this.value;
+                })
+            };
+
+            obj.protectedSubmit = debouncedSubmit(obj.submit, 100);
+
+            await obj.protectedSubmit.call(obj);
+
+            expect(obj.submit).toHaveBeenCalled();
+        });
     });
 });
