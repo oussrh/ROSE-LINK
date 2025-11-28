@@ -132,11 +132,16 @@ jobs:
           bandit -r . -ll --exclude ./tests -f json -o bandit-report.json
           bandit -r . -ll --exclude ./tests
 
-  # E2E Tests with Playwright
+  # E2E Tests with Playwright - using sharding for parallel execution
   test-e2e:
-    name: E2E Tests
+    name: E2E Tests (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend]
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
 
     steps:
       - name: Checkout code
@@ -153,6 +158,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-e2e-node-${{ hashFiles('e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-node-
 
       - name: Install backend dependencies
         working-directory: backend
@@ -174,12 +187,12 @@ jobs:
           # Start server in background with mock mode for testing
           ROSE_MOCK_MODE=true python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
           # Wait for server to be ready
-          sleep 10
-          curl --retry 5 --retry-delay 2 --retry-connrefused http://localhost:8000/api/health || echo "Health check failed but continuing"
+          sleep 5
+          curl --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/health || echo "Health check failed but continuing"
 
-      - name: Run E2E tests
+      - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         working-directory: e2e
-        run: npx playwright test --project=chromium --reporter=list
+        run: npx playwright test --project=chromium --reporter=list --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           BASE_URL: http://localhost:8000
 
@@ -187,7 +200,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shardIndex }}
           path: e2e/playwright-report/
           retention-days: 7
 
@@ -195,7 +208,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: e2e-test-results
+          name: e2e-test-results-shard-${{ matrix.shardIndex }}
           path: e2e/test-results.json
           retention-days: 7
 
