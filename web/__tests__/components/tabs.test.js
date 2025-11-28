@@ -251,4 +251,88 @@ describe('Tab Navigation Component', () => {
             expect(typeof window.showTab).toBe('function');
         });
     });
+
+    describe('Branch coverage - edge cases', () => {
+        it('should handle keyboard navigation when no tab is active', () => {
+            initTabs();
+
+            // Remove aria-selected from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.setAttribute('aria-selected', 'false');
+            });
+
+            const wifiBtn = document.getElementById('tab-wifi');
+            const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+
+            // Should not throw when no active tab
+            expect(() => wifiBtn.dispatchEvent(event)).not.toThrow();
+        });
+
+        it('should use default tab when getCurrentTab finds no active button', () => {
+            initTabs();
+
+            // Remove active state from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.setAttribute('aria-selected', 'false');
+            });
+
+            // Trigger a keyboard event - should default to first tab behavior
+            const wifiBtn = document.getElementById('tab-wifi');
+            const event = new KeyboardEvent('keydown', { key: 'Home', bubbles: true });
+            wifiBtn.dispatchEvent(event);
+
+            // Home key should navigate to first tab (wifi)
+            expect(document.getElementById('tab-wifi').getAttribute('aria-selected')).toBe('true');
+        });
+
+        it('should handle ArrowUp the same as ArrowLeft', () => {
+            initTabs();
+
+            // First select VPN tab
+            showTab('vpn');
+            expect(document.getElementById('tab-vpn').getAttribute('aria-selected')).toBe('true');
+
+            // Now press ArrowUp on VPN tab
+            const vpnBtn = document.getElementById('tab-vpn');
+            const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true });
+            vpnBtn.dispatchEvent(event);
+
+            // Should navigate to wifi (previous tab)
+            const wifiBtn = document.getElementById('tab-wifi');
+            expect(wifiBtn.getAttribute('aria-selected')).toBe('true');
+        });
+
+        it('should handle ArrowDown the same as ArrowRight', () => {
+            initTabs();
+
+            // First select WiFi tab
+            showTab('wifi');
+            expect(document.getElementById('tab-wifi').getAttribute('aria-selected')).toBe('true');
+
+            // Now press ArrowDown on WiFi tab
+            const wifiBtn = document.getElementById('tab-wifi');
+            const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
+            wifiBtn.dispatchEvent(event);
+
+            // Should navigate to vpn (next tab)
+            const vpnBtn = document.getElementById('tab-vpn');
+            expect(vpnBtn.getAttribute('aria-selected')).toBe('true');
+        });
+
+        it('should ignore non-navigation keys', () => {
+            initTabs();
+
+            // First select WiFi tab
+            showTab('wifi');
+            expect(document.getElementById('tab-wifi').getAttribute('aria-selected')).toBe('true');
+
+            // Press a non-navigation key
+            const wifiBtn = document.getElementById('tab-wifi');
+            const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
+            wifiBtn.dispatchEvent(event);
+
+            // wifi should still be selected
+            expect(wifiBtn.getAttribute('aria-selected')).toBe('true');
+        });
+    });
 });

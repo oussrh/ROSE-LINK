@@ -417,6 +417,23 @@ describe('Debounce Utility', () => {
             expect(func).toHaveBeenCalledTimes(2);
             expect(func).toHaveBeenLastCalledWith('third');
         });
+
+        it('should execute immediately when time has passed beyond wait', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100, { leading: true, trailing: true });
+
+            // First call - immediate execution
+            throttledFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Wait well past the throttle period
+            jest.advanceTimersByTime(200);
+
+            // Call again - should execute immediately since enough time passed
+            throttledFn('second');
+            expect(func).toHaveBeenCalledTimes(2);
+            expect(func).toHaveBeenLastCalledWith('second');
+        });
     });
 
     describe('debouncedRequest abort and error handling', () => {
