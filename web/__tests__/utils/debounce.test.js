@@ -383,4 +383,72 @@ describe('Debounce Utility', () => {
             expect(debouncedFn.pending()).toBe(false);
         });
     });
+
+    describe('throttle remaining time edge cases', () => {
+        it('should clear existing timeout when remaining time becomes non-positive', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100, { leading: true, trailing: true });
+
+            // First call - leads
+            throttledFn('first');
+            expect(func).toHaveBeenCalledTimes(1);
+
+            // Advance time past the wait period
+            jest.advanceTimersByTime(101);
+
+            // Call again - should trigger immediately because remaining is negative
+            throttledFn('second');
+            expect(func).toHaveBeenCalledTimes(2);
+            expect(func).toHaveBeenLastCalledWith('second');
+        });
+
+        it('should handle rapid calls within wait period with trailing', () => {
+            const func = jest.fn();
+            const throttledFn = throttle(func, 100, { leading: true, trailing: true });
+
+            throttledFn('first');
+            throttledFn('second');
+            throttledFn('third');
+
+            expect(func).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(100);
+
+            expect(func).toHaveBeenCalledTimes(2);
+            expect(func).toHaveBeenLastCalledWith('third');
+        });
+    });
+
+    describe('debouncedRequest abort and error handling', () => {
+        it('should handle abort() when no controller exists', () => {
+            const requestFn = jest.fn().mockResolvedValue({});
+            const debouncedFn = debouncedRequest(requestFn, 100);
+
+            // Calling abort without any pending request should not throw
+            expect(() => debouncedFn.abort()).not.toThrow();
+        });
+
+        it('should call abort on controller when abort() is called during request', () => {
+            const requestFn = jest.fn().mockImplementation((arg, signal) => {
+                // Simulate a long-running request
+                return new Promise(resolve => {
+                    const timer = setTimeout(() => resolve({ data: arg }), 1000);
+                    signal.addEventListener('abort', () => {
+                        clearTimeout(timer);
+                    });
+                });
+            });
+
+            const debouncedFn = debouncedRequest(requestFn, 50);
+
+            debouncedFn('test');
+            jest.advanceTimersByTime(50);
+
+            // Now abort
+            debouncedFn.abort();
+
+            // Request was initiated
+            expect(requestFn).toHaveBeenCalled();
+        });
+    });
 });

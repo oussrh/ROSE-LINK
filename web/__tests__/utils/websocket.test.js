@@ -391,11 +391,22 @@ describe('WebSocket Utilities', () => {
             const errorCallback = jest.fn(() => { throw new Error('Test'); });
             const normalCallback = jest.fn();
 
+            // Mock console.error to prevent test output noise
+            const originalError = console.error;
+            console.error = jest.fn();
+
             wsManager.on('test', errorCallback);
             wsManager.on('test', normalCallback);
 
             expect(() => wsManager.emit('test', {})).not.toThrow();
             expect(normalCallback).toHaveBeenCalled();
+            expect(console.error).toHaveBeenCalledWith(
+                expect.stringContaining('Error in test listener:'),
+                expect.any(Error)
+            );
+
+            // Restore console.error
+            console.error = originalError;
         });
     });
 

@@ -801,4 +801,69 @@ describe('Setup Wizard Component', () => {
             expect(content.innerHTML).toContain('wizard_summary');
         });
     });
+
+    describe('Network error handling', () => {
+        it('should handle WiFi scan network error', async () => {
+            global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+            showWizard();
+            nextStep(); // Go to WiFi step
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const container = document.getElementById('wizard-wifi-networks');
+            expect(container.innerHTML).toContain('error');
+        });
+
+        it('should handle WiFi connect network error', async () => {
+            const mockNetworks = [{ ssid: 'TestNet', signal: 80 }];
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({ networks: mockNetworks })
+                })
+                .mockRejectedValueOnce(new Error('Connection failed'));
+
+            global.prompt = jest.fn().mockReturnValue('password123');
+
+            showWizard();
+            nextStep();
+
+            const scanBtn = document.getElementById('wizard-wifi-scan');
+            scanBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const networkEl = document.querySelector('[data-ssid="TestNet"]');
+            networkEl.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(showToast).toHaveBeenCalledWith('error', 'error');
+        });
+
+        it('should handle VPN import network error', async () => {
+            global.fetch = jest.fn().mockRejectedValue(new Error('Upload failed'));
+
+            showWizard();
+            nextStep(); // wifi
+            nextStep(); // vpn
+
+            const fileInput = document.getElementById('wizard-vpn-file');
+            const file = new File(['[Interface]'], 'test.conf', { type: 'text/plain' });
+            Object.defineProperty(fileInput, 'files', { value: [file] });
+
+            const importBtn = document.getElementById('wizard-vpn-import');
+            importBtn.click();
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const statusEl = document.getElementById('wizard-vpn-status');
+            expect(statusEl.innerHTML).toContain('error');
+        });
+    });
 });
