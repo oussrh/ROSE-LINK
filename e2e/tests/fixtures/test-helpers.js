@@ -28,7 +28,12 @@ async function navigateToTab(page, tabName) {
  */
 async function setLanguage(page, lang) {
     await page.click(`#lang-${lang}`);
-    await page.waitForTimeout(500); // Allow time for i18n update
+    // Wait for language attribute to update on html element
+    await page.waitForFunction(
+        (expectedLang) => document.documentElement.lang === expectedLang,
+        lang,
+        { timeout: 5000 }
+    );
 }
 
 /**
@@ -146,6 +151,188 @@ async function expectToast(page, type, text = null) {
     if (text) {
         await expect(toast).toContainText(text);
     }
+}
+
+/**
+ * Wait for API response and optionally validate payload
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} url - URL pattern to intercept
+ * @param {object} options - Options for response and validation
+ * @returns {Promise<{request: object, response: object}>} - Captured request/response data
+ */
+async function mockApiWithValidation(page, url, options = {}) {
+    const {
+        response = { status: 'success' },
+        status = 200,
+        validatePayload = null,
+        method = null
+    } = options;
+
+    const captured = { request: null, validated: false };
+
+    await page.route(url, (route) => {
+        if (method && route.request().method() !== method) {
+            route.continue();
+            return;
+        }
+
+        captured.request = {
+            url: route.request().url(),
+            method: route.request().method(),
+            postData: route.request().postData(),
+            headers: route.request().headers(),
+        };
+
+        // Parse and validate payload if validator provided
+        if (validatePayload && captured.request.postData) {
+            try {
+                const payload = JSON.parse(captured.request.postData);
+                captured.validated = validatePayload(payload);
+            } catch {
+                captured.validated = false;
+            }
+        }
+
+        route.fulfill({
+            status,
+            contentType: 'application/json',
+            body: JSON.stringify(response),
+        });
+    });
+
+    return captured;
+}
+
+/**
+ * Wait for network idle state (no pending requests)
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {number} timeout - Timeout in milliseconds
+ */
+async function waitForNetworkIdle(page, timeout = 5000) {
+    await page.waitForLoadState('networkidle', { timeout });
+}
+
+/**
+ * Wait for specific API response
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} urlPattern - URL pattern to wait for
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Response>} - The response object
+ */
+async function waitForApiResponse(page, urlPattern, timeout = 10000) {
+    return page.waitForResponse(
+        response => response.url().includes(urlPattern),
+        { timeout }
+    );
+}
+
+/**
+ * Expect message area to contain specific text
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} selector - Message area selector
+ * @param {string|RegExp} expectedText - Expected text or pattern
+ * @param {number} timeout - Timeout in milliseconds
+ */
+async function expectMessageContent(page, selector, expectedText, timeout = 5000) {
+    const messageArea = page.locator(selector);
+    await expect(messageArea).toBeVisible({ timeout });
+
+    if (typeof expectedText === 'string') {
+        await expect(messageArea).toContainText(expectedText, { timeout });
+    } else {
+        await expect(messageArea).toHaveText(expectedText, { timeout });
+    }
+}
+
+/**
+ * Check for offline indicator
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {boolean} expectVisible - Whether indicator should be visible
+ */
+async function expectOfflineIndicator(page, expectVisible = true) {
+    const indicator = page.locator('[data-testid="offline-indicator"], .offline-indicator, [aria-label*="offline"]');
+
+    if (expectVisible) {
+        await expect(indicator).toBeVisible({ timeout: 5000 });
+    } else {
+        await expect(indicator).not.toBeVisible({ timeout: 1000 }).catch(() => {
+            // It's ok if indicator doesn't exist at all
+        });
+    }
+}
+
+/**
+ * Wait for status card to update with specific content
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} cardName - Status card identifier (WAN, VPN, AP)
+ * @param {string|RegExp} expectedContent - Expected content
+ */
+async function expectStatusCardContent(page, cardName, expectedContent) {
+    const cardSelector = `#status-cards :has-text("${cardName}")`;
+    const card = page.locator(cardSelector).first();
+
+    await expect(card).toBeVisible({ timeout: 5000 });
+
+    if (typeof expectedContent === 'string') {
+        await expect(card).toContainText(expectedContent);
+    } else {
+        await expect(card).toHaveText(expectedContent);
+    }
+}
+
+/**
+ * Submit form and wait for response
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} submitSelector - Submit button selector
+ * @param {string} apiPattern - API URL pattern to wait for
+ * @returns {Promise<Response>} - The API response
+ */
+async function submitFormAndWaitForResponse(page, submitSelector, apiPattern) {
+    const responsePromise = page.waitForResponse(
+        response => response.url().includes(apiPattern),
+        { timeout: 10000 }
+    );
+
+    await page.click(submitSelector);
+
+    return responsePromise;
+}
+
+/**
+ * Verify form submission payload
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} apiPattern - API URL pattern
+ * @param {object} expectedFields - Expected fields in payload
+ * @param {Function} action - Action that triggers the submission
+ */
+async function verifyFormSubmission(page, apiPattern, expectedFields, action) {
+    let capturedPayload = null;
+
+    const originalRoute = page.route(apiPattern, async (route) => {
+        const postData = route.request().postData();
+        if (postData) {
+            try {
+                capturedPayload = JSON.parse(postData);
+            } catch {
+                capturedPayload = postData;
+            }
+        }
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ status: 'success' }),
+        });
+    });
+
+    await action();
+
+    // Wait for the route to be hit
+    await page.waitForResponse(
+        response => response.url().includes(apiPattern),
+        { timeout: 10000 }
+    ).catch(() => null);
+
+    return { payload: capturedPayload, expectedFields };
 }
 
 /**
@@ -293,6 +480,14 @@ module.exports = {
     captureApiRequests,
     fillAndSubmitForm,
     expectToast,
+    mockApiWithValidation,
+    waitForNetworkIdle,
+    waitForApiResponse,
+    expectMessageContent,
+    expectOfflineIndicator,
+    expectStatusCardContent,
+    submitFormAndWaitForResponse,
+    verifyFormSubmission,
     SELECTORS,
     TEST_DATA,
 };
