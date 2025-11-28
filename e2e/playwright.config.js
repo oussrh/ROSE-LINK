@@ -13,17 +13,17 @@ module.exports = defineConfig({
     // Test directory
     testDir: './tests',
 
-    // Run tests in parallel (but not in CI to avoid flakiness)
-    fullyParallel: !process.env.CI,
+    // Run tests in parallel - use more workers in CI for faster execution
+    fullyParallel: true,
 
     // Fail the build on CI if you accidentally left test.only in the source code
     forbidOnly: !!process.env.CI,
 
-    // Retry on CI only
-    retries: process.env.CI ? 2 : 0,
+    // Retry only once on CI to reduce time for consistently failing tests
+    retries: process.env.CI ? 1 : 0,
 
-    // Number of workers
-    workers: process.env.CI ? 1 : undefined,
+    // Use more workers in CI (GitHub runners have 2-4 cores)
+    workers: process.env.CI ? 4 : undefined,
 
     // Reporter configuration
     reporter: process.env.CI
@@ -51,11 +51,11 @@ module.exports = defineConfig({
         // Viewport
         viewport: { width: 1280, height: 720 },
 
-        // Slower actions in CI for stability
-        actionTimeout: process.env.CI ? 15000 : 10000,
+        // Reduced timeouts - fail fast rather than wait
+        actionTimeout: 10000,
 
         // Navigation timeout
-        navigationTimeout: process.env.CI ? 30000 : 20000,
+        navigationTimeout: 15000,
     },
 
     // Configure projects for major browsers
@@ -105,12 +105,12 @@ module.exports = defineConfig({
         },
     ],
 
-    // Timeout for each test (longer in CI)
-    timeout: process.env.CI ? 60000 : 30000,
+    // Timeout for each test - reduced for faster feedback
+    timeout: 30000,
 
     // Timeout for expect assertions
     expect: {
-        timeout: process.env.CI ? 10000 : 5000,
+        timeout: 5000,
     },
 
     // Global setup/teardown
