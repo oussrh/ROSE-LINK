@@ -329,17 +329,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2025-11-28
+
+### Added
+- **Grafana Monitoring Dashboard**: Complete monitoring stack with Docker Compose
+  - Grafana + Prometheus + Node Exporter containerized setup
+  - Comprehensive ROSE-LINK dashboard with:
+    - Status overview (VPN, WAN, Hotspot, Clients, Uptime, Temperature)
+    - System resources gauges and time series (CPU, Memory, Disk)
+    - Network traffic graphs (throughput, packets, total traffic)
+    - VPN & connectivity status history
+    - CPU temperature and disk usage over time
+  - Template variables for interface filtering (multi-select) and instance selection
+  - Link capacity variable (10/100/1000/2500/10000 Mbps) for bandwidth calculations
+  - Bandwidth utilization panel showing percentage of capacity used
+  - Pre-configured Prometheus scraping of ROSE-LINK metrics endpoint
+
+- **Prometheus Alert Rules**: Production-ready alerting configuration
+  - VPNDisconnected: VPN down for >1 minute (Critical)
+  - WANDisconnected: WAN down for >2 minutes (Critical)
+  - HighCPUTemperature: CPU temp >70°C for >5 minutes (Warning)
+  - CriticalCPUTemperature: CPU temp >80°C for >1 minute (Critical)
+  - HighCPUUsage: CPU usage >90% for >5 minutes (Warning)
+  - HighMemoryUsage: Memory usage >85% for >5 minutes (Warning)
+  - CriticalMemoryUsage: Memory usage >95% for >2 minutes (Critical)
+  - LowDiskSpace: Disk usage >80% for >10 minutes (Warning)
+  - CriticalDiskSpace: Disk usage >95% for >5 minutes (Critical)
+  - HotspotDown: Hotspot inactive for >2 minutes (Warning)
+  - RoseLinkDown: Backend not responding for >1 minute (Critical)
+
+- **E2E Test Coverage Improvements**: Comprehensive Playwright tests
+  - Grafana dashboard E2E tests with dedicated test project
+  - E2E coverage quality assessment and improvements
+  - Tests for VPN, WiFi, Hotspot, Accessibility flows
+
+- **Accessibility Enhancements**: Improved keyboard navigation and ARIA support
+  - Type checking configuration for frontend
+  - Performance benchmarks
+
+### Changed
+- Frontend test branch coverage increased to 90%+ threshold
+- Enhanced Grafana dashboard panels with min/max aggregations
+- Alert annotations added to Grafana panels for operational visibility
+
+### Files Added
+- `monitoring/docker-compose.yml` - Container orchestration
+- `monitoring/README.md` - Monitoring stack documentation
+- `monitoring/prometheus/prometheus.yml` - Prometheus configuration
+- `monitoring/prometheus/alerts.yml` - Alert rules
+- `monitoring/grafana/dashboards/rose-link-dashboard.json` - Main dashboard
+- `monitoring/grafana/provisioning/datasources/datasources.yml` - Datasource config
+- `monitoring/grafana/provisioning/dashboards/dashboards.yml` - Dashboard provisioning
+- `e2e/tests/grafana.spec.js` - Grafana E2E tests
+
+---
+
 ## [Unreleased]
 
 ### Planned for 1.x
 - Email notifications for VPN failures
 - Full QoS profiles (Gaming, Streaming, Work)
-- Grafana metrics dashboard
 - Multi-WAN load balancing
 - Automatic updates
 
 ---
 
+[1.2.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.2.0
 [1.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.1.0
 [1.0.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.0.0
 [0.3.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v0.3.0
