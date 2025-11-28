@@ -57,6 +57,15 @@
     <link rel="stylesheet" href="/css/custom.css">
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen antialiased font-alexandria">
+    <!-- Skip Link for Keyboard Navigation -->
+    <a href="#main-content" id="skip-link"
+        class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-rose-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-white">
+        Skip to main content
+    </a>
+
+    <!-- Live Region for Screen Reader Announcements -->
+    <div id="a11y-live-region" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
     <!-- Loading/Splash Screen -->
     <div id="splash-screen" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center transition-opacity duration-500">
         <img src="/Logo.webp" alt="ROSE Link" class="w-32 h-auto mb-6 animate-pulse">
@@ -134,7 +143,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+    <main id="main-content" class="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <!-- Status Cards -->
         <div id="status-cards" hx-get="/api/status" hx-trigger="load, every 5s" hx-swap="innerHTML"
             class="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8" role="region" aria-label="System status">
