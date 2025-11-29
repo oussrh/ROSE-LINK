@@ -1,0 +1,521 @@
+#!/bin/bash
+#
+# ROSE Link Monitoring Control Script
+# Manages Prometheus, Node Exporter, and Grafana
+#
+# Usage: rose-monitoring [enable|disable|status|restart]
+#
+
+set -euo pipefail
+
+readonly VERSION="1.0.0"
+readonly PROMETHEUS_VERSION="2.47.0"
+readonly NODE_EXPORTER_VERSION="1.6.1"
+readonly INSTALL_DIR="/opt/rose-link"
+readonly MONITORING_DIR="/opt/rose-link/monitoring"
+readonly PROMETHEUS_USER="prometheus"
+readonly GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-roselink}"
+
+# Colors
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly CYAN='\033[0;36m'
+readonly BOLD='\033[1m'
+readonly NC='\033[0m'
+
+# Architecture detection
+detect_arch() {
+    local arch
+    arch=$(uname -m)
+    case "$arch" in
+        aarch64|arm64) echo "arm64" ;;
+        armv7l|armhf) echo "armv7" ;;
+        x86_64) echo "amd64" ;;
+        *) echo "unsupported" ;;
+    esac
+}
+
+PROMETHEUS_ARCH=$(detect_arch)
+
+info() { echo -e "${CYAN}→${NC} $1"; }
+success() { echo -e "${GREEN}✓${NC} $1"; }
+warning() { echo -e "${YELLOW}⚠${NC} $1"; }
+error() { echo -e "${RED}✗${NC} $1"; }
+
+check_root() {
+    if [[ "$EUID" -ne 0 ]]; then
+        error "This command must be run as root (sudo)"
+        exit 1
+    fi
+}
+
+check_resources() {
+    local ram_mb
+    ram_mb=$(free -m | awk '/^Mem:/{print $2}')
+    if [[ "$ram_mb" -lt 1024 ]]; then
+        warning "Low RAM detected (${ram_mb}MB). Monitoring may impact performance."
+        warning "Recommended: Raspberry Pi 4/5 with 2GB+ RAM"
+    fi
+}
+
+is_monitoring_installed() {
+    [[ -f /usr/local/bin/prometheus ]] && [[ -f /usr/local/bin/node_exporter ]] && command -v grafana-server &>/dev/null
+}
+
+is_monitoring_enabled() {
+    systemctl is-enabled prometheus &>/dev/null 2>&1
+}
+
+install_prometheus() {
+    if [[ "$PROMETHEUS_ARCH" == "unsupported" ]]; then
+        error "Unsupported architecture: $(uname -m)"
+        exit 1
+    fi
+
+    info "Installing Prometheus v${PROMETHEUS_VERSION}..."
+
+    local tmp_dir="/tmp/prometheus_install_$$"
+    mkdir -p "$tmp_dir"
+
+    # Create user if not exists
+    if ! id -u "$PROMETHEUS_USER" &>/dev/null; then
+        useradd -r -s /usr/sbin/nologin -d /var/lib/prometheus -c "Prometheus" "$PROMETHEUS_USER"
+    fi
+
+    # Create directories
+    mkdir -p /etc/prometheus /var/lib/prometheus
+
+    # Download and install
+    local url="https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}.tar.gz"
+    curl -sL "$url" -o "$tmp_dir/prometheus.tar.gz"
+    tar -xzf "$tmp_dir/prometheus.tar.gz" -C "$tmp_dir"
+
+    cp "$tmp_dir/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}/prometheus" /usr/local/bin/
+    cp "$tmp_dir/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}/promtool" /usr/local/bin/
+    chmod +x /usr/local/bin/prometheus /usr/local/bin/promtool
+
+    cp -r "$tmp_dir/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}/consoles" /etc/prometheus/
+    cp -r "$tmp_dir/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}/console_libraries" /etc/prometheus/
+
+    chown -R "$PROMETHEUS_USER:$PROMETHEUS_USER" /etc/prometheus /var/lib/prometheus
+
+    rm -rf "$tmp_dir"
+    success "Prometheus installed"
+}
+
+install_node_exporter() {
+    info "Installing Node Exporter v${NODE_EXPORTER_VERSION}..."
+
+    local tmp_dir="/tmp/node_exporter_install_$$"
+    mkdir -p "$tmp_dir"
+
+    local url="https://github.com/prometheus/node_exporter/releases/download/v${NODE_EXPORTER_VERSION}/node_exporter-${NODE_EXPORTER_VERSION}.linux-${PROMETHEUS_ARCH}.tar.gz"
+    curl -sL "$url" -o "$tmp_dir/node_exporter.tar.gz"
+    tar -xzf "$tmp_dir/node_exporter.tar.gz" -C "$tmp_dir"
+
+    cp "$tmp_dir/node_exporter-${NODE_EXPORTER_VERSION}.linux-${PROMETHEUS_ARCH}/node_exporter" /usr/local/bin/
+    chmod +x /usr/local/bin/node_exporter
+
+    rm -rf "$tmp_dir"
+    success "Node Exporter installed"
+}
+
+install_grafana() {
+    info "Installing Grafana..."
+
+    # Add GPG key
+    if [[ ! -f /usr/share/keyrings/grafana.key ]]; then
+        wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
+    fi
+
+    # Add repository
+    echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" > /etc/apt/sources.list.d/grafana.list
+
+    apt-get update -qq
+    apt-get install -y -qq grafana
+
+    success "Grafana installed"
+}
+
+configure_prometheus() {
+    info "Configuring Prometheus..."
+
+    # Copy config from package if exists
+    if [[ -f "$INSTALL_DIR/monitoring/prometheus/prometheus.yml" ]]; then
+        cp "$INSTALL_DIR/monitoring/prometheus/prometheus.yml" /etc/prometheus/prometheus.yml
+        # Update target from Docker to localhost
+        sed -i 's/host.docker.internal:8000/localhost:8000/g' /etc/prometheus/prometheus.yml
+        sed -i 's/node-exporter:9100/localhost:9100/g' /etc/prometheus/prometheus.yml
+    else
+        cat > /etc/prometheus/prometheus.yml << 'EOF'
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'rose-link-monitor'
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  - job_name: 'rose-link'
+    metrics_path: '/api/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:8000']
+        labels:
+          instance: 'rose-link-backend'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+        labels:
+          instance: 'rose-link-host'
+EOF
+    fi
+
+    # Copy alerts
+    if [[ -f "$INSTALL_DIR/monitoring/prometheus/alerts.yml" ]]; then
+        cp "$INSTALL_DIR/monitoring/prometheus/alerts.yml" /etc/prometheus/alerts.yml
+    fi
+
+    chown -R "$PROMETHEUS_USER:$PROMETHEUS_USER" /etc/prometheus
+    success "Prometheus configured"
+}
+
+configure_grafana() {
+    info "Configuring Grafana..."
+
+    mkdir -p /etc/grafana/provisioning/datasources
+    mkdir -p /etc/grafana/provisioning/dashboards
+    mkdir -p /var/lib/grafana/dashboards
+
+    # Datasources
+    cat > /etc/grafana/provisioning/datasources/datasources.yml << 'EOF'
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://localhost:9090
+    isDefault: true
+    editable: false
+EOF
+
+    # Dashboard provisioning
+    cat > /etc/grafana/provisioning/dashboards/dashboards.yml << 'EOF'
+apiVersion: 1
+providers:
+  - name: 'ROSE-LINK'
+    folder: 'ROSE-LINK'
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
+EOF
+
+    # Copy dashboard
+    if [[ -f "$INSTALL_DIR/monitoring/grafana/dashboards/rose-link-dashboard.json" ]]; then
+        cp "$INSTALL_DIR/monitoring/grafana/dashboards/rose-link-dashboard.json" /var/lib/grafana/dashboards/
+    fi
+
+    # Grafana config
+    cat > /etc/grafana/grafana.ini << EOF
+[server]
+http_port = 3000
+root_url = %(protocol)s://%(domain)s/grafana/
+serve_from_sub_path = true
+
+[security]
+admin_user = admin
+admin_password = ${GRAFANA_PASSWORD}
+
+[users]
+allow_sign_up = false
+
+[auth.anonymous]
+enabled = true
+org_role = Viewer
+EOF
+
+    chown -R grafana:grafana /var/lib/grafana /etc/grafana
+    success "Grafana configured"
+}
+
+create_systemd_services() {
+    info "Creating systemd services..."
+
+    # Prometheus service
+    cat > /etc/systemd/system/prometheus.service << EOF
+[Unit]
+Description=Prometheus Monitoring
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${PROMETHEUS_USER}
+Group=${PROMETHEUS_USER}
+ExecStart=/usr/local/bin/prometheus \\
+  --config.file=/etc/prometheus/prometheus.yml \\
+  --storage.tsdb.path=/var/lib/prometheus \\
+  --storage.tsdb.retention.time=15d \\
+  --web.listen-address=0.0.0.0:9090
+Restart=always
+RestartSec=10
+MemoryMax=256M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Node Exporter service
+    cat > /etc/systemd/system/node_exporter.service << EOF
+[Unit]
+Description=Prometheus Node Exporter
+After=network-online.target
+
+[Service]
+Type=simple
+User=${PROMETHEUS_USER}
+Group=${PROMETHEUS_USER}
+ExecStart=/usr/local/bin/node_exporter \\
+  --collector.filesystem.mount-points-exclude='^/(sys|proc|dev|host|etc)($$|/)' \\
+  --web.listen-address=:9100
+Restart=always
+RestartSec=10
+MemoryMax=64M
+CPUQuota=20%
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    success "Systemd services created"
+}
+
+configure_nginx_grafana() {
+    info "Configuring Nginx for Grafana..."
+
+    local nginx_conf="/etc/nginx/sites-available/roselink"
+
+    if [[ -f "$nginx_conf" ]] && ! grep -q "location /grafana" "$nginx_conf"; then
+        # Add Grafana location before the last closing brace
+        sed -i '/^}$/i\
+    # Grafana Dashboard\
+    location /grafana/ {\
+        proxy_pass http://127.0.0.1:3000/;\
+        proxy_http_version 1.1;\
+        proxy_set_header Host $host;\
+        proxy_set_header X-Real-IP $remote_addr;\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\
+        proxy_set_header X-Forwarded-Proto $scheme;\
+        proxy_set_header Upgrade $http_upgrade;\
+        proxy_set_header Connection "upgrade";\
+    }' "$nginx_conf"
+
+        if nginx -t &>/dev/null; then
+            systemctl reload nginx
+            success "Nginx configured for Grafana"
+        else
+            warning "Nginx configuration error"
+        fi
+    fi
+}
+
+enable_monitoring() {
+    check_root
+    check_resources
+
+    echo -e "${BOLD}Enabling ROSE Link Monitoring Stack${NC}"
+    echo ""
+
+    if ! is_monitoring_installed; then
+        install_prometheus
+        install_node_exporter
+        install_grafana
+        configure_prometheus
+        configure_grafana
+        create_systemd_services
+        configure_nginx_grafana
+    else
+        info "Monitoring components already installed"
+    fi
+
+    info "Starting services..."
+    systemctl enable prometheus node_exporter grafana-server
+    systemctl start prometheus
+    sleep 2
+    systemctl start node_exporter
+    sleep 2
+    systemctl start grafana-server
+
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║         Monitoring Stack Enabled Successfully!            ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${BOLD}Access URLs:${NC}"
+    echo -e "  Grafana:    ${CYAN}https://roselink.local/grafana/${NC}"
+    echo -e "              ${CYAN}http://192.168.50.1:3000${NC}"
+    echo -e "  Prometheus: ${CYAN}http://192.168.50.1:9090${NC}"
+    echo ""
+    echo -e "${BOLD}Grafana Credentials:${NC}"
+    echo -e "  Username: ${GREEN}admin${NC}"
+    echo -e "  Password: ${GREEN}${GRAFANA_PASSWORD}${NC}"
+    echo ""
+}
+
+disable_monitoring() {
+    check_root
+
+    echo -e "${BOLD}Disabling ROSE Link Monitoring Stack${NC}"
+    echo ""
+
+    info "Stopping services..."
+    systemctl stop prometheus node_exporter grafana-server 2>/dev/null || true
+    systemctl disable prometheus node_exporter grafana-server 2>/dev/null || true
+
+    success "Monitoring services disabled"
+    echo ""
+    echo -e "${YELLOW}Note: Monitoring binaries are still installed.${NC}"
+    echo -e "${YELLOW}Run 'rose-monitoring enable' to re-enable.${NC}"
+    echo ""
+}
+
+uninstall_monitoring() {
+    check_root
+
+    echo -e "${BOLD}Uninstalling ROSE Link Monitoring Stack${NC}"
+    echo ""
+
+    read -p "This will remove Prometheus, Node Exporter, and Grafana. Continue? [y/N] " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cancelled."
+        exit 0
+    fi
+
+    info "Stopping and removing services..."
+    systemctl stop prometheus node_exporter grafana-server 2>/dev/null || true
+    systemctl disable prometheus node_exporter grafana-server 2>/dev/null || true
+
+    info "Removing Prometheus..."
+    rm -f /usr/local/bin/prometheus /usr/local/bin/promtool
+    rm -rf /etc/prometheus /var/lib/prometheus
+    rm -f /etc/systemd/system/prometheus.service
+
+    info "Removing Node Exporter..."
+    rm -f /usr/local/bin/node_exporter
+    rm -f /etc/systemd/system/node_exporter.service
+
+    info "Removing Grafana..."
+    apt-get remove -y grafana 2>/dev/null || true
+    rm -rf /etc/grafana /var/lib/grafana
+    rm -f /etc/apt/sources.list.d/grafana.list
+
+    info "Removing prometheus user..."
+    userdel prometheus 2>/dev/null || true
+
+    info "Cleaning Nginx config..."
+    if [[ -f /etc/nginx/sites-available/roselink ]]; then
+        sed -i '/# Grafana Dashboard/,/^    }/d' /etc/nginx/sites-available/roselink
+        nginx -t &>/dev/null && systemctl reload nginx 2>/dev/null || true
+    fi
+
+    systemctl daemon-reload
+
+    success "Monitoring stack uninstalled"
+}
+
+show_status() {
+    echo -e "${BOLD}ROSE Link Monitoring Status${NC}"
+    echo ""
+
+    if ! is_monitoring_installed; then
+        echo -e "Monitoring: ${YELLOW}Not installed${NC}"
+        echo ""
+        echo "Run 'sudo rose-monitoring enable' to install and enable monitoring."
+        return
+    fi
+
+    echo -e "${BOLD}Services:${NC}"
+    for svc in prometheus node_exporter grafana-server; do
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+            echo -e "  ${GREEN}●${NC} $svc: ${GREEN}running${NC}"
+        elif systemctl is-enabled --quiet "$svc" 2>/dev/null; then
+            echo -e "  ${YELLOW}●${NC} $svc: ${YELLOW}enabled but stopped${NC}"
+        else
+            echo -e "  ${RED}●${NC} $svc: ${RED}disabled${NC}"
+        fi
+    done
+
+    echo ""
+    echo -e "${BOLD}Access URLs:${NC}"
+    echo "  Grafana:    https://roselink.local/grafana/"
+    echo "  Prometheus: http://192.168.50.1:9090"
+    echo ""
+}
+
+restart_monitoring() {
+    check_root
+
+    info "Restarting monitoring services..."
+    systemctl restart prometheus node_exporter grafana-server
+    success "Services restarted"
+}
+
+show_help() {
+    echo "ROSE Link Monitoring Control v${VERSION}"
+    echo ""
+    echo "Usage: rose-monitoring <command>"
+    echo ""
+    echo "Commands:"
+    echo "  enable      Install and enable monitoring stack"
+    echo "  disable     Stop monitoring services (keeps installed)"
+    echo "  uninstall   Completely remove monitoring stack"
+    echo "  status      Show monitoring status"
+    echo "  restart     Restart monitoring services"
+    echo "  help        Show this help"
+    echo ""
+    echo "Environment variables:"
+    echo "  GRAFANA_PASSWORD    Set Grafana admin password (default: roselink)"
+    echo ""
+    echo "Examples:"
+    echo "  sudo rose-monitoring enable"
+    echo "  sudo GRAFANA_PASSWORD=mypass rose-monitoring enable"
+    echo "  rose-monitoring status"
+    echo ""
+}
+
+# Main
+case "${1:-}" in
+    enable)
+        enable_monitoring
+        ;;
+    disable)
+        disable_monitoring
+        ;;
+    uninstall)
+        uninstall_monitoring
+        ;;
+    status)
+        show_status
+        ;;
+    restart)
+        restart_monitoring
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac
