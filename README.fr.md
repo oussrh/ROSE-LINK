@@ -32,14 +32,29 @@ ROSE Link crée une solution VPN complète qui :
 - ⚙️ **Configuration flexible** via l'interface web (pays, canaux WiFi, paramètres VPN)
 
 ```
-[PC/Smartphone] ~~~Wi-Fi~~~> Raspberry Pi (ROSE Link Hotspot)
-                                    │
-                              WireGuard (wg0)
-                                    │
-                              Serveur VPN distant
-                              (Fritz!Box, VPS, etc.)
-                                    │
-                          Réseau distant + Internet
+                    ┌─────────────────┐
+                    │ 📱 Votre Appareil│
+                    │  (PC/Smartphone)│
+                    └────────┬────────┘
+                             │ WiFi
+                             ▼
+                    ┌─────────────────┐
+                    │   🍓 ROSE Link  │
+                    │  Raspberry Pi   │
+                    │    (Hotspot)    │
+                    └────────┬────────┘
+                             │ WireGuard (wg0)
+                             ▼
+                    ┌─────────────────┐
+                    │ 🔐 Serveur VPN  │
+                    │ Fritz!Box / VPS │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  🌍 Internet    │
+                    │ + Réseau Distant│
+                    └─────────────────┘
 ```
 
 ---
