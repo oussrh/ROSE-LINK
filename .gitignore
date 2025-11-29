@@ -60,3 +60,6 @@ htmlcov/
 # Node.js (frontend)
 node_modules/
 .npm/
+
+# Claude
+.claude/
