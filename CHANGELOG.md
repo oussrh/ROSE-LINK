@@ -384,6 +384,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - 2025-11-29
+
+### Added
+- **Native Monitoring Stack**: Integrated Prometheus + Grafana directly into the Debian package
+  - New `rose-monitoring` command for easy enable/disable/status/uninstall
+  - Downloads and installs Prometheus 2.47.0 and Node Exporter 1.6.1 from official binaries
+  - Installs Grafana from official APT repository
+  - Includes pre-configured dashboard and Prometheus alerts
+
+- **Monitoring Commands**: CLI tool for managing monitoring stack
+  - `rose-monitoring enable` - Install and enable monitoring
+  - `rose-monitoring disable` - Stop services (keeps installed)
+  - `rose-monitoring status` - Check monitoring status
+  - `rose-monitoring restart` - Restart all monitoring services
+  - `rose-monitoring uninstall` - Completely remove monitoring
+
+- **Resource Optimization**: Monitoring stack optimized for Raspberry Pi
+  - Prometheus: max 256MB RAM, 50% CPU limit
+  - Node Exporter: max 64MB RAM, 20% CPU limit
+  - 15-day data retention to save disk space
+
+- **Nginx Integration**: Automatic Grafana proxy configuration
+  - Grafana accessible at `https://roselink.local/grafana/`
+  - Auto-configures Nginx reverse proxy on enable
+
+### Changed
+- Monitoring is now **optional but included** in the package
+- Monitoring not enabled by default (user must run `rose-monitoring enable`)
+- Updated debian/control with monitoring dependencies
+- Updated postinst to install rose-monitoring command
+- Updated install.sh to copy monitoring configs
+
+### Files Added
+- `system/rose-monitoring` - CLI tool for monitoring management
+- `system/monitoring/prometheus/prometheus.yml` - Native Prometheus config
+- `system/monitoring/prometheus/alerts.yml` - Alert rules
+- `system/monitoring/grafana/dashboards/rose-link-dashboard.json` - Dashboard
+
+### Documentation
+- Updated README.md with new `rose-monitoring` command usage
+- Updated README.fr.md with French documentation
+- Removed references to standalone install-monitoring.sh script
+
+---
+
 ## [Unreleased]
 
 ### Planned for 1.x
@@ -394,6 +439,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.2.1]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.2.1
 [1.2.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.2.0
 [1.1.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.1.0
 [1.0.0]: https://github.com/oussrh/ROSE-LINK/releases/tag/v1.0.0
