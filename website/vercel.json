@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": "out",
   "headers": [
     {
       "source": "/(.*)",
@@ -29,12 +27,12 @@
   "redirects": [
     {
       "source": "/github",
-      "destination": "https://github.com/ROSE-Link/ROSE-LINK",
+      "destination": "https://github.com/oussrh/ROSE-LINK",
       "permanent": false
     },
     {
       "source": "/docs",
-      "destination": "https://github.com/ROSE-Link/ROSE-LINK#documentation",
+      "destination": "https://github.com/oussrh/ROSE-LINK#documentation",
       "permanent": false
     }
   ]
