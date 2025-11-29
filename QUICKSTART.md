@@ -37,37 +37,46 @@ Get up and running with ROSE Link in 10 minutes!
 
 ## ⚡ Installation
 
-### Option 1: One-Line Install (Recommended)
+### Option 1: APT Repository (Recommended)
+
+```bash
+# Quick setup - adds repository and installs
+curl -sSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash
+sudo apt install rose-link
+```
+
+Or manually:
+```bash
+# Add GPG key
+curl -fsSL https://oussrh.github.io/ROSE-LINK/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/rose-link.gpg
+
+# Add repository
+echo "deb [arch=arm64,armhf signed-by=/usr/share/keyrings/rose-link.gpg] https://oussrh.github.io/ROSE-LINK stable main" | sudo tee /etc/apt/sources.list.d/rose-link.list
+
+# Install
+sudo apt update
+sudo apt install rose-link
+```
+
+### Option 2: One-Line Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install.sh | sudo bash
 ```
 
-### Option 2: Download and Install
+### Option 3: Download and Install
 
 ```bash
 # Download the installer
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link.tar.gz
 
-# Extract
-tar -xzf rose-link-pro.tar.gz
+# Extract and install
+tar -xzf rose-link.tar.gz
 cd rose-link
-
-# Install (interactive mode)
 sudo bash install.sh
 
 # Or install with custom options
 sudo bash install.sh --ssid "MyRouter" --country FR
-```
-
-### Option 3: Debian Package (Best for Updates)
-
-```bash
-# Download the package
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.1.0-1_all.deb
-
-# Install with apt (handles dependencies automatically)
-sudo apt install ./rose-link-pro_1.1.0-1_all.deb
 ```
 
 ### Installation Options

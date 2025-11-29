@@ -5,7 +5,7 @@ import { useLanguage } from "@/lib/i18n";
 
 const stepKeys = [
   { number: "01", key: "step1", code: null },
-  { number: "02", key: "step2", code: "curl -sSL https://get.rose-link.io | sudo bash" },
+  { number: "02", key: "step2", code: "curl -sSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash && sudo apt install rose-link" },
   { number: "03", key: "step3", code: null },
   { number: "04", key: "step4", code: null },
 ];

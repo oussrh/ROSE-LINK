@@ -101,37 +101,46 @@ ROSE Link crée une solution VPN complète qui :
 - **Mémoire** : 512 Mo RAM minimum, 1 Go+ recommandé
 - **Stockage** : 300 Mo d'espace disque minimum
 
-### Méthode 1 : Installation en une ligne (Rapide)
+### Méthode 1 : Dépôt APT (Recommandé)
+
+```bash
+# Installation rapide - ajoute le dépôt et installe
+curl -sSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash
+sudo apt install rose-link
+```
+
+Ou manuellement :
+```bash
+# Ajouter la clé GPG
+curl -fsSL https://oussrh.github.io/ROSE-LINK/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/rose-link.gpg
+
+# Ajouter le dépôt
+echo "deb [arch=arm64,armhf signed-by=/usr/share/keyrings/rose-link.gpg] https://oussrh.github.io/ROSE-LINK stable main" | sudo tee /etc/apt/sources.list.d/rose-link.list
+
+# Installer
+sudo apt update
+sudo apt install rose-link
+```
+
+### Méthode 2 : Installation en une ligne
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install.sh | sudo bash
 ```
 
-### Méthode 2 : Télécharger et Installer (Recommandé)
+### Méthode 3 : Télécharger et Installer
 
 ```bash
 # Télécharger l'archive
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro.tar.gz
+wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link.tar.gz
 
-# Extraire
-tar -xzf rose-link-pro.tar.gz
+# Extraire et installer
+tar -xzf rose-link.tar.gz
 cd rose-link
-
-# Installation interactive
 sudo bash install.sh
 
 # Ou avec options personnalisées
 sudo bash install.sh --ssid "MonVPN" --country FR
-```
-
-### Méthode 3 : Paquet Debian (Meilleur pour les mises à jour)
-
-```bash
-# Télécharger le paquet
-wget https://github.com/oussrh/ROSE-LINK/releases/latest/download/rose-link-pro_1.2.0-1_all.deb
-
-# Installer avec apt (gère les dépendances)
-sudo apt install ./rose-link-pro_1.2.0-1_all.deb
 ```
 
 ### Options d'installation
