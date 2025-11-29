@@ -92,12 +92,13 @@ ROSE Link creates a complete VPN solution that:
 - Security setup: Configure admin password
 
 ### Grafana Monitoring Dashboard
-- Docker Compose stack: Grafana + Prometheus + Node Exporter
+- **Native installation**: Runs directly on Raspberry Pi (no Docker required)
+- **Docker option**: Also available via Docker Compose for development
 - Status overview: VPN, WAN, Hotspot, Clients, Uptime, Temperature
 - System resources: CPU, Memory, Disk gauges and history
 - Network traffic: Throughput, packets, total traffic per interface
 - Prometheus alerts: VPN/WAN down, high CPU temp, low disk space
-- Template variables: Filter by interface, instance, and link capacity
+- Resource-optimized: Memory/CPU limits for Raspberry Pi
 
 ### Modern User Interface
 - Dark mode: Elegant and eye-friendly interface
@@ -198,6 +199,67 @@ sudo bash uninstall.sh -y -f
 # If installed via Debian package
 sudo apt remove rose-link-pro    # Keep config
 sudo apt purge rose-link-pro     # Remove all
+```
+
+---
+
+## Monitoring Stack (Optional)
+
+ROSE Link includes a native Grafana + Prometheus monitoring stack optimized for Raspberry Pi.
+
+### Requirements
+- Raspberry Pi 4 or 5 (1GB+ RAM recommended)
+- ROSE Link already installed
+- ~500MB additional disk space
+
+### Install Monitoring
+
+```bash
+# Download and run the monitoring installer
+curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install-monitoring.sh | sudo bash
+
+# Or with custom Grafana password
+sudo bash install-monitoring.sh --grafana-password MySecurePass
+```
+
+### What Gets Installed
+
+| Component | Version | Port | Purpose |
+|-----------|---------|------|---------|
+| Prometheus | 2.47.0 | 9090 | Metrics collection & storage |
+| Node Exporter | 1.6.1 | 9100 | System metrics (CPU, RAM, disk) |
+| Grafana | Latest | 3000 | Dashboard visualization |
+
+### Access Dashboards
+
+After installation:
+- **Grafana**: `https://roselink.local/grafana/` or `http://192.168.50.1:3000`
+- **Prometheus**: `http://192.168.50.1:9090`
+
+Default Grafana credentials:
+- Username: `admin`
+- Password: `roselink` (or your custom password)
+
+### Resource Limits
+
+The monitoring stack is optimized for Raspberry Pi with strict resource limits:
+- Prometheus: max 256MB RAM, 50% CPU
+- Node Exporter: max 64MB RAM, 20% CPU
+- Data retention: 15 days (saves disk space)
+
+### Uninstall Monitoring
+
+```bash
+sudo bash uninstall-monitoring.sh
+```
+
+### Docker Alternative (Development)
+
+For development or systems with more resources, you can use the Docker Compose stack:
+
+```bash
+cd monitoring
+docker-compose up -d
 ```
 
 ---
