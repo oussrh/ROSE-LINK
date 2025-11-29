@@ -32,7 +32,7 @@ ROSE Link crée une solution VPN complète qui :
 - ⚙️ **Configuration flexible** via l'interface web (pays, canaux WiFi, paramètres VPN)
 
 ```
-📱 Appareil ──WiFi──▶ 🍓 ROSE Link (Pi) ──WireGuard──▶ 🔐 Serveur VPN ──▶ 🌍 Internet
+📱 Appareil ── WiFi ──▶ 🍓 ROSE Link (Pi) ── WireGuard ──▶ 🔐 Serveur VPN ──▶ 🌍 Internet
 ```
 
 ---
