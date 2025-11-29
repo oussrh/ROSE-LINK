@@ -1,0 +1,26 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+Origin: ROSE Link
+Label: ROSE Link APT Repository
+Suite: stable
+Codename: stable
+Architectures: arm64 armhf
+Components: main
+Description: Official APT repository for ROSE Link - Raspberry Pi VPN Router
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEE18TGnnFu+qaCpIC5sm63VcdvPLYFAmkrUb4ACgkQsm63Vcdv
+PLa1uBAA242Fesvll+g9M6ys2t7oWrUJv5JReGOfrA+omZVXVEy+ZZS4dbc3x3Xi
+0Xq1mF0+mVlxxOCNJV7LYK5zGBnhj1G1WzpZAUlwfOitYZjitamEeCIUHcIlhKZY
+gvMXr5pcBNM7xLmNXrthrpeqgIcudgLh5IupDX4YUJ69tVyrJMcxqnQgnu6V1XrX
+aPMPh5Ob9ChLK3jzsgdThSxQJ2Xv9T44nx8jtxxF+Nj9EV04PenBNSoVfvLbFWid
+NoFIc2FxtKxtg03T/JKyp6UdQdxGCZkivTxq3myJolQ2HRjZD+gun0bMBIVFRFEo
+yJ9pKm/NCEuk1QwVH2xUaaZ98DLqHjAPIwfoOFCI/Ykk8R3kEY7aJUoGv8oSLSnN
+PQwcMAirG3/xFeuXYLnRPBk/mKrNdTZ9ZSXIUfjYQm4Pu1xzw1qjcHs3pK24/5T5
+fMEDsN1U2xi2WdMUeEaRfv0WDrifgRUsBF3ehfqzibJ/3HJdEcO8F0KuEq80aPM0
+DSHY3uL0hHNKSYHt9J8Ge5PdM8tykRzPlDSaJwrrwF19EeUCdDl1cDYsU5DUwXMZ
+G/rWvcCB+uurjlf6kyc9O5QuIxF2OWIzBOPOlXCMzLQhJF8UCJP9qVGnq8FeXMH4
++PPWnxo/VS4aOLfyxUjGA0HFEuP3+p6oV9p7opAu8/+93Fb1eOU=
+=qDUV
+-----END PGP SIGNATURE-----

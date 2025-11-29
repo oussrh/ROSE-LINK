@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROSE Link APT Repository</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #0d1117; color: #c9d1d9; }
+        h1 { color: #f85149; }
+        h2 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+        code { background: #161b22; padding: 2px 8px; border-radius: 4px; font-family: 'Fira Code', monospace; }
+        pre { background: #161b22; padding: 16px; border-radius: 8px; overflow-x: auto; border: 1px solid #30363d; }
+        a { color: #58a6ff; }
+        .note { background: #161b22; border-left: 4px solid #58a6ff; padding: 12px 16px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h1>ROSE Link APT Repository</h1>
+    <p>Official APT repository for <strong>ROSE Link</strong> - Transform your Raspberry Pi into a VPN router with ad blocking.</p>
+
+    <h2>Quick Install</h2>
+    <pre><code>curl -sSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash</code></pre>
+
+    <h2>Manual Setup</h2>
+    <pre><code># Add GPG key
+curl -fsSL https://oussrh.github.io/ROSE-LINK/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/rose-link.gpg
+
+# Add repository
+echo "deb [arch=arm64,armhf signed-by=/usr/share/keyrings/rose-link.gpg] https://oussrh.github.io/ROSE-LINK stable main" | sudo tee /etc/apt/sources.list.d/rose-link.list
+
+# Install
+sudo apt update
+sudo apt install rose-link</code></pre>
+
+    <h2>Supported Architectures</h2>
+    <ul>
+        <li><code>arm64</code> - Raspberry Pi 3/4/5 (64-bit OS)</li>
+        <li><code>armhf</code> - Raspberry Pi 3/4/Zero 2W (32-bit OS)</li>
+    </ul>
+
+    <h2>Supported OS</h2>
+    <ul>
+        <li>Raspberry Pi OS (Bullseye/Bookworm)</li>
+        <li>Debian 11 (Bullseye)</li>
+        <li>Debian 12 (Bookworm)</li>
+    </ul>
+
+    <div class="note">
+        <strong>Note:</strong> This repository is designed for Raspberry Pi devices. For other platforms, please install from source.
+    </div>
+
+    <h2>Links</h2>
+    <ul>
+        <li><a href="https://github.com/oussrh/ROSE-LINK">GitHub Repository</a></li>
+        <li><a href="https://rose-link.dev">Website</a></li>
+        <li><a href="https://github.com/oussrh/ROSE-LINK/blob/main/QUICKSTART.md">Quick Start Guide</a></li>
+    </ul>
+
+    <h2>GPG Key</h2>
+    <p>Key ID: <code>D1812C0ED97B14139E0C2FE0AAE0EEAEF0433D36</code></p>
+    <p>Download: <a href="gpg.key">gpg.key</a></p>
+</body>
+</html>

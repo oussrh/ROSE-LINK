@@ -1,0 +1,7 @@
+Origin: ROSE Link
+Label: ROSE Link APT Repository
+Suite: stable
+Codename: stable
+Architectures: arm64 armhf
+Components: main
+Description: Official APT repository for ROSE Link - Raspberry Pi VPN Router
