@@ -41,6 +41,7 @@ roselink-repo/
 *.tmp
 temp/
 tmp/
+.todo
 
 # Debian packaging
 debian/opt/
@@ -57,9 +58,12 @@ htmlcov/
 *.cover
 *.coverage
 
-# Node.js (frontend)
+# Node.js (frontend & website)
 node_modules/
 .npm/
+.next/
+out/
+.vercel/
 
 # Claude
 .claude/
