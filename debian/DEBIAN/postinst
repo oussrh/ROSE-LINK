@@ -291,6 +291,24 @@ EOF
         systemctl daemon-reload
         success "Systemd services installed"
 
+        # Install rose-monitoring command
+        info "Installing monitoring management command..."
+        if [ -f "$INSTALL_DIR/system/rose-monitoring" ]; then
+            cp "$INSTALL_DIR/system/rose-monitoring" /usr/local/bin/rose-monitoring
+            chmod +x /usr/local/bin/rose-monitoring
+            success "rose-monitoring command installed"
+        fi
+
+        # Create monitoring config directory
+        info "Setting up monitoring configuration..."
+        mkdir -p "$INSTALL_DIR/monitoring/prometheus"
+        mkdir -p "$INSTALL_DIR/monitoring/grafana/dashboards"
+        if [ -d "$INSTALL_DIR/system/monitoring" ]; then
+            cp -r "$INSTALL_DIR/system/monitoring/"* "$INSTALL_DIR/monitoring/" 2>/dev/null || true
+        fi
+        chown -R "$USER:$GROUP" "$INSTALL_DIR/monitoring"
+        success "Monitoring configuration ready"
+
         # Enable services
         info "Enabling services..."
         systemctl enable rose-backend >/dev/null 2>&1 || warning "Could not enable rose-backend"
@@ -322,6 +340,11 @@ EOF
         echo -e "${CYAN}WiFi Hotspot:${NC}"
         echo -e "  • SSID: ROSE-Link"
         echo -e "  • Password: RoseLink2024"
+        echo ""
+        echo -e "${CYAN}Monitoring Dashboard (Optional):${NC}"
+        echo -e "  • Enable:  ${GREEN}sudo rose-monitoring enable${NC}"
+        echo -e "  • Status:  rose-monitoring status"
+        echo -e "  • Disable: sudo rose-monitoring disable"
         echo ""
         echo -e "${YELLOW}Note: Accept the self-signed certificate warning in your browser.${NC}"
         echo ""

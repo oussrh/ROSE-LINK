@@ -1,5 +1,5 @@
 Package: rose-link-pro
-Version: 1.1.0-1
+Version: 1.2.0-1
 Section: net
 Priority: optional
 Architecture: all
@@ -21,18 +21,21 @@ Depends: python3 (>= 3.9),
          openssl (>= 1.1),
          ca-certificates,
          procps,
-         curl
+         curl,
+         apt-transport-https,
+         software-properties-common,
+         gnupg2
 Recommends: avahi-daemon
 Suggests: htop, vnstat, iftop
 Conflicts: rose-link
 Replaces: rose-link
 Provides: rose-link
-Installed-Size: 2048
+Installed-Size: 3072
 Maintainer: ROSE Link Team <contact@roselink.dev>
 Homepage: https://github.com/oussrh/ROSE-LINK
 Vcs-Git: https://github.com/oussrh/ROSE-LINK.git
 Vcs-Browser: https://github.com/oussrh/ROSE-LINK
-Description: ROSE Link - Home VPN Router for Raspberry Pi
+Description: ROSE Link - Home VPN Router for Raspberry Pi with Monitoring
  ROSE Link transforms your Raspberry Pi (3, 4, 5, Zero 2W) into a secure
  VPN router and WiFi access point for your home network.
  .
@@ -42,6 +45,14 @@ Description: ROSE Link - Home VPN Router for Raspberry Pi
   * Create a local WiFi hotspot for your devices (2.4GHz and 5GHz)
   * Route all client traffic through the VPN tunnel
   * Modern web interface for easy configuration
+  * Built-in Grafana + Prometheus monitoring dashboard
+ .
+ Monitoring Stack (Optional):
+  * Prometheus for metrics collection
+  * Node Exporter for system metrics
+  * Grafana for dashboard visualization
+  * Pre-configured alerts for VPN, WAN, CPU, Memory, Disk
+  * Enable with: rose-monitoring enable
  .
  Supported Hardware:
   * Raspberry Pi 5 - Full support with WiFi 6 and 5GHz

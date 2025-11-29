@@ -1095,6 +1095,35 @@ EOF
     step_info "Systemd services installed"
 }
 
+install_monitoring_command() {
+    step_info "Installing monitoring management command..."
+
+    # Install rose-monitoring command
+    if [[ -f "system/rose-monitoring" ]]; then
+        cp system/rose-monitoring /usr/local/bin/rose-monitoring
+        chmod +x /usr/local/bin/rose-monitoring
+        step_info "rose-monitoring command installed"
+    elif [[ -f "$INSTALL_DIR/system/rose-monitoring" ]]; then
+        cp "$INSTALL_DIR/system/rose-monitoring" /usr/local/bin/rose-monitoring
+        chmod +x /usr/local/bin/rose-monitoring
+        step_info "rose-monitoring command installed"
+    fi
+
+    # Create monitoring config directory
+    mkdir -p "$INSTALL_DIR/monitoring/prometheus"
+    mkdir -p "$INSTALL_DIR/monitoring/grafana/dashboards"
+
+    # Copy monitoring configs
+    if [[ -d "system/monitoring" ]]; then
+        cp -r system/monitoring/* "$INSTALL_DIR/monitoring/" 2>/dev/null || true
+    elif [[ -d "$INSTALL_DIR/system/monitoring" ]]; then
+        cp -r "$INSTALL_DIR/system/monitoring/"* "$INSTALL_DIR/monitoring/" 2>/dev/null || true
+    fi
+
+    chown -R "$USER:$GROUP" "$INSTALL_DIR/monitoring"
+    step_info "Monitoring configuration ready"
+}
+
 enable_services() {
     step_info "Enabling and starting services..."
 
@@ -1186,6 +1215,13 @@ ROSE_SUCCESS
     echo -e "   2. Open ${CYAN}https://roselink.local${NC} in your browser"
     echo -e "   3. Go to the VPN tab and import your WireGuard .conf file"
     echo -e "   4. The VPN will connect automatically"
+    echo ""
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BOLD}📈 Monitoring Dashboard (Optional)${NC}"
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   Enable:  ${GREEN}sudo rose-monitoring enable${NC}"
+    echo -e "   Status:  rose-monitoring status"
+    echo -e "   Access:  https://roselink.local/grafana/"
     echo ""
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${BOLD}📊 Service Status${NC}"
@@ -1374,6 +1410,7 @@ main() {
     # Step 12: Enable Services
     step_start "Enabling Services"
     install_systemd_services
+    install_monitoring_command
     enable_services
     step_done
 
