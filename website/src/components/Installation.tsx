@@ -5,7 +5,7 @@ import { useLanguage } from "@/lib/i18n";
 
 const stepKeys = [
   { number: "01", key: "step1", code: null },
-  { number: "02", key: "step2", code: "curl -sSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash && sudo apt install rose-link" },
+  { number: "02", key: "step2", code: "curl -sSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash\nsudo apt install rose-link" },
   { number: "03", key: "step3", code: null },
   { number: "04", key: "step4", code: null },
 ];
@@ -57,7 +57,7 @@ export default function Installation() {
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
           {/* Installation Steps */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-2 lg:order-1">
             {stepKeys.map((step, index) => (
               <div
                 key={index}
@@ -76,8 +76,8 @@ export default function Installation() {
                   <p className="text-dark-400 text-sm mb-3">{t(`install.${step.key}.desc`)}</p>
                   {step.code && (
                     <div className="relative group">
-                      <pre className="bg-dark-800 border border-dark-700 rounded-lg p-3 sm:p-4 text-xs sm:text-sm overflow-x-auto max-w-full">
-                        <code className="text-green-400 whitespace-pre-wrap break-all sm:whitespace-pre sm:break-normal">{step.code}</code>
+                      <pre className="bg-dark-800 border border-dark-700 rounded-lg p-3 sm:p-4 text-xs sm:text-sm overflow-x-auto">
+                        <code className="text-green-400 whitespace-pre-wrap break-words">{step.code}</code>
                       </pre>
                       <button
                         onClick={() => copyToClipboard(step.code!, index)}
