@@ -10,7 +10,7 @@
 
 Transform your Raspberry Pi into a professional WiFi router/access point that establishes a secure VPN tunnel to your remote network, allowing you to access local resources and obtain the public IP of your VPN server from anywhere in the world.
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203%2F4%2F5%2FZero%202W-red)
 
@@ -205,21 +205,28 @@ sudo apt purge rose-link-pro     # Remove all
 
 ## Monitoring Stack (Optional)
 
-ROSE Link includes a native Grafana + Prometheus monitoring stack optimized for Raspberry Pi.
+ROSE Link includes a built-in Grafana + Prometheus monitoring stack optimized for Raspberry Pi. The monitoring is **included in the package** but **not enabled by default** to keep the system lightweight.
 
-### Requirements
-- Raspberry Pi 4 or 5 (1GB+ RAM recommended)
-- ROSE Link already installed
-- ~500MB additional disk space
+### Enable Monitoring
 
-### Install Monitoring
+After installing ROSE Link, enable monitoring with a single command:
 
 ```bash
-# Download and run the monitoring installer
-curl -fsSL https://raw.githubusercontent.com/oussrh/ROSE-LINK/main/install-monitoring.sh | sudo bash
+# Enable monitoring (downloads and configures Prometheus + Grafana)
+sudo rose-monitoring enable
 
 # Or with custom Grafana password
-sudo bash install-monitoring.sh --grafana-password MySecurePass
+sudo GRAFANA_PASSWORD=MySecurePass rose-monitoring enable
+```
+
+### Monitoring Commands
+
+```bash
+rose-monitoring status      # Check monitoring status
+sudo rose-monitoring enable   # Install and enable monitoring
+sudo rose-monitoring disable  # Stop services (keeps installed)
+sudo rose-monitoring restart  # Restart all monitoring services
+sudo rose-monitoring uninstall # Completely remove monitoring
 ```
 
 ### What Gets Installed
@@ -232,7 +239,7 @@ sudo bash install-monitoring.sh --grafana-password MySecurePass
 
 ### Access Dashboards
 
-After installation:
+After enabling:
 - **Grafana**: `https://roselink.local/grafana/` or `http://192.168.50.1:3000`
 - **Prometheus**: `http://192.168.50.1:9090`
 
@@ -240,22 +247,33 @@ Default Grafana credentials:
 - Username: `admin`
 - Password: `roselink` (or your custom password)
 
+### Pre-configured Alerts
+
+The monitoring stack includes alerts for:
+- VPN disconnected (critical)
+- WAN disconnected (critical)
+- High CPU temperature > 70°C (warning) / > 80°C (critical)
+- High memory usage > 85% (warning) / > 95% (critical)
+- Low disk space > 80% (warning) / > 95% (critical)
+- Hotspot inactive (warning)
+- ROSE Link backend down (critical)
+
 ### Resource Limits
 
-The monitoring stack is optimized for Raspberry Pi with strict resource limits:
+Optimized for Raspberry Pi with strict resource limits:
 - Prometheus: max 256MB RAM, 50% CPU
 - Node Exporter: max 64MB RAM, 20% CPU
 - Data retention: 15 days (saves disk space)
 
-### Uninstall Monitoring
+### Requirements
 
-```bash
-sudo bash uninstall-monitoring.sh
-```
+- Raspberry Pi 4 or 5 recommended (1GB+ RAM)
+- ~500MB additional disk space
+- Internet connection (to download Prometheus/Grafana on first enable)
 
 ### Docker Alternative (Development)
 
-For development or systems with more resources, you can use the Docker Compose stack:
+For development or systems with more resources, you can use the Docker Compose stack instead:
 
 ```bash
 cd monitoring
