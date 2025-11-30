@@ -14,6 +14,8 @@ on:
 jobs:
   build-deb:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       deb_name: ${{ steps.build.outputs.deb_name }}
       version: ${{ steps.build.outputs.version }}
