@@ -79,11 +79,31 @@ jobs:
           ref: gh-pages
           fetch-depth: 0
 
+      - name: Clean old artifacts from root
+        run: |
+          # Remove any old .deb files from root to avoid confusion
+          echo "=== Cleaning old .deb files from root ==="
+          rm -fv rose-link*.deb rose-link-pro*.deb 2>/dev/null || true
+          echo "=== Root directory clean ==="
+
       - name: Download .deb artifact
         uses: actions/download-artifact@v4
         with:
           name: debian-package
           path: ./
+
+      - name: Verify artifact download
+        run: |
+          echo "=== Downloaded artifact ==="
+          ls -la rose-link*.deb 2>/dev/null || { echo "ERROR: No artifact downloaded!"; exit 1; }
+          # Should be exactly one file
+          FILE_COUNT=$(ls -1 rose-link*.deb 2>/dev/null | wc -l)
+          echo "Number of .deb files found: $FILE_COUNT"
+          if [ "$FILE_COUNT" -ne 1 ]; then
+            echo "ERROR: Expected exactly 1 .deb file, found $FILE_COUNT"
+            ls -la *.deb
+            exit 1
+          fi
 
       - name: Install APT repository tools
         run: |
@@ -266,10 +286,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Remove the .deb from root (we only want it in pool/)
+          echo "=== Removing .deb from root (only keep in pool) ==="
+          rm -fv rose-link*.deb 2>/dev/null || true
+
           echo "=== Git status before add ==="
           git status
 
-          git add -A
+          # Add pool and dists directories explicitly
+          git add pool/ dists/
+
+          # Also remove any old .deb files from root in git
+          git rm -f --cached rose-link*.deb rose-link-pro*.deb 2>/dev/null || true
 
           echo "=== Git status after add ==="
           git status
@@ -280,6 +308,10 @@ jobs:
           # Show what version is in the Packages file
           echo "=== Version in Packages file ==="
           grep "^Version:" dists/stable/main/binary-arm64/Packages || echo "No Version line found"
+
+          # Show what's in the pool
+          echo "=== Pool contents ==="
+          ls -la pool/main/r/rose-link/
 
           if git diff --staged --quiet; then
             echo "WARNING: No changes detected!"
