@@ -56,57 +56,27 @@ error() {
     log "ERROR" "$1"
 }
 
-show_banner() {
-    echo -e "${GREEN}"
-    cat << 'BANNER'
+print_header() {
+    local title="$1"
+    local color="${2:-$CYAN}"
+    echo ""
+    echo -e "${color}┌──────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${color}│  ${title}$(printf '%*s' $((58 - ${#title})) '')│${NC}"
+    echo -e "${color}└──────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+}
 
-               ####
-              #######
-            ##### #####
-          #####    #####
-  ###########        ############
- ###############  ###############
- ######      ########      ######
- #################     ##########    ############      ##########      ##########  ############
- ####   #######     ######   ####    ##############  ##############   ###########  ############
- ####    #################   ####    #####    ##### #####      #####  #####        ####
- ####    ###   #####  ####   ####    #####    ##### ####        ##### #########    ############
- ####    ###          ####   ####    #############  ####        #####    ########  ############
- ####    ###          ####   ####    ###########    #####      #####  ##     ##### ####
- ####    ###          ####   ####    #####   #####   ##############  ############# #############
-  ####   ####         ####  #####    #####    #####    ##########     ##########   #############
-    ####  #####     ##### #####
-      ####  ##### ##### #####                    ####                 ####
-        ###################          #####       ####                 ####
-  ##            ###            ##    #####              ###   ##      ####    ###
- ########       ###       ########   #####       ####   ###########   #### ######
- ############   ###   ############   #####       ####   ############  #########
- ###      ####  ###  ####     ####   #####       ####   ####   #####  ########
- #####     #### #######      ####    #####       ####   ####   #####  #########
-   #### ### ########## #########     ########### ####   ####   #####  #### #####
-     #######  ####### ########       ########### ####   ####   #####  ####   #####
-      ######################
-            ###########
-              ######
-                ###
-                ###
-                ###
-                ###
-                ###
-
-BANNER
-    echo -e "${NC}"
+print_section() {
+    local title="$1"
+    echo ""
+    echo -e "${CYAN}━━━ ${title} ━━━${NC}"
 }
 
 # Initialize log
 mkdir -p "$(dirname "$LOG_FILE")"
 echo "=== ROSE Link Post-installation $(date) ===" >> "$LOG_FILE"
 
-show_banner
-echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║              Post-Installation Setup                           ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
-echo ""
+print_header "ROSE Link - Configuration" "$GREEN"
 
 case "$1" in
     configure)
@@ -477,50 +447,57 @@ EOF
         systemctl restart rose-backend >/dev/null 2>&1 || warning "Could not start rose-backend"
         success "Services started"
 
-        echo ""
-        echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${GREEN}║            ROSE Link Installation Complete!                    ║${NC}"
-        echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
-        echo ""
-        echo -e "${CYAN}Device:${NC} $PI_MODEL"
-        echo -e "${CYAN}WiFi Mode:${NC} $([ "$SUPPORTS_5GHZ" = true ] && echo "5GHz (802.11ac)" || echo "2.4GHz (802.11n)")"
-        echo -e "${CYAN}AP Interface:${NC} $WIFI_AP_INTERFACE"
-        echo ""
-        echo -e "${CYAN}Web Interface:${NC}"
-        echo -e "  • https://roselink.local"
-        echo -e "  • https://192.168.50.1"
-        echo ""
-        echo -e "${CYAN}WiFi Hotspot:${NC}"
         # Get current SSID and password from config
         CURRENT_SSID=$(grep '^ssid=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "$DEFAULT_SSID")
         CURRENT_PASS=$(grep '^wpa_passphrase=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "")
+
+        # Final summary
+        echo ""
+        echo -e "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}"
+        echo -e "${GREEN}│              ✓ Installation Complete!                        │${NC}"
+        echo -e "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}"
+
+        print_section "System Info"
+        echo -e "  ${CYAN}Device:${NC}      $PI_MODEL"
+        echo -e "  ${CYAN}WiFi Mode:${NC}   $([ "$SUPPORTS_5GHZ" = true ] && echo "5GHz (802.11ac)" || echo "2.4GHz (802.11n)")"
+        echo -e "  ${CYAN}Interface:${NC}   $WIFI_AP_INTERFACE"
+
+        print_section "Web Interface"
+        echo -e "  ${GREEN}►${NC} https://roselink.local"
+        echo -e "  ${GREEN}►${NC} https://192.168.50.1"
+
+        print_section "WiFi Hotspot"
         if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "$DEFAULT_SSID" ]; then
-            echo -e "  • SSID: $CURRENT_SSID (preserved)"
+            echo -e "  ${CYAN}SSID:${NC}      $CURRENT_SSID ${YELLOW}(preserved)${NC}"
         else
-            echo -e "  • SSID: $CURRENT_SSID"
+            echo -e "  ${CYAN}SSID:${NC}      $CURRENT_SSID"
         fi
         if [ "$GENERATED_NEW_PASSWORD" = true ]; then
-            echo -e "  • Password: ${GREEN}${CURRENT_PASS}${NC} (newly generated)"
+            echo -e "  ${CYAN}Password:${NC}  ${GREEN}${CURRENT_PASS}${NC}"
             echo ""
-            echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${YELLOW}║  IMPORTANT: Save your WiFi password!                           ║${NC}"
-            echo -e "${YELLOW}║  Password: ${GREEN}${CURRENT_PASS}${YELLOW}                                   ║${NC}"
-            echo -e "${YELLOW}║  You can change it in: /etc/hostapd/hostapd.conf               ║${NC}"
-            echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
+            echo -e "  ${YELLOW}┌────────────────────────────────────────────────────────┐${NC}"
+            echo -e "  ${YELLOW}│  ⚠ SAVE THIS PASSWORD - Generated randomly for you    │${NC}"
+            echo -e "  ${YELLOW}│  Change via web UI or /etc/hostapd/hostapd.conf        │${NC}"
+            echo -e "  ${YELLOW}└────────────────────────────────────────────────────────┘${NC}"
         else
-            echo -e "  • Password: (preserved from previous install)"
+            echo -e "  ${CYAN}Password:${NC}  ${YELLOW}(preserved from previous install)${NC}"
         fi
-        echo ""
+
         if [ -z "$WIFI_CLIENT_INTERFACE" ]; then
-            echo -e "${YELLOW}IMPORTANT: Connect Ethernet cable for internet access!${NC}"
             echo ""
+            echo -e "  ${RED}┌────────────────────────────────────────────────────────┐${NC}"
+            echo -e "  ${RED}│  ⚠ ETHERNET REQUIRED - Single WiFi interface detected  │${NC}"
+            echo -e "  ${RED}│  Connect Ethernet cable for internet access            │${NC}"
+            echo -e "  ${RED}└────────────────────────────────────────────────────────┘${NC}"
         fi
-        echo -e "${CYAN}Monitoring Dashboard (Optional):${NC}"
-        echo -e "  • Enable:  ${GREEN}sudo rose-monitoring enable${NC}"
-        echo -e "  • Status:  rose-monitoring status"
-        echo -e "  • Disable: sudo rose-monitoring disable"
+
+        print_section "Monitoring (Optional)"
+        echo -e "  ${GREEN}Enable:${NC}   sudo rose-monitoring enable"
+        echo -e "  ${CYAN}Status:${NC}   rose-monitoring status"
+        echo -e "  ${RED}Disable:${NC}  sudo rose-monitoring disable"
+
         echo ""
-        echo -e "${YELLOW}Note: Accept the self-signed certificate warning in your browser.${NC}"
+        echo -e "  ${YELLOW}ℹ Accept the self-signed certificate warning in your browser${NC}"
         echo ""
         ;;
 

@@ -33,8 +33,14 @@ error() {
     echo -e "${RED}✗${NC} $1"
 }
 
+print_section() {
+    local title="$1"
+    echo ""
+    echo -e "${CYAN}━━━ ${title} ━━━${NC}"
+}
+
 show_banner() {
-    echo -e "${CYAN}"
+    echo -e "${GREEN}"
     cat << 'BANNER'
 
                ####
@@ -80,10 +86,11 @@ check_system_requirements() {
 
     show_banner
 
-    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║              Pre-Installation Check                            ║${NC}"
-    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-    echo ""
+    echo -e "${CYAN}┌──────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│              Pre-Installation Check                          │${NC}"
+    echo -e "${CYAN}└──────────────────────────────────────────────────────────────┘${NC}"
+
+    print_section "System Requirements"
 
     # Check Debian version
     info "Checking operating system..."
@@ -176,11 +183,12 @@ check_system_requirements() {
         info "Python3 will be installed as a dependency"
     fi
 
+    print_section "Installation Status"
+
     # Check for existing installation
     info "Checking for existing installation..."
     if [ -d "/opt/rose-link" ]; then
-        warning "Existing installation found at /opt/rose-link"
-        warning "  Will be upgraded"
+        warning "Existing installation found - will be upgraded"
     else
         success "Clean installation"
     fi
@@ -209,14 +217,15 @@ check_system_requirements() {
     echo ""
 
     if [ "$has_errors" = true ]; then
-        echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${RED}║  Pre-installation check failed. Please resolve the issues.     ║${NC}"
-        echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+        echo -e "${RED}┌──────────────────────────────────────────────────────────────┐${NC}"
+        echo -e "${RED}│  ✗ Pre-installation check failed                             │${NC}"
+        echo -e "${RED}│  Please resolve the issues above before installing           │${NC}"
+        echo -e "${RED}└──────────────────────────────────────────────────────────────┘${NC}"
         return 1
     else
-        echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${GREEN}║  Pre-installation check passed. Proceeding with installation. ║${NC}"
-        echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+        echo -e "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}"
+        echo -e "${GREEN}│  ✓ All checks passed - Proceeding with installation          │${NC}"
+        echo -e "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}"
         return 0
     fi
 }
