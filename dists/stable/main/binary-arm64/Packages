@@ -1,8 +1,8 @@
 Package: rose-link
-Version: 1.3.0-1
+Version: 1.3.2-1
 Architecture: all
 Maintainer: ROSE Link Team <contact@roselink.dev>
-Installed-Size: 1532
+Installed-Size: 1548
 Pre-Depends: dpkg (>= 1.17.5)
 Depends: python3 (>= 3.9),
          python3-pip,
@@ -28,11 +28,11 @@ Suggests: htop, vnstat, iftop
 Conflicts: rose-link-pro
 Replaces: rose-link-pro
 Provides: rose-link-pro
-Filename: pool/main/r/rose-link/rose-link_1.3.0-1_all.deb
-Size: 361546
-MD5sum: e8625024b49dfb01d4b4ebe6fc2734c5
-SHA1: a8d4b797bb801d6aedbaa6fa051728d7ba58e962
-SHA256: c65560fb8062124fd227a7bc1dea65acb1cbe970921737fc270280989f0e89da
+Filename: pool/main/r/rose-link/rose-link_1.3.2-1_all.deb
+Size: 364908
+MD5sum: 3b58b7c7e7886a25898e062513dc52f3
+SHA1: cb72f2fb9b30a61378de780336fe3ceba6470682
+SHA256: c14b0975b2d914c0f28951b1fefb9462519e1d92e69ea7110ed2f4a82647b6a8
 Section: net
 Priority: optional
 Homepage: https://github.com/oussrh/ROSE-LINK
