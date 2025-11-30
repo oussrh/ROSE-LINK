@@ -1,0 +1,244 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 1.2.0)'
+        required: false
+        default: ''
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    outputs:
+      deb_name: ${{ steps.build.outputs.deb_name }}
+      version: ${{ steps.build.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev fakeroot lintian
+
+      - name: Build Debian package
+        id: build
+        run: |
+          chmod +x scripts/build-deb.sh
+          bash scripts/build-deb.sh
+
+          # Find the built .deb file
+          DEB_FILE=$(ls -1 rose-link-pro_*.deb 2>/dev/null | head -1)
+          if [ -z "$DEB_FILE" ]; then
+            echo "Error: No .deb file found"
+            exit 1
+          fi
+
+          echo "deb_name=$DEB_FILE" >> $GITHUB_OUTPUT
+
+          # Extract version
+          VERSION=$(echo "$DEB_FILE" | grep -oP '\d+\.\d+\.\d+-\d+')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          echo "Built: $DEB_FILE (version: $VERSION)"
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: rose-link-pro_*.deb
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: rose-link-pro_*.deb
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-apt-repo:
+    needs: build-deb
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Download .deb artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-package
+          path: ./
+
+      - name: Install APT repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev apt-utils gnupg
+
+      - name: Import GPG key
+        if: env.GPG_PRIVATE_KEY != ''
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "GPG key imported"
+
+      - name: Update APT repository
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+
+          DEB_FILE=$(ls -1 rose-link-pro_*.deb 2>/dev/null | head -1)
+          if [ -z "$DEB_FILE" ]; then
+            echo "Error: No .deb file found"
+            exit 1
+          fi
+
+          echo "Processing: $DEB_FILE"
+
+          # Create pool directory structure
+          mkdir -p pool/main/r/rose-link
+
+          # Copy .deb to pool (remove old versions first)
+          rm -f pool/main/r/rose-link/*.deb
+          cp "$DEB_FILE" pool/main/r/rose-link/
+
+          # Get architectures from the .deb
+          DEB_ARCH=$(dpkg-deb --field "$DEB_FILE" Architecture)
+          echo "Package architecture: $DEB_ARCH"
+
+          # Create Packages files for each architecture
+          for arch in arm64 armhf; do
+            mkdir -p "dists/stable/main/binary-${arch}"
+
+            if [ "$DEB_ARCH" = "all" ] || [ "$DEB_ARCH" = "$arch" ]; then
+              # Generate Packages file
+              dpkg-scanpackages --arch "$arch" pool/ > "dists/stable/main/binary-${arch}/Packages"
+              gzip -9 -k -f "dists/stable/main/binary-${arch}/Packages"
+            else
+              # Empty Packages file for unsupported arch
+              touch "dists/stable/main/binary-${arch}/Packages"
+              gzip -9 -k -f "dists/stable/main/binary-${arch}/Packages"
+            fi
+
+            echo "Generated Packages for $arch"
+          done
+
+          # Generate Release file
+          cd dists/stable
+
+          cat > Release << EOF
+          Origin: ROSE Link
+          Label: ROSE Link APT Repository
+          Suite: stable
+          Codename: stable
+          Date: $(date -Ru)
+          Architectures: arm64 armhf
+          Components: main
+          Description: Official APT repository for ROSE Link - Raspberry Pi VPN Router
+          EOF
+
+          # Add hashes
+          {
+            echo "MD5Sum:"
+            find main -type f \( -name "Packages" -o -name "Packages.gz" \) -exec sh -c '
+              for f; do
+                SIZE=$(stat -c %s "$f")
+                MD5=$(md5sum "$f" | cut -d" " -f1)
+                echo " $MD5 $SIZE $f"
+              done
+            ' _ {} +
+
+            echo "SHA1:"
+            find main -type f \( -name "Packages" -o -name "Packages.gz" \) -exec sh -c '
+              for f; do
+                SIZE=$(stat -c %s "$f")
+                SHA1=$(sha1sum "$f" | cut -d" " -f1)
+                echo " $SHA1 $SIZE $f"
+              done
+            ' _ {} +
+
+            echo "SHA256:"
+            find main -type f \( -name "Packages" -o -name "Packages.gz" \) -exec sh -c '
+              for f; do
+                SIZE=$(stat -c %s "$f")
+                SHA256=$(sha256sum "$f" | cut -d" " -f1)
+                echo " $SHA256 $SIZE $f"
+              done
+            ' _ {} +
+          } >> Release
+
+          # Sign Release file if GPG key is available
+          if [ -n "$GPG_KEY_ID" ] && gpg --list-keys "$GPG_KEY_ID" &>/dev/null; then
+            echo "Signing Release file..."
+
+            # Create Release.gpg (detached signature)
+            rm -f Release.gpg
+            if [ -n "$GPG_PASSPHRASE" ]; then
+              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+                --passphrase-fd 0 --default-key "$GPG_KEY_ID" \
+                -abs -o Release.gpg Release
+            else
+              gpg --batch --yes --default-key "$GPG_KEY_ID" -abs -o Release.gpg Release
+            fi
+
+            # Create InRelease (inline signature)
+            rm -f InRelease
+            if [ -n "$GPG_PASSPHRASE" ]; then
+              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+                --passphrase-fd 0 --default-key "$GPG_KEY_ID" \
+                --clearsign -o InRelease Release
+            else
+              gpg --batch --yes --default-key "$GPG_KEY_ID" --clearsign -o InRelease Release
+            fi
+
+            echo "Release file signed"
+          else
+            echo "Warning: GPG key not available, repository will be unsigned"
+            # Create unsigned InRelease (copy of Release)
+            cp Release InRelease
+          fi
+
+          cd ../..
+
+          echo "APT repository updated successfully"
+
+          # Show what was generated
+          echo ""
+          echo "=== Repository Contents ==="
+          find . -type f -name "*.deb" -o -name "Packages*" -o -name "Release*" -o -name "InRelease" | head -20
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update APT repository with ${{ needs.build-deb.outputs.deb_name }}
+
+          Version: ${{ needs.build-deb.outputs.version }}
+          Built from: ${{ github.sha }}"
+
+            git push origin gh-pages
+            echo "Changes pushed to gh-pages"
+          fi

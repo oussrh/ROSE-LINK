@@ -6,8 +6,8 @@
 
 set -e
 
-GITHUB_USER="oussrh"  # Your GitHub username
-REPO_URL="https://$GITHUB_USER.github.io/roselink-repo"
+GITHUB_USER="oussrh"
+REPO_URL="https://$GITHUB_USER.github.io/ROSE-LINK"
 
 echo "🌹 ROSE Link Quick Installer"
 echo ""
@@ -34,11 +34,11 @@ apt-get update
 apt-get install -y curl gnupg
 
 # Add GPG key
-curl -fsSL "$REPO_URL/ROSELINK-REPO.gpg" \
+curl -fsSL "$REPO_URL/gpg.key" \
   | gpg --dearmor -o /etc/apt/trusted.gpg.d/roselink.gpg
 
 # Add repository
-echo "deb [arch=armhf,arm64 signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] $REPO_URL bookworm main" \
+echo "deb [arch=arm64,armhf signed-by=/etc/apt/trusted.gpg.d/roselink.gpg] $REPO_URL stable main" \
   | tee /etc/apt/sources.list.d/roselink.list
 
 # Install ROSE Link
