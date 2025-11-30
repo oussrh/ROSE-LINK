@@ -114,12 +114,23 @@ jobs:
 
           echo "Processing: $DEB_FILE"
 
+          # Show package version
+          DEB_VERSION=$(dpkg-deb --field "$DEB_FILE" Version)
+          echo "Package version: $DEB_VERSION"
+
           # Create pool directory structure
           mkdir -p pool/main/r/rose-link
 
-          # Copy .deb to pool (remove old versions first)
+          # Remove ALL old .deb files (important for Packages regeneration)
+          echo "Removing old packages..."
           rm -f pool/main/r/rose-link/*.deb
+
+          # Copy new .deb to pool
           cp "$DEB_FILE" pool/main/r/rose-link/
+          echo "Copied $DEB_FILE to pool/"
+
+          # Verify the file is there
+          ls -la pool/main/r/rose-link/
 
           # Get architectures from the .deb
           DEB_ARCH=$(dpkg-deb --field "$DEB_FILE" Architecture)
@@ -131,7 +142,14 @@ jobs:
 
             if [ "$DEB_ARCH" = "all" ] || [ "$DEB_ARCH" = "$arch" ]; then
               # Generate Packages file
+              echo "Generating Packages for $arch..."
               dpkg-scanpackages --arch "$arch" pool/ > "dists/stable/main/binary-${arch}/Packages"
+
+              # Verify the version in Packages file
+              echo "=== Packages file content for $arch ==="
+              cat "dists/stable/main/binary-${arch}/Packages"
+              echo "=== End Packages ==="
+
               gzip -9 -k -f "dists/stable/main/binary-${arch}/Packages"
             else
               # Empty Packages file for unsupported arch
