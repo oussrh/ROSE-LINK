@@ -18,6 +18,13 @@ USER="rose"
 GROUP="rose"
 INSTALL_DIR="/opt/rose-link"
 LOG_FILE="/var/log/rose-link-postinst.log"
+DEFAULT_SSID="ROSE-Link"
+
+# Generate a secure random password (12 chars, alphanumeric)
+generate_password() {
+    # Use /dev/urandom for secure randomness
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 12
+}
 
 # Logging function
 log() {
@@ -204,8 +211,9 @@ case "$1" in
 
         # Configure hostapd
         info "Configuring WiFi hotspot..."
+        GENERATED_NEW_PASSWORD=false
         if [ -f "$INSTALL_DIR/system/hostapd.conf" ]; then
-            # Always update from package (preserves user changes to SSID/password via sed)
+            # Check for existing configuration
             if [ -f /etc/hostapd/hostapd.conf ]; then
                 # Preserve user's SSID and password if they exist (POSIX-compatible grep)
                 EXISTING_SSID=$(grep '^ssid=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "")
@@ -214,12 +222,19 @@ case "$1" in
             cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
             # Substitute interface placeholder
             sed -i "s/__WIFI_AP_INTERFACE__/${WIFI_AP_INTERFACE}/g" /etc/hostapd/hostapd.conf
-            # Restore user's SSID and password if they had customized them
-            if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "ROSE-Link" ]; then
+            # Handle SSID and password
+            if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "$DEFAULT_SSID" ]; then
+                # Restore user's custom SSID
                 sed -i "s/^ssid=.*/ssid=${EXISTING_SSID}/" /etc/hostapd/hostapd.conf
             fi
-            if [ -n "$EXISTING_PASS" ] && [ "$EXISTING_PASS" != "RoseLink2024" ]; then
-                sed -i "s/^wpa_passphrase=.*/wpa_passphrase=${EXISTING_PASS}/" /etc/hostapd/hostapd.conf
+            if [ -n "$EXISTING_PASS" ]; then
+                # Restore existing password (user already has one)
+                sed -i "s/__WIFI_PASSWORD__/${EXISTING_PASS}/" /etc/hostapd/hostapd.conf
+            else
+                # Fresh install: generate a random secure password
+                WIFI_PASSWORD=$(generate_password)
+                sed -i "s/__WIFI_PASSWORD__/${WIFI_PASSWORD}/" /etc/hostapd/hostapd.conf
+                GENERATED_NEW_PASSWORD=true
             fi
             # Configure 5GHz for Pi 4/5 (better performance, less interference)
             if [ "$SUPPORTS_5GHZ" = true ]; then
@@ -242,11 +257,14 @@ case "$1" in
                 CHANNEL="6"
                 AC_SUPPORT=""
             fi
+            # Generate random password for fresh install
+            WIFI_PASSWORD=$(generate_password)
+            GENERATED_NEW_PASSWORD=true
             cat > /etc/hostapd/hostapd.conf << EOF
 # ROSE Link Hotspot Configuration
 interface=${WIFI_AP_INTERFACE}
 driver=nl80211
-ssid=ROSE-Link
+ssid=${DEFAULT_SSID}
 hw_mode=${HW_MODE}
 channel=${CHANNEL}
 country_code=BE
@@ -255,7 +273,7 @@ ${AC_SUPPORT}
 wmm_enabled=1
 auth_algs=1
 wpa=2
-wpa_passphrase=RoseLink2024
+wpa_passphrase=${WIFI_PASSWORD}
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 EOF
@@ -473,15 +491,24 @@ EOF
         echo -e "  • https://192.168.50.1"
         echo ""
         echo -e "${CYAN}WiFi Hotspot:${NC}"
-        if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "ROSE-Link" ]; then
-            echo -e "  • SSID: $EXISTING_SSID (preserved)"
+        # Get current SSID and password from config
+        CURRENT_SSID=$(grep '^ssid=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "$DEFAULT_SSID")
+        CURRENT_PASS=$(grep '^wpa_passphrase=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "")
+        if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "$DEFAULT_SSID" ]; then
+            echo -e "  • SSID: $CURRENT_SSID (preserved)"
         else
-            echo -e "  • SSID: ROSE-Link"
+            echo -e "  • SSID: $CURRENT_SSID"
         fi
-        if [ -n "$EXISTING_PASS" ] && [ "$EXISTING_PASS" != "RoseLink2024" ]; then
-            echo -e "  • Password: (preserved from previous install)"
+        if [ "$GENERATED_NEW_PASSWORD" = true ]; then
+            echo -e "  • Password: ${GREEN}${CURRENT_PASS}${NC} (newly generated)"
+            echo ""
+            echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
+            echo -e "${YELLOW}║  IMPORTANT: Save your WiFi password!                           ║${NC}"
+            echo -e "${YELLOW}║  Password: ${GREEN}${CURRENT_PASS}${YELLOW}                                   ║${NC}"
+            echo -e "${YELLOW}║  You can change it in: /etc/hostapd/hostapd.conf               ║${NC}"
+            echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
         else
-            echo -e "  • Password: RoseLink2024"
+            echo -e "  • Password: (preserved from previous install)"
         fi
         echo ""
         if [ -z "$WIFI_CLIENT_INTERFACE" ]; then
