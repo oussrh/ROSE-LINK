@@ -5,38 +5,38 @@ Origin: ROSE Link
 Label: ROSE Link APT Repository
 Suite: stable
 Codename: stable
-Date: Sun, 30 Nov 2025 16:16:45 +0000
+Date: Sun, 30 Nov 2025 16:19:36 +0000
 Architectures: arm64 armhf
 Components: main
 Description: Official APT repository for ROSE Link - Raspberry Pi VPN Router
 MD5Sum:
  83f29356092fad576aaac83f5e6df872 2609 main/binary-armhf/Packages
- 1971d559de818dcbc321e4ab596540f9 1332 main/binary-armhf/Packages.gz
+ 8b6f0dc34d9b33b0c1b571daa6758eea 1332 main/binary-armhf/Packages.gz
  83f29356092fad576aaac83f5e6df872 2609 main/binary-arm64/Packages
- 1971d559de818dcbc321e4ab596540f9 1332 main/binary-arm64/Packages.gz
+ 8b6f0dc34d9b33b0c1b571daa6758eea 1332 main/binary-arm64/Packages.gz
 SHA1:
  074a711a653c546dcc3b4552a70a392452fd763a 2609 main/binary-armhf/Packages
- b72035a2ce4aa1a5fa4b3cc0a0da21fcd69e59ae 1332 main/binary-armhf/Packages.gz
+ 6cbfccaf4fd50e40b0294447087aa64877acff32 1332 main/binary-armhf/Packages.gz
  074a711a653c546dcc3b4552a70a392452fd763a 2609 main/binary-arm64/Packages
- b72035a2ce4aa1a5fa4b3cc0a0da21fcd69e59ae 1332 main/binary-arm64/Packages.gz
+ 6cbfccaf4fd50e40b0294447087aa64877acff32 1332 main/binary-arm64/Packages.gz
 SHA256:
  5bdd3a6c238baefe0b470f53a4136fd1940428f9c98186f19c92dc586acef13c 2609 main/binary-armhf/Packages
- 0b1e858f4342e922b7f5d5ffb99c92280cfc380bafacb0ea604d74e56c704998 1332 main/binary-armhf/Packages.gz
+ 665bda4f5109a45b47ece71d31cd84c2517dde22203323c513f076d0f18afdda 1332 main/binary-armhf/Packages.gz
  5bdd3a6c238baefe0b470f53a4136fd1940428f9c98186f19c92dc586acef13c 2609 main/binary-arm64/Packages
- 0b1e858f4342e922b7f5d5ffb99c92280cfc380bafacb0ea604d74e56c704998 1332 main/binary-arm64/Packages.gz
+ 665bda4f5109a45b47ece71d31cd84c2517dde22203323c513f076d0f18afdda 1332 main/binary-arm64/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEE18TGnnFu+qaCpIC5sm63VcdvPLYFAmksbe0ACgkQsm63Vcdv
-PLZSsg/+LiekueWMdNjGA6Xzf41wH7kY+IRCHlg1hV3uq/jlXMORskgBC1A2zbsh
-klfc5PiLK6qUx5erZBCRYohJwmdJllQ6iUs68OxRCOK/K9nA21s+pYwHO1MpRSe5
-JOgrOvduyqTYAlLekV39+wutat84GY2UaCv7TLcxdLnMrw1aVMj0SLQqhEOT+9cG
-qeQ1ujgFF85xbIqSjfwZe8fV+rZvK/nRzSnJ5jZAgkwpfXOA995x7BuhlmpNr3Ix
-oh5N0MTets7dZwelT7ijkBU0sCiTTZ3hgm8uRKJxIBctdPUnm4I/nHnpO84HsZY5
-mPkOy2CeiTptgZCfuDEEeWpGSkXhnpT4ECN8RdB1Yy0yocNIwaCi4OdaY8/Vo5Ex
-VJsI7mUb7ZISxZw/vXZH3vmidzLr/YNIzRLSqFvmGruwDd2/niu9S7AU4cEj+mhG
-AAwBtffasYnDQnPr/QVDW7d1D6V3U1EASVEUeRxYtfxtj0DNzB2dPjcptV3quDn/
-cin6b3wvQu2uTrKotPQcj75nERbci14Ivdw83NXGpN8p1mRhlyz2wQ6hdLbU1lry
-gG8W4YzVHhMpjYYUGplFCGr2/rT6P3JgQ+QTXmk4QaoOpSq6fteT+F2vkleN43TH
-QvIjTGwSynv9ewdEwx3fV6qmntBiO+NkLmiGLxzzYbkx2ZMRLRU=
-=+iiY
+iQIzBAEBCgAdFiEE18TGnnFu+qaCpIC5sm63VcdvPLYFAmksbpgACgkQsm63Vcdv
+PLatRA/+M5htyhaw9A5MAuOAfLxhmv8Z8OQj21TK+MY9XmoVhvmH9CKMnnP5dDGF
+IThfeXhhFGdp24FEzGXz/STaxARQJh/KMMvfPQCe+E30WFy2jWt1CfhmigsmyF9y
+TJAhLtQN8Q7+XxKJp2uYX6pPPDodANDKZ4o0wG1mH7YiZTtzEXpWJZLDeYNaAP6j
+x64BseSgTSNoqStxlDtkPLIhFj6VrMYipEm+M8/msFjiNN1KnCy/0Gov/2HyPVwG
+zsPTQEVSHeSatHrWb+HiHWkFids5NwknHziBccRXYCvrjAACbpApoI7SCKRD2Loj
+3XYkD3/rB9tfNZ2lrmo82gu6FknlRp2v+YPTGV3wIhXSGuLx6zD2i9lnzQ5YyNXS
+SjNamSQn0Zcc6nNRYMu2If9SG6S0iz9SIUgrwVXsyTaogqsEuYYm6ie0h2skuQcd
++nZQR7XhFRo1RHtizVQMRQSxgVb+9+iD6GvnsdzLppIfo5toERQRjKz8rltnx9M1
+Obn39PhTwtNSMgSR3p1SMPc75eqqnDl4HUpCGUmOaLaxG3dx9PBRlVL4RFZ4I/c7
+61sr8yOU3EF7k1RY3DpN5gtssR57yxJAug2C4ApL3VpXq9dUDCKDEmSHhAmN1mFd
+CkqL3N6COQbyzJP5c/bmqSlQXCM/Gu6h5vHkXqgzKewNNtye9xs=
+=cR2U
 -----END PGP SIGNATURE-----
