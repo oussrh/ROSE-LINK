@@ -86,13 +86,20 @@ fi
 
 # Web frontend
 if [ -d "$PROJECT_DIR/web" ]; then
-    # Copy HTML, CSS, JS files
+    # Copy HTML files
     cp "$PROJECT_DIR/web"/*.html "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
-    cp "$PROJECT_DIR/web"/*.json "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
-    cp "$PROJECT_DIR/web"/*.js "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
 
-    # Copy subdirectories
-    for subdir in css js icons images; do
+    # Copy service worker and manifest
+    cp "$PROJECT_DIR/web"/sw.js "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
+    cp "$PROJECT_DIR/web"/site.webmanifest "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
+
+    # Copy images (logos, icons, favicons)
+    cp "$PROJECT_DIR/web"/*.webp "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
+    cp "$PROJECT_DIR/web"/*.png "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
+    cp "$PROJECT_DIR/web"/*.ico "$DEB_DIR/opt/rose-link/web/" 2>/dev/null || true
+
+    # Copy subdirectories (css, js, icons, images, locales, vendor)
+    for subdir in css js icons images locales vendor; do
         if [ -d "$PROJECT_DIR/web/$subdir" ]; then
             cp -r "$PROJECT_DIR/web/$subdir" "$DEB_DIR/opt/rose-link/web/"
         fi

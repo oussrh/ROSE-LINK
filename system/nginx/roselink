@@ -41,26 +41,13 @@ server {
     root /opt/rose-link/web;
     index index.html;
 
-    # Main page with HTTP/2 Server Push for critical assets
+    # Main page
     location = / {
-        http2_push /css/custom.css;
-        http2_push /js/main.js;
-        http2_push /js/i18n.js;
-        http2_push /js/config.js;
-        http2_push /locales/en.json;
-        http2_push /Logo.webp;
-        http2_push /vendor/htmx.min.js;
         try_files /index.html =404;
     }
 
     location = /index.html {
-        http2_push /css/custom.css;
-        http2_push /js/main.js;
-        http2_push /js/i18n.js;
-        http2_push /js/config.js;
-        http2_push /locales/en.json;
-        http2_push /Logo.webp;
-        http2_push /vendor/htmx.min.js;
+        # Served from root
     }
 
     # API proxy
