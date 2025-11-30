@@ -22,9 +22,7 @@ Depends: python3 (>= 3.9),
          ca-certificates,
          procps,
          curl,
-         apt-transport-https,
-         software-properties-common,
-         gnupg2
+         gnupg
 Recommends: avahi-daemon
 Suggests: htop, vnstat, iftop
 Conflicts: rose-link
