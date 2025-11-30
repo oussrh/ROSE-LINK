@@ -116,6 +116,7 @@ if [ -d "$PROJECT_DIR/system" ]; then
     cp "$PROJECT_DIR/system"/*.conf "$DEB_DIR/opt/rose-link/system/" 2>/dev/null || true
     cp "$PROJECT_DIR/system"/*.append "$DEB_DIR/opt/rose-link/system/" 2>/dev/null || true
     cp "$PROJECT_DIR/system/rose-sudoers" "$DEB_DIR/opt/rose-link/system/" 2>/dev/null || true
+    cp "$PROJECT_DIR/system/rose-monitoring" "$DEB_DIR/opt/rose-link/system/" 2>/dev/null || true
 
     # Copy service files
     cp "$PROJECT_DIR/system"/*.service "$DEB_DIR/opt/rose-link/system/" 2>/dev/null || true
