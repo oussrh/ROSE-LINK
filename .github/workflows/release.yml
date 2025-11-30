@@ -36,7 +36,7 @@ jobs:
           bash scripts/build-deb.sh
 
           # Find the built .deb file
-          DEB_FILE=$(ls -1 rose-link-pro_*.deb 2>/dev/null | head -1)
+          DEB_FILE=$(ls -1 rose-link_*.deb 2>/dev/null | head -1)
           if [ -z "$DEB_FILE" ]; then
             echo "Error: No .deb file found"
             exit 1
@@ -54,14 +54,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debian-package
-          path: rose-link-pro_*.deb
+          path: rose-link_*.deb
           retention-days: 30
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: rose-link-pro_*.deb
+          files: rose-link_*.deb
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -106,7 +106,7 @@ jobs:
         run: |
           set -e
 
-          DEB_FILE=$(ls -1 rose-link-pro_*.deb 2>/dev/null | head -1)
+          DEB_FILE=$(ls -1 rose-link_*.deb 2>/dev/null | head -1)
           if [ -z "$DEB_FILE" ]; then
             echo "Error: No .deb file found"
             exit 1

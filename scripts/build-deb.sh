@@ -20,7 +20,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 DEB_DIR="$PROJECT_DIR/debian"
 BUILD_DIR="$PROJECT_DIR/build"
 VERSION=$(grep -oP 'Version: \K[0-9]+\.[0-9]+\.[0-9]+-[0-9]+' "$DEB_DIR/DEBIAN/control" 2>/dev/null || echo "0.2.0-1")
-PACKAGE_NAME="rose-link-pro_${VERSION}_all"
+PACKAGE_NAME="rose-link_${VERSION}_all"
 
 info() {
     echo -e "${CYAN}→${NC} $1"

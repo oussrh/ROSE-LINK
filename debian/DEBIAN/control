@@ -1,5 +1,5 @@
-Package: rose-link-pro
-Version: 1.2.8-1
+Package: rose-link
+Version: 1.3.0-1
 Section: net
 Priority: optional
 Architecture: all
@@ -25,9 +25,9 @@ Depends: python3 (>= 3.9),
          gnupg
 Recommends: avahi-daemon
 Suggests: htop, vnstat, iftop
-Conflicts: rose-link
-Replaces: rose-link
-Provides: rose-link
+Conflicts: rose-link-pro
+Replaces: rose-link-pro
+Provides: rose-link-pro
 Installed-Size: 3072
 Maintainer: ROSE Link Team <contact@roselink.dev>
 Homepage: https://github.com/oussrh/ROSE-LINK
