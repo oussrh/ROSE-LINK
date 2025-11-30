@@ -121,16 +121,33 @@ jobs:
           # Create pool directory structure
           mkdir -p pool/main/r/rose-link
 
+          # Show what's currently in the pool
+          echo "=== Current pool contents ==="
+          ls -la pool/main/r/rose-link/ || echo "Pool directory empty or doesn't exist"
+
           # Remove ALL old .deb files (important for Packages regeneration)
-          echo "Removing old packages..."
-          rm -f pool/main/r/rose-link/*.deb
+          echo "Removing ALL old packages..."
+          rm -rfv pool/main/r/rose-link/*.deb || true
+
+          # Verify cleanup
+          echo "=== After cleanup ==="
+          ls -la pool/main/r/rose-link/ || echo "Pool directory empty"
 
           # Copy new .deb to pool
-          cp "$DEB_FILE" pool/main/r/rose-link/
+          cp -v "$DEB_FILE" pool/main/r/rose-link/
           echo "Copied $DEB_FILE to pool/"
 
-          # Verify the file is there
+          # Verify only the new file is there
+          echo "=== Final pool contents ==="
           ls -la pool/main/r/rose-link/
+
+          # Count files - should be exactly 1
+          FILE_COUNT=$(ls -1 pool/main/r/rose-link/*.deb 2>/dev/null | wc -l)
+          echo "Number of .deb files in pool: $FILE_COUNT"
+          if [ "$FILE_COUNT" -ne 1 ]; then
+            echo "ERROR: Expected 1 .deb file, found $FILE_COUNT"
+            exit 1
+          fi
 
           # Get architectures from the .deb
           DEB_ARCH=$(dpkg-deb --field "$DEB_FILE" Architecture)
