@@ -164,6 +164,14 @@ case "$1" in
         PI_MODEL=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0' || echo "Unknown")
         info "Detected: $PI_MODEL"
 
+        # Detect if Pi supports 5GHz (Pi 4, Pi 5, Pi 400)
+        SUPPORTS_5GHZ=false
+        case "$PI_MODEL" in
+            *"Pi 4"*|*"Pi 5"*|*"Pi 400"*)
+                SUPPORTS_5GHZ=true
+                ;;
+        esac
+
         # Determine AP interface based on available interfaces
         if [ ${#WIFI_INTERFACES[@]} -ge 2 ]; then
             # Pi 4/5 or Pi with USB WiFi adapter - use secondary interface for AP
@@ -178,7 +186,7 @@ case "$1" in
             warning "Ethernet connection required for internet access"
             echo ""
             echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${YELLOW}║  ⚠  IMPORTANT: Single WiFi Interface Detected                 ║${NC}"
+            echo -e "${YELLOW}║  IMPORTANT: Single WiFi Interface Detected                    ║${NC}"
             echo -e "${YELLOW}╠════════════════════════════════════════════════════════════════╣${NC}"
             echo -e "${YELLOW}║  Your Raspberry Pi has only one WiFi interface.               ║${NC}"
             echo -e "${YELLOW}║  You MUST connect via Ethernet cable for internet access.     ║${NC}"
@@ -190,15 +198,18 @@ case "$1" in
             warning "No WiFi interface detected, defaulting to wlan0"
         fi
         info "Using WiFi AP interface: $WIFI_AP_INTERFACE"
+        if [ "$SUPPORTS_5GHZ" = true ]; then
+            info "5GHz WiFi supported - will configure for optimal performance"
+        fi
 
         # Configure hostapd
         info "Configuring WiFi hotspot..."
         if [ -f "$INSTALL_DIR/system/hostapd.conf" ]; then
             # Always update from package (preserves user changes to SSID/password via sed)
             if [ -f /etc/hostapd/hostapd.conf ]; then
-                # Preserve user's SSID and password if they exist
-                EXISTING_SSID=$(grep -oP '^ssid=\K.*' /etc/hostapd/hostapd.conf 2>/dev/null || echo "")
-                EXISTING_PASS=$(grep -oP '^wpa_passphrase=\K.*' /etc/hostapd/hostapd.conf 2>/dev/null || echo "")
+                # Preserve user's SSID and password if they exist (POSIX-compatible grep)
+                EXISTING_SSID=$(grep '^ssid=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "")
+                EXISTING_PASS=$(grep '^wpa_passphrase=' /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "")
             fi
             cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
             # Substitute interface placeholder
@@ -210,16 +221,37 @@ case "$1" in
             if [ -n "$EXISTING_PASS" ] && [ "$EXISTING_PASS" != "RoseLink2024" ]; then
                 sed -i "s/^wpa_passphrase=.*/wpa_passphrase=${EXISTING_PASS}/" /etc/hostapd/hostapd.conf
             fi
+            # Configure 5GHz for Pi 4/5 (better performance, less interference)
+            if [ "$SUPPORTS_5GHZ" = true ]; then
+                sed -i 's/^hw_mode=g/hw_mode=a/' /etc/hostapd/hostapd.conf
+                sed -i 's/^channel=6/channel=36/' /etc/hostapd/hostapd.conf
+                # Add 802.11ac support for Pi 4/5
+                if ! grep -q "^ieee80211ac=" /etc/hostapd/hostapd.conf; then
+                    echo "ieee80211ac=1" >> /etc/hostapd/hostapd.conf
+                fi
+                info "Configured 5GHz mode (channel 36) for better performance"
+            fi
         else
+            # Fallback: generate config inline
+            if [ "$SUPPORTS_5GHZ" = true ]; then
+                HW_MODE="a"
+                CHANNEL="36"
+                AC_SUPPORT="ieee80211ac=1"
+            else
+                HW_MODE="g"
+                CHANNEL="6"
+                AC_SUPPORT=""
+            fi
             cat > /etc/hostapd/hostapd.conf << EOF
 # ROSE Link Hotspot Configuration
 interface=${WIFI_AP_INTERFACE}
 driver=nl80211
 ssid=ROSE-Link
-hw_mode=g
-channel=6
+hw_mode=${HW_MODE}
+channel=${CHANNEL}
 country_code=BE
 ieee80211n=1
+${AC_SUPPORT}
 wmm_enabled=1
 auth_algs=1
 wpa=2
@@ -264,9 +296,15 @@ EOF
         fi
         success "dnsmasq configured"
 
-        # Configure dhcpcd
+        # Configure static IP for AP interface
         info "Configuring static IP..."
-        if ! grep -q "# ROSE Link AP Configuration" /etc/dhcpcd.conf 2>/dev/null; then
+        if [ -f /etc/dhcpcd.conf ]; then
+            # Using dhcpcd (Raspberry Pi OS, older Debian)
+            # Remove any existing ROSE Link config first (handles interface changes)
+            if grep -q "# ROSE Link AP Configuration" /etc/dhcpcd.conf 2>/dev/null; then
+                sed -i '/# ROSE Link AP Configuration/,/^$/d' /etc/dhcpcd.conf 2>/dev/null || true
+            fi
+            # Add new configuration
             cat >> /etc/dhcpcd.conf << EOF
 
 # ROSE Link AP Configuration
@@ -274,9 +312,17 @@ interface ${WIFI_AP_INTERFACE}
     static ip_address=192.168.50.1/24
     nohook wpa_supplicant
 EOF
-            success "Static IP configured"
+            success "Static IP configured (dhcpcd)"
+        elif command -v nmcli &>/dev/null; then
+            # Using NetworkManager (Debian 12+, Ubuntu)
+            # Create a connection for the AP interface
+            nmcli con delete "ROSE-AP" 2>/dev/null || true
+            nmcli con add type wifi ifname "${WIFI_AP_INTERFACE}" con-name "ROSE-AP" \
+                autoconnect no ssid "ROSE-Link" 2>/dev/null || true
+            nmcli con mod "ROSE-AP" ipv4.addresses 192.168.50.1/24 ipv4.method manual 2>/dev/null || true
+            success "Static IP configured (NetworkManager)"
         else
-            success "Static IP already configured"
+            warning "Could not configure static IP - no dhcpcd or NetworkManager found"
         fi
 
         # Install sudoers
@@ -418,14 +464,30 @@ EOF
         echo -e "${GREEN}║            ROSE Link Installation Complete!                    ║${NC}"
         echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
+        echo -e "${CYAN}Device:${NC} $PI_MODEL"
+        echo -e "${CYAN}WiFi Mode:${NC} $([ "$SUPPORTS_5GHZ" = true ] && echo "5GHz (802.11ac)" || echo "2.4GHz (802.11n)")"
+        echo -e "${CYAN}AP Interface:${NC} $WIFI_AP_INTERFACE"
+        echo ""
         echo -e "${CYAN}Web Interface:${NC}"
         echo -e "  • https://roselink.local"
         echo -e "  • https://192.168.50.1"
         echo ""
         echo -e "${CYAN}WiFi Hotspot:${NC}"
-        echo -e "  • SSID: ROSE-Link"
-        echo -e "  • Password: RoseLink2024"
+        if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "ROSE-Link" ]; then
+            echo -e "  • SSID: $EXISTING_SSID (preserved)"
+        else
+            echo -e "  • SSID: ROSE-Link"
+        fi
+        if [ -n "$EXISTING_PASS" ] && [ "$EXISTING_PASS" != "RoseLink2024" ]; then
+            echo -e "  • Password: (preserved from previous install)"
+        else
+            echo -e "  • Password: RoseLink2024"
+        fi
         echo ""
+        if [ -z "$WIFI_CLIENT_INTERFACE" ]; then
+            echo -e "${YELLOW}IMPORTANT: Connect Ethernet cable for internet access!${NC}"
+            echo ""
+        fi
         echo -e "${CYAN}Monitoring Dashboard (Optional):${NC}"
         echo -e "  • Enable:  ${GREEN}sudo rose-monitoring enable${NC}"
         echo -e "  • Status:  rose-monitoring status"
