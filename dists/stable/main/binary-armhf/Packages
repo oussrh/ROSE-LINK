@@ -22,19 +22,17 @@ Depends: python3 (>= 3.9),
          ca-certificates,
          procps,
          curl,
-         apt-transport-https,
-         software-properties-common,
-         gnupg2
+         gnupg
 Recommends: avahi-daemon
 Suggests: htop, vnstat, iftop
 Conflicts: rose-link
 Replaces: rose-link
 Provides: rose-link
 Filename: pool/main/r/rose-link/rose-link-pro_1.2.0-1_all.deb
-Size: 161782
-MD5sum: b8a3c7928f41f37926c3ee3ce40b3475
-SHA1: 762984dd735087bdd9ff12f5a2c25213ceaf819a
-SHA256: c043e95eaaa7cc5b00c11bdd7cd8d14175925129b5c72f41930d5473074575d5
+Size: 161744
+MD5sum: 4482421e6c315ea0403f846f3ae7d83e
+SHA1: 6678444303c0d1ff9275169e38dad85c66ce9896
+SHA256: 892158f976b34199f76f993eb67d52ec82a79b3a6642ab0c41bffee941bf1115
 Section: net
 Priority: optional
 Homepage: https://github.com/oussrh/ROSE-LINK

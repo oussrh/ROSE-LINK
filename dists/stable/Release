@@ -2,22 +2,22 @@ Origin: ROSE Link
 Label: ROSE Link APT Repository
 Suite: stable
 Codename: stable
-Date: Sun, 30 Nov 2025 15:37:57 +0000
+Date: Sun, 30 Nov 2025 15:41:54 +0000
 Architectures: arm64 armhf
 Components: main
 Description: Official APT repository for ROSE Link - Raspberry Pi VPN Router
 MD5Sum:
- 33ff7671d52bcdfd4373f2ac61f1e3cf 2677 main/binary-armhf/Packages
- 71775c702bb2716f78a5594a983cc694 1357 main/binary-armhf/Packages.gz
- 33ff7671d52bcdfd4373f2ac61f1e3cf 2677 main/binary-arm64/Packages
- 71775c702bb2716f78a5594a983cc694 1357 main/binary-arm64/Packages.gz
+ 83f29356092fad576aaac83f5e6df872 2609 main/binary-armhf/Packages
+ ecb1cfe362cd6772116ee8868d65b4f8 1332 main/binary-armhf/Packages.gz
+ 83f29356092fad576aaac83f5e6df872 2609 main/binary-arm64/Packages
+ ecb1cfe362cd6772116ee8868d65b4f8 1332 main/binary-arm64/Packages.gz
 SHA1:
- 543e3a22f8a8b29c3bfae1768854719a1b52e2ce 2677 main/binary-armhf/Packages
- 9e926697b7fca9868a78de84dab75eb662fc5b20 1357 main/binary-armhf/Packages.gz
- 543e3a22f8a8b29c3bfae1768854719a1b52e2ce 2677 main/binary-arm64/Packages
- 9e926697b7fca9868a78de84dab75eb662fc5b20 1357 main/binary-arm64/Packages.gz
+ 074a711a653c546dcc3b4552a70a392452fd763a 2609 main/binary-armhf/Packages
+ 3506251ba99d9a85a3ff9f879a7351289d1c4368 1332 main/binary-armhf/Packages.gz
+ 074a711a653c546dcc3b4552a70a392452fd763a 2609 main/binary-arm64/Packages
+ 3506251ba99d9a85a3ff9f879a7351289d1c4368 1332 main/binary-arm64/Packages.gz
 SHA256:
- 464e49bcb5cbc88df3000b806e9cb9be752b7bedf26bc9aff48f9d993232ea5b 2677 main/binary-armhf/Packages
- 3ab4173b67fd5d723a8f607ccc66cfafa919bad783a0c9e70e71fcc989e90164 1357 main/binary-armhf/Packages.gz
- 464e49bcb5cbc88df3000b806e9cb9be752b7bedf26bc9aff48f9d993232ea5b 2677 main/binary-arm64/Packages
- 3ab4173b67fd5d723a8f607ccc66cfafa919bad783a0c9e70e71fcc989e90164 1357 main/binary-arm64/Packages.gz
+ 5bdd3a6c238baefe0b470f53a4136fd1940428f9c98186f19c92dc586acef13c 2609 main/binary-armhf/Packages
+ ccb364161df80f6959fb25ff7deed0049e9cc847c357388bce35672c254f51ec 1332 main/binary-armhf/Packages.gz
+ 5bdd3a6c238baefe0b470f53a4136fd1940428f9c98186f19c92dc586acef13c 2609 main/binary-arm64/Packages
+ ccb364161df80f6959fb25ff7deed0049e9cc847c357388bce35672c254f51ec 1332 main/binary-arm64/Packages.gz
