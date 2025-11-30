@@ -2,22 +2,22 @@ Origin: ROSE Link
 Label: ROSE Link APT Repository
 Suite: stable
 Codename: stable
-Date: Sun, 30 Nov 2025 16:19:36 +0000
+Date: Sun, 30 Nov 2025 16:23:11 +0000
 Architectures: arm64 armhf
 Components: main
 Description: Official APT repository for ROSE Link - Raspberry Pi VPN Router
 MD5Sum:
  83f29356092fad576aaac83f5e6df872 2609 main/binary-armhf/Packages
- 8b6f0dc34d9b33b0c1b571daa6758eea 1332 main/binary-armhf/Packages.gz
+ 33d1f401acfb4f6a2544d55e1b81ab39 1332 main/binary-armhf/Packages.gz
  83f29356092fad576aaac83f5e6df872 2609 main/binary-arm64/Packages
- 8b6f0dc34d9b33b0c1b571daa6758eea 1332 main/binary-arm64/Packages.gz
+ 33d1f401acfb4f6a2544d55e1b81ab39 1332 main/binary-arm64/Packages.gz
 SHA1:
  074a711a653c546dcc3b4552a70a392452fd763a 2609 main/binary-armhf/Packages
- 6cbfccaf4fd50e40b0294447087aa64877acff32 1332 main/binary-armhf/Packages.gz
+ d5e029d3129dff5461ed418f2794f33f03bc0500 1332 main/binary-armhf/Packages.gz
  074a711a653c546dcc3b4552a70a392452fd763a 2609 main/binary-arm64/Packages
- 6cbfccaf4fd50e40b0294447087aa64877acff32 1332 main/binary-arm64/Packages.gz
+ d5e029d3129dff5461ed418f2794f33f03bc0500 1332 main/binary-arm64/Packages.gz
 SHA256:
  5bdd3a6c238baefe0b470f53a4136fd1940428f9c98186f19c92dc586acef13c 2609 main/binary-armhf/Packages
- 665bda4f5109a45b47ece71d31cd84c2517dde22203323c513f076d0f18afdda 1332 main/binary-armhf/Packages.gz
+ e935d295e13e84eeb007d55f974019b9717f5866d6830bf595a52a10dce2a40a 1332 main/binary-armhf/Packages.gz
  5bdd3a6c238baefe0b470f53a4136fd1940428f9c98186f19c92dc586acef13c 2609 main/binary-arm64/Packages
- 665bda4f5109a45b47ece71d31cd84c2517dde22203323c513f076d0f18afdda 1332 main/binary-arm64/Packages.gz
+ e935d295e13e84eeb007d55f974019b9717f5866d6830bf595a52a10dce2a40a 1332 main/binary-arm64/Packages.gz
