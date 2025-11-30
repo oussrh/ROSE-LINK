@@ -25,14 +25,13 @@ warning() {
     echo -e "${YELLOW}⚠${NC} $1"
 }
 
-echo ""
-echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}║              🌹 ROSE Link Pre-removal                          ║${NC}"
-echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
-echo ""
-
 case "$1" in
-    remove|upgrade|deconfigure)
+    remove|deconfigure)
+        echo ""
+        echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${YELLOW}║              ROSE Link Pre-removal                             ║${NC}"
+        echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
         # Stop ROSE Link services
         info "Stopping ROSE Link services..."
 
@@ -62,6 +61,12 @@ case "$1" in
         echo ""
         success "Pre-removal completed"
         echo ""
+        ;;
+
+    upgrade)
+        # On upgrade, just stop services quietly
+        systemctl stop rose-backend 2>/dev/null || true
+        systemctl stop rose-watchdog 2>/dev/null || true
         ;;
 
     failed-upgrade)

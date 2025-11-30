@@ -193,13 +193,25 @@ case "$1" in
 
         # Configure hostapd
         info "Configuring WiFi hotspot..."
-        if [ ! -f /etc/hostapd/hostapd.conf ]; then
-            if [ -f "$INSTALL_DIR/system/hostapd.conf" ]; then
-                cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
-                # Substitute interface placeholder
-                sed -i "s/__WIFI_AP_INTERFACE__/${WIFI_AP_INTERFACE}/g" /etc/hostapd/hostapd.conf
-            else
-                cat > /etc/hostapd/hostapd.conf << EOF
+        if [ -f "$INSTALL_DIR/system/hostapd.conf" ]; then
+            # Always update from package (preserves user changes to SSID/password via sed)
+            if [ -f /etc/hostapd/hostapd.conf ]; then
+                # Preserve user's SSID and password if they exist
+                EXISTING_SSID=$(grep -oP '^ssid=\K.*' /etc/hostapd/hostapd.conf 2>/dev/null || echo "")
+                EXISTING_PASS=$(grep -oP '^wpa_passphrase=\K.*' /etc/hostapd/hostapd.conf 2>/dev/null || echo "")
+            fi
+            cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
+            # Substitute interface placeholder
+            sed -i "s/__WIFI_AP_INTERFACE__/${WIFI_AP_INTERFACE}/g" /etc/hostapd/hostapd.conf
+            # Restore user's SSID and password if they had customized them
+            if [ -n "$EXISTING_SSID" ] && [ "$EXISTING_SSID" != "ROSE-Link" ]; then
+                sed -i "s/^ssid=.*/ssid=${EXISTING_SSID}/" /etc/hostapd/hostapd.conf
+            fi
+            if [ -n "$EXISTING_PASS" ] && [ "$EXISTING_PASS" != "RoseLink2024" ]; then
+                sed -i "s/^wpa_passphrase=.*/wpa_passphrase=${EXISTING_PASS}/" /etc/hostapd/hostapd.conf
+            fi
+        else
+            cat > /etc/hostapd/hostapd.conf << EOF
 # ROSE Link Hotspot Configuration
 interface=${WIFI_AP_INTERFACE}
 driver=nl80211
@@ -215,12 +227,9 @@ wpa_passphrase=RoseLink2024
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 EOF
-            fi
-            chmod 600 /etc/hostapd/hostapd.conf
-            success "Hostapd configuration created"
-        else
-            success "Hostapd configuration already exists"
         fi
+        chmod 600 /etc/hostapd/hostapd.conf
+        success "Hostapd configured"
 
         # Enable hostapd config
         if [ -f /etc/default/hostapd ]; then
