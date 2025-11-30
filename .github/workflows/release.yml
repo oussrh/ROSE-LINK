@@ -266,16 +266,33 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          echo "=== Git status before add ==="
+          git status
+
           git add -A
 
+          echo "=== Git status after add ==="
+          git status
+
+          echo "=== Staged changes ==="
+          git diff --staged --name-only || echo "No staged changes"
+
+          # Show what version is in the Packages file
+          echo "=== Version in Packages file ==="
+          grep "^Version:" dists/stable/main/binary-arm64/Packages || echo "No Version line found"
+
           if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update APT repository with ${{ needs.build-deb.outputs.deb_name }}
+            echo "WARNING: No changes detected!"
+            echo "This might indicate a problem with the artifact download or package generation."
+            # Force a commit by touching a file
+            date > .last-update
+            git add .last-update
+          fi
+
+          git commit -m "Update APT repository with ${{ needs.build-deb.outputs.deb_name }}
 
           Version: ${{ needs.build-deb.outputs.version }}
           Built from: ${{ github.sha }}"
 
-            git push origin gh-pages
-            echo "Changes pushed to gh-pages"
-          fi
+          git push origin gh-pages
+          echo "Changes pushed to gh-pages"
