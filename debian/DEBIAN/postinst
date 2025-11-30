@@ -49,13 +49,55 @@ error() {
     log "ERROR" "$1"
 }
 
+show_banner() {
+    echo -e "${GREEN}"
+    cat << 'BANNER'
+
+               ####
+              #######
+            ##### #####
+          #####    #####
+  ###########        ############
+ ###############  ###############
+ ######      ########      ######
+ #################     ##########    ############      ##########      ##########  ############
+ ####   #######     ######   ####    ##############  ##############   ###########  ############
+ ####    #################   ####    #####    ##### #####      #####  #####        ####
+ ####    ###   #####  ####   ####    #####    ##### ####        ##### #########    ############
+ ####    ###          ####   ####    #############  ####        #####    ########  ############
+ ####    ###          ####   ####    ###########    #####      #####  ##     ##### ####
+ ####    ###          ####   ####    #####   #####   ##############  ############# #############
+  ####   ####         ####  #####    #####    #####    ##########     ##########   #############
+    ####  #####     ##### #####
+      ####  ##### ##### #####                    ####                 ####
+        ###################          #####       ####                 ####
+  ##            ###            ##    #####              ###   ##      ####    ###
+ ########       ###       ########   #####       ####   ###########   #### ######
+ ############   ###   ############   #####       ####   ############  #########
+ ###      ####  ###  ####     ####   #####       ####   ####   #####  ########
+ #####     #### #######      ####    #####       ####   ####   #####  #########
+   #### ### ########## #########     ########### ####   ####   #####  #### #####
+     #######  ####### ########       ########### ####   ####   #####  ####   #####
+      ######################
+            ###########
+              ######
+                ###
+                ###
+                ###
+                ###
+                ###
+
+BANNER
+    echo -e "${NC}"
+}
+
 # Initialize log
 mkdir -p "$(dirname "$LOG_FILE")"
 echo "=== ROSE Link Post-installation $(date) ===" >> "$LOG_FILE"
 
-echo ""
+show_banner
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║              🌹 ROSE Link Post-Installation                    ║${NC}"
+echo -e "${GREEN}║              Post-Installation Setup                           ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -110,22 +152,52 @@ case "$1" in
             success "Python environment already exists"
         fi
 
-        # Detect WiFi interface
-        WIFI_AP_INTERFACE=""
+        # Detect WiFi interfaces and Raspberry Pi model
+        WIFI_INTERFACES=()
         for iface in $(ls /sys/class/net/ 2>/dev/null); do
             if [ -d "/sys/class/net/$iface/wireless" ]; then
-                WIFI_AP_INTERFACE=$iface
-                break
+                WIFI_INTERFACES+=("$iface")
             fi
         done
-        WIFI_AP_INTERFACE=${WIFI_AP_INTERFACE:-wlan0}
-        info "Using WiFi interface: $WIFI_AP_INTERFACE"
+
+        # Detect Pi model
+        PI_MODEL=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0' || echo "Unknown")
+        info "Detected: $PI_MODEL"
+
+        # Determine AP interface based on available interfaces
+        if [ ${#WIFI_INTERFACES[@]} -ge 2 ]; then
+            # Pi 4/5 or Pi with USB WiFi adapter - use secondary interface for AP
+            WIFI_AP_INTERFACE="${WIFI_INTERFACES[1]}"
+            WIFI_CLIENT_INTERFACE="${WIFI_INTERFACES[0]}"
+            info "Dual WiFi mode: Client on $WIFI_CLIENT_INTERFACE, AP on $WIFI_AP_INTERFACE"
+        elif [ ${#WIFI_INTERFACES[@]} -eq 1 ]; then
+            # Single WiFi interface (Pi 3, Zero 2W) - must use ethernet for WAN
+            WIFI_AP_INTERFACE="${WIFI_INTERFACES[0]}"
+            WIFI_CLIENT_INTERFACE=""
+            warning "Single WiFi interface detected ($WIFI_AP_INTERFACE)"
+            warning "Ethernet connection required for internet access"
+            echo ""
+            echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
+            echo -e "${YELLOW}║  ⚠  IMPORTANT: Single WiFi Interface Detected                 ║${NC}"
+            echo -e "${YELLOW}╠════════════════════════════════════════════════════════════════╣${NC}"
+            echo -e "${YELLOW}║  Your Raspberry Pi has only one WiFi interface.               ║${NC}"
+            echo -e "${YELLOW}║  You MUST connect via Ethernet cable for internet access.     ║${NC}"
+            echo -e "${YELLOW}║  The WiFi will be used exclusively for the hotspot.           ║${NC}"
+            echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
+            echo ""
+        else
+            WIFI_AP_INTERFACE="wlan0"
+            warning "No WiFi interface detected, defaulting to wlan0"
+        fi
+        info "Using WiFi AP interface: $WIFI_AP_INTERFACE"
 
         # Configure hostapd
         info "Configuring WiFi hotspot..."
         if [ ! -f /etc/hostapd/hostapd.conf ]; then
             if [ -f "$INSTALL_DIR/system/hostapd.conf" ]; then
                 cp "$INSTALL_DIR/system/hostapd.conf" /etc/hostapd/hostapd.conf
+                # Substitute interface placeholder
+                sed -i "s/__WIFI_AP_INTERFACE__/${WIFI_AP_INTERFACE}/g" /etc/hostapd/hostapd.conf
             else
                 cat > /etc/hostapd/hostapd.conf << EOF
 # ROSE Link Hotspot Configuration
@@ -164,6 +236,8 @@ EOF
 
         if [ -f "$INSTALL_DIR/system/dnsmasq.conf" ]; then
             cp "$INSTALL_DIR/system/dnsmasq.conf" /etc/dnsmasq.conf
+            # Substitute interface placeholder
+            sed -i "s/__WIFI_AP_INTERFACE__/${WIFI_AP_INTERFACE}/g" /etc/dnsmasq.conf
         else
             cat > /etc/dnsmasq.conf << EOF
 # ROSE Link DHCP/DNS Configuration
@@ -313,6 +387,8 @@ EOF
         info "Enabling services..."
         systemctl enable rose-backend >/dev/null 2>&1 || warning "Could not enable rose-backend"
         systemctl enable rose-watchdog >/dev/null 2>&1 || warning "Could not enable rose-watchdog"
+        # Unmask hostapd if masked (Debian default)
+        systemctl unmask hostapd >/dev/null 2>&1 || true
         systemctl enable hostapd >/dev/null 2>&1 || warning "Could not enable hostapd"
         systemctl enable dnsmasq >/dev/null 2>&1 || warning "Could not enable dnsmasq"
         systemctl enable nginx >/dev/null 2>&1 || warning "Could not enable nginx"
@@ -330,7 +406,7 @@ EOF
 
         echo ""
         echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${GREEN}║          🎉 ROSE Link Installation Complete! 🎉                ║${NC}"
+        echo -e "${GREEN}║            ROSE Link Installation Complete!                    ║${NC}"
         echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
         echo -e "${CYAN}Web Interface:${NC}"
