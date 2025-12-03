@@ -67,3 +67,4 @@ out/
 
 # Claude Code instructions
 CLAUDE.md
+.claude/
