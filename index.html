@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROSE Link APT Repository</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e5e5e5;
+        }
+        h1 { color: #f43f5e; }
+        code {
+            background: #1a1a1a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        a { color: #f43f5e; }
+    </style>
+</head>
+<body>
+    <h1>🌹 ROSE Link APT Repository</h1>
+    <p>This is the APT repository for <a href="https://rose-link.dev">ROSE Link</a> - VPN Router for Raspberry Pi.</p>
+
+    <h2>Quick Install</h2>
+    <pre><code>curl -fsSL https://oussrh.github.io/ROSE-LINK/install.sh | sudo bash</code></pre>
+
+    <h2>Manual Setup</h2>
+    <pre><code># Add repository
+echo "deb [signed-by=/usr/share/keyrings/rose-link.gpg] https://oussrh.github.io/ROSE-LINK stable main" | sudo tee /etc/apt/sources.list.d/rose-link.list
+
+# Update and install
+sudo apt update
+sudo apt install rose-link</code></pre>
+
+    <h2>Links</h2>
+    <ul>
+        <li><a href="https://rose-link.dev">Website</a></li>
+        <li><a href="https://github.com/oussrh/ROSE-LINK">GitHub Repository</a></li>
+    </ul>
+</body>
+</html>
