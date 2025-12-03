@@ -1,0 +1,101 @@
+# ROSE Link sudoers configuration
+# This file should be installed to /etc/sudoers.d/rose
+# Permissions: 440, Owner: root:root
+
+# Network management
+rose ALL=(ALL) NOPASSWD: /usr/bin/nmcli *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/iw *
+rose ALL=(ALL) NOPASSWD: /usr/bin/iw *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/ip *
+rose ALL=(ALL) NOPASSWD: /usr/bin/ip *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/rfkill *
+rose ALL=(ALL) NOPASSWD: /usr/bin/rfkill *
+
+# WireGuard VPN
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg show *
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg-quick up *
+rose ALL=(ALL) NOPASSWD: /usr/bin/wg-quick down *
+
+# Service management - WireGuard
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start wg-quick@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop wg-quick@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart wg-quick@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status wg-quick@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active wg-quick@*
+
+# Service management - Hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status hostapd
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active hostapd
+
+# Service management - Dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status dnsmasq
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active dnsmasq
+
+# Service management - Nginx
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start nginx
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop nginx
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status nginx
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active nginx
+
+# Service management - Rose services
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start rose-watchdog
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop rose-watchdog
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart rose-watchdog
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status rose-watchdog
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active rose-watchdog
+
+# Service management - AdGuard Home
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start AdGuardHome
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop AdGuardHome
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart AdGuardHome
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status AdGuardHome
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active AdGuardHome
+
+# System operations
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl reboot
+rose ALL=(ALL) NOPASSWD: /usr/sbin/reboot
+rose ALL=(ALL) NOPASSWD: /usr/bin/journalctl *
+
+# Firewall (iptables) for client blocking and QoS
+rose ALL=(ALL) NOPASSWD: /usr/sbin/iptables *
+rose ALL=(ALL) NOPASSWD: /usr/bin/iptables *
+rose ALL=(ALL) NOPASSWD: /usr/sbin/iptables-save
+rose ALL=(ALL) NOPASSWD: /usr/bin/iptables-save
+rose ALL=(ALL) NOPASSWD: /usr/sbin/iptables-restore
+rose ALL=(ALL) NOPASSWD: /usr/bin/iptables-restore
+
+# Traffic control (QoS)
+rose ALL=(ALL) NOPASSWD: /usr/sbin/tc *
+rose ALL=(ALL) NOPASSWD: /usr/bin/tc *
+
+# Hostapd client management
+rose ALL=(ALL) NOPASSWD: /usr/sbin/hostapd_cli *
+rose ALL=(ALL) NOPASSWD: /usr/bin/hostapd_cli *
+
+# OpenVPN
+rose ALL=(ALL) NOPASSWD: /usr/sbin/openvpn *
+rose ALL=(ALL) NOPASSWD: /usr/bin/openvpn *
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start openvpn@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop openvpn@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart openvpn@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status openvpn@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active openvpn@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl start openvpn-client@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop openvpn-client@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart openvpn-client@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl status openvpn-client@*
+rose ALL=(ALL) NOPASSWD: /usr/bin/systemctl is-active openvpn-client@*
+
+# SSL certificate management
+rose ALL=(ALL) NOPASSWD: /usr/bin/openssl *
+rose ALL=(ALL) NOPASSWD: /usr/bin/certbot *

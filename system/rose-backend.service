@@ -1,0 +1,22 @@
+[Unit]
+Description=ROSE Link Backend API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rose
+Group=rose
+WorkingDirectory=/opt/rose-link/backend
+Environment="PATH=/opt/rose-link/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/rose-link/venv/bin/python /opt/rose-link/backend/main.py
+Restart=always
+RestartSec=10
+
+# Security
+# Note: NoNewPrivileges must be disabled to allow sudo commands for system management
+# The service needs sudo for: systemctl, iptables, iw, nmcli, wg-quick, etc.
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

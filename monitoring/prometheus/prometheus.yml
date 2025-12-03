@@ -1,0 +1,37 @@
+# ROSE-LINK Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'rose-link-monitor'
+
+# Alerting rules
+rule_files:
+  - "alerts.yml"
+
+# Scrape configuration
+scrape_configs:
+  # ROSE-LINK Backend Metrics
+  - job_name: 'rose-link'
+    metrics_path: '/api/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+        labels:
+          instance: 'rose-link-backend'
+          environment: 'production'
+    # Handle connection errors gracefully
+    honor_labels: true
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (optional system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'rose-link-host'

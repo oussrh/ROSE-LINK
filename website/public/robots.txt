@@ -1,0 +1,9 @@
+# robots.txt for ROSE Link
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://rose-link.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

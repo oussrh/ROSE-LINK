@@ -1,0 +1,129 @@
+# ROSE-LINK Alert Rules
+groups:
+  - name: rose-link-alerts
+    rules:
+      # VPN Connection Alerts
+      - alert: VPNDisconnected
+        expr: rose_link_vpn_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "VPN connection is down"
+          description: "The VPN connection has been disconnected for more than 1 minute."
+
+      # WAN Connection Alerts
+      - alert: WANDisconnected
+        expr: rose_link_wan_status == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WAN connection is down"
+          description: "The WAN connection has been disconnected for more than 2 minutes."
+
+      # CPU Temperature Alerts
+      - alert: HighCPUTemperature
+        expr: rose_link_cpu_temperature_celsius > 70
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU temperature detected"
+          description: "CPU temperature is {{ $value }}C, which exceeds the safe threshold."
+
+      - alert: CriticalCPUTemperature
+        expr: rose_link_cpu_temperature_celsius > 80
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical CPU temperature"
+          description: "CPU temperature is {{ $value }}C. Immediate attention required."
+
+      # CPU Usage Alerts
+      - alert: HighCPUUsage
+        expr: rose_link_cpu_usage_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage has been above 90% for more than 5 minutes."
+
+      # Memory Alerts
+      - alert: HighMemoryUsage
+        expr: (rose_link_memory_used_bytes / rose_link_memory_total_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85%."
+
+      - alert: CriticalMemoryUsage
+        expr: (rose_link_memory_used_bytes / rose_link_memory_total_bytes) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage"
+          description: "Memory usage is above 95%. System may become unstable."
+
+      # Disk Space Alerts
+      - alert: LowDiskSpace
+        expr: (rose_link_disk_used_bytes / rose_link_disk_total_bytes) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is above 80%."
+
+      - alert: CriticalDiskSpace
+        expr: (rose_link_disk_used_bytes / rose_link_disk_total_bytes) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space"
+          description: "Disk usage is above 95%. Immediate action required."
+
+      # Hotspot Alerts
+      - alert: HotspotDown
+        expr: rose_link_hotspot_status == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hotspot is not active"
+          description: "The WiFi hotspot has been inactive for more than 2 minutes."
+
+      # Service Health
+      - alert: RoseLinkDown
+        expr: up{job="rose-link"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ROSE-LINK backend is down"
+          description: "The ROSE-LINK backend service is not responding."
+
+      # Node Exporter Alerts (System Level)
+      - alert: HostOutOfMemory
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host out of memory"
+          description: "Node memory is filling up (< 10% left)"
+
+      - alert: HostHighCpuLoad
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host high CPU load"
+          description: "CPU load is > 80%"

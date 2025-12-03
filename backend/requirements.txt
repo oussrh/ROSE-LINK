@@ -1,0 +1,32 @@
+# ROSE Link Backend Dependencies
+# Updated: 2025-11 - Latest stable versions
+
+# FastAPI - Modern, fast web framework for building APIs
+# https://fastapi.tiangolo.com/
+fastapi>=0.115.0
+
+# Uvicorn - Lightning-fast ASGI server with uvloop and httptools
+# https://www.uvicorn.org/
+uvicorn[standard]>=0.32.0
+
+# Pydantic - Data validation using Python type hints
+# https://docs.pydantic.dev/
+pydantic[email]>=2.10.0
+
+# Python-multipart - Streaming multipart parser for file uploads
+# https://github.com/Kludex/python-multipart
+python-multipart>=0.0.17
+
+# SlowAPI - Rate limiting for FastAPI
+# https://github.com/laurentS/slowapi
+slowapi>=0.1.9
+
+# aiohttp - Async HTTP client for AdGuard API integration
+# https://docs.aiohttp.org/
+aiohttp>=3.9.0
+
+# Optional performance enhancements (automatically installed with uvicorn[standard]):
+# - uvloop: Fast drop-in replacement for asyncio event loop
+# - httptools: Fast HTTP parsing
+# - websockets: WebSocket support
+# - watchfiles: File watching for auto-reload

@@ -1,0 +1,410 @@
+/**
+ * ROSE Link - Custom Styles
+ * Custom animations, utilities, and component styles
+ */
+
+/* =================================================================
+   Custom Animations
+   ================================================================= */
+@keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.pulse-slow {
+    animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.spin-slow {
+    animation: spin-slow 2s linear infinite;
+}
+
+/* =================================================================
+   Mobile-first Responsive Utilities
+   ================================================================= */
+.touch-manipulation {
+    touch-action: manipulation;
+}
+
+/* =================================================================
+   Accessibility: Focus States
+   ================================================================= */
+.focus-ring:focus {
+    outline: 2px solid #ca2625;
+    outline-offset: 2px;
+}
+
+/* =================================================================
+   Status Indicators
+   ================================================================= */
+.status-glow {
+    box-shadow: 0 0 10px currentColor;
+}
+
+/* =================================================================
+   Smooth Transitions
+   ================================================================= */
+.transition-smooth {
+    transition: all 0.2s ease-in-out;
+}
+
+/* =================================================================
+   Scrollbar Utilities
+   ================================================================= */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* =================================================================
+   Lucide Icon Styles
+   ================================================================= */
+.lucide {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.icon-md {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.icon-lg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.icon-xl {
+    width: 2rem;
+    height: 2rem;
+}
+
+.icon-2xl {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+/* =================================================================
+   Toast Notifications
+   ================================================================= */
+.toast-enter {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-exit {
+    transform: translateY(0.5rem);
+    opacity: 0;
+}
+
+/* =================================================================
+   Chart.js Styles
+   Brand: ROSE Link
+   Main Color: #ca2625
+   Font: Alexandria Semi Bold
+   ================================================================= */
+.chart-container {
+    position: relative;
+    min-height: 200px;
+    width: 100%;
+    background: #1f2937;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.chart-container canvas {
+    font-family: 'Alexandria', sans-serif !important;
+}
+
+/* Chart card wrapper */
+.chart-card {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.chart-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid #374151;
+}
+
+.chart-card-title {
+    font-family: 'Alexandria', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-card-title .icon {
+    color: #ca2625;
+}
+
+.chart-card-body {
+    padding: 1rem;
+}
+
+/* Chart legend customization */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    font-family: 'Alexandria', sans-serif;
+    font-size: 0.875rem;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9ca3af;
+}
+
+.chart-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Bandwidth chart specific */
+.bandwidth-chart {
+    height: 250px;
+}
+
+@media (min-width: 640px) {
+    .bandwidth-chart {
+        height: 300px;
+    }
+}
+
+/* Chart loading state */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #9ca3af;
+}
+
+.chart-loading::after {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border: 2px solid #374151;
+    border-top-color: #ca2625;
+    border-radius: 50%;
+    animation: spin-slow 1s linear infinite;
+    margin-left: 0.5rem;
+}
+
+/* =================================================================
+   Accessibility: Screen Reader Only
+   Visually hidden but accessible to assistive technologies
+   ================================================================= */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Allow sr-only elements to become visible on focus (for skip links) */
+.sr-only.focus\:not-sr-only:focus,
+.focus\:not-sr-only:focus {
+    position: absolute;
+    width: auto;
+    height: auto;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
+
+/* =================================================================
+   Accessibility: High Contrast Mode
+   Enhanced visibility for users with low vision
+   ================================================================= */
+@media (prefers-contrast: more) {
+    /* Increase border visibility */
+    .border-gray-700 {
+        border-color: #9ca3af;
+    }
+
+    /* Increase text contrast */
+    .text-gray-400 {
+        color: #d1d5db;
+    }
+
+    /* Make status indicators more visible */
+    .bg-green-500 {
+        background-color: #22c55e;
+        box-shadow: 0 0 0 2px #000, 0 0 0 4px #22c55e;
+    }
+
+    .bg-red-500 {
+        background-color: #ef4444;
+        box-shadow: 0 0 0 2px #000, 0 0 0 4px #ef4444;
+    }
+
+    /* Enhanced focus indicators */
+    .focus-ring:focus,
+    button:focus,
+    a:focus,
+    input:focus,
+    select:focus {
+        outline: 3px solid #fff;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 6px #000;
+    }
+
+    /* Ensure links are distinguishable */
+    a {
+        text-decoration: underline;
+    }
+}
+
+/* =================================================================
+   Accessibility: Forced Colors Mode (Windows High Contrast)
+   Support for Windows High Contrast Mode
+   ================================================================= */
+@media (forced-colors: active) {
+    /* Use system colors */
+    .bg-rose-600,
+    .bg-rose-700,
+    .bg-blue-600,
+    .bg-green-600,
+    .bg-red-600,
+    .bg-orange-600,
+    .bg-purple-600 {
+        background-color: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+    }
+
+    /* Status indicators */
+    .bg-green-500,
+    .bg-red-500,
+    .bg-blue-500 {
+        forced-color-adjust: none;
+    }
+
+    /* Ensure focus is visible */
+    :focus {
+        outline: 3px solid Highlight;
+    }
+}
+
+/* =================================================================
+   Accessibility: Reduced Motion
+   For users with vestibular disorders or motion sensitivity
+   ================================================================= */
+@media (prefers-reduced-motion: reduce) {
+    /* Disable all animations */
+    .pulse-slow,
+    .spin-slow,
+    .animate-pulse,
+    .chart-loading::after {
+        animation: none;
+    }
+
+    /* Disable transitions */
+    .transition-smooth {
+        transition: none;
+    }
+
+    /* Replace animated indicators with static alternatives */
+    .pulse-slow {
+        opacity: 1;
+    }
+
+    /* Ensure visibility without animation */
+    .spin-slow {
+        transform: none;
+    }
+
+    /* Disable modal animations */
+    .animate-fade-in,
+    .animate-scale-in,
+    .animate-fade-out,
+    .animate-scale-out {
+        animation: none;
+    }
+}
+
+/* =================================================================
+   Modal/Dialog Animations
+   ================================================================= */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes scale-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.15s ease-out forwards;
+}
+
+.animate-fade-out {
+    animation: fade-out 0.15s ease-in forwards;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.15s ease-out forwards;
+}
+
+.animate-scale-out {
+    animation: scale-out 0.15s ease-in forwards;
+}

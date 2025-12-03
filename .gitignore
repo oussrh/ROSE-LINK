@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.deb
+*.tar.gz
+*.zip
+roselink-repo/
+
+# Sensitive files
+*.conf
+!system/*.conf
+!system/**/*.conf
+*.key
+*.crt
+*.pem
+
+# Temporary files
+*.log
+*.tmp
+temp/
+tmp/
+.todo
+
+# Debian packaging
+debian/opt/
+debian/etc/
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+coverage.xml
+coverage_html/
+coverage/
+htmlcov/
+.hypothesis/
+*.cover
+*.coverage
+
+# Node.js (frontend & website)
+node_modules/
+.npm/
+.next/
+out/
+.vercel/
+
+# Claude Code instructions
+CLAUDE.md

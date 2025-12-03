@@ -1,0 +1,13 @@
+[Unit]
+Description=ROSE Link VPN Watchdog
+After=wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+Type=simple
+ExecStart=/opt/rose-link/system/rose-watchdog.sh
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

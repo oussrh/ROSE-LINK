@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ROSE Link - Page Not Found">
+    <meta name="theme-color" content="#1f2937">
+    <title>404 - Page Not Found | ROSE Link</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+    <!-- Alexandria Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'alexandria': ['Alexandria', 'sans-serif'],
+                    },
+                    colors: {
+                        rose: {
+                            500: '#ca2625',
+                            600: '#b31f1e',
+                            700: '#961917',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-alexandria flex flex-col">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <a href="/" class="flex items-center gap-3 w-fit">
+                <img src="/Logo-250X178.webp" alt="ROSE Link Logo" class="h-10 w-auto">
+                <div>
+                    <h1 class="text-xl font-bold text-rose-500">ROSE Link</h1>
+                    <p class="text-xs text-gray-400">Home VPN Router</p>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center px-4 py-16">
+        <div class="text-center max-w-lg">
+            <!-- Logo Animation -->
+            <div class="mb-8 float-animation">
+                <img src="/Logo.webp" alt="ROSE Link" class="w-32 h-auto mx-auto opacity-50">
+            </div>
+
+            <!-- Error Code -->
+            <h1 class="text-8xl font-bold text-rose-500 mb-4">404</h1>
+
+            <!-- Error Message -->
+            <h2 class="text-2xl font-semibold text-gray-200 mb-4">Page Not Found</h2>
+            <p class="text-gray-400 mb-8">
+                The page you're looking for doesn't exist or has been moved.
+                <br>
+                <span class="text-sm">If you're offline, some features may be unavailable.</span>
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/"
+                   class="px-6 py-3 bg-rose-600 hover:bg-rose-700 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Go to Dashboard
+                </a>
+                <button onclick="history.back()"
+                        class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m12 19-7-7 7-7"/>
+                        <path d="M19 12H5"/>
+                    </svg>
+                    Go Back
+                </button>
+            </div>
+
+            <!-- Connection Status -->
+            <div id="connection-status" class="mt-12 p-4 bg-gray-800 rounded-lg border border-gray-700 inline-block">
+                <div class="flex items-center gap-2 text-sm">
+                    <div id="status-dot" class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span id="status-text" class="text-gray-400">Checking connection...</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 py-4">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-400">
+            <p>
+                <img src="/icon.webp" alt="" class="inline-block h-4 w-4 align-text-bottom">
+                <strong>ROSE Link</strong> - Home VPN Router on Raspberry Pi
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Check connection status
+        function checkConnection() {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+
+            if (navigator.onLine) {
+                dot.className = 'w-2 h-2 rounded-full bg-green-500';
+                text.textContent = 'You are online';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-red-500';
+                text.textContent = 'You are offline';
+            }
+        }
+
+        // Initial check
+        checkConnection();
+
+        // Listen for connection changes
+        window.addEventListener('online', checkConnection);
+        window.addEventListener('offline', checkConnection);
+    </script>
+</body>
+</html>

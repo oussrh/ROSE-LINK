@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="ROSE Link - Home VPN Router for Raspberry Pi">
+    <meta name="theme-color" content="#1f2937">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ROSE Link - VPN Router</title>
+    <!-- Favicons and Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <!-- Alexandria Semi Bold Font (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (CDN with forms plugin) -->
+    <!-- For offline deployments, use: npx tailwindcss -o vendor/tailwind.css --minify -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        // Tailwind configuration (must be inline before Tailwind loads)
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'alexandria': ['Alexandria', 'sans-serif'],
+                        },
+                        colors: {
+                            rose: {
+                                50: '#fff1f1', 100: '#ffe3e3', 200: '#ffcbcb', 300: '#fea6a6',
+                                400: '#fa6b6b', 500: '#ca2625', 600: '#b31f1e', 700: '#961917',
+                                800: '#7c1716', 900: '#671918',
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    </script>
+
+    <!-- htmx - Local with CDN fallback -->
+    <script src="/vendor/htmx.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/htmx.org@2.0.3';"></script>
+
+    <!-- Lucide Icons - Local with CDN fallback -->
+    <script src="/vendor/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js';"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen antialiased font-alexandria">
+    <!-- Skip Link for Keyboard Navigation -->
+    <a href="#main-content" id="skip-link"
+        class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-rose-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-white">
+        Skip to main content
+    </a>
+
+    <!-- Live Region for Screen Reader Announcements -->
+    <div id="a11y-live-region" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+    <!-- Loading/Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center transition-opacity duration-500">
+        <img src="/Logo.webp" alt="ROSE Link" class="w-32 h-auto mb-6 animate-pulse">
+        <h1 class="text-2xl font-bold text-rose-500 mb-4">ROSE Link</h1>
+        <div class="flex items-center gap-2 text-gray-400">
+            <svg class="w-5 h-5 spin-slow" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Loading...</span>
+        </div>
+    </div>
+
+    <!-- Setup Wizard Overlay -->
+    <div id="setup-wizard" class="hidden fixed inset-0 z-[90] bg-gray-900/95 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-gray-700 overflow-hidden max-h-[90vh] flex flex-col">
+            <!-- Wizard Header -->
+            <div class="bg-gray-750 border-b border-gray-700 px-6 py-4 flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="/Logo-250X178.webp" alt="ROSE Link" class="h-8 w-auto">
+                        <span class="font-semibold" data-i18n="wizard_title">Setup Wizard</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="wizard-step-counter" class="text-sm text-gray-400">1 / 5</span>
+                        <button id="wizard-close-btn" type="button" class="text-gray-400 hover:text-white transition-colors p-1" title="Close">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Progress Indicators -->
+                <div class="flex gap-2 mt-4">
+                    <div class="wizard-step-indicator flex-1 h-1 rounded-full bg-rose-500 transition-colors"></div>
+                    <div class="wizard-step-indicator flex-1 h-1 rounded-full bg-gray-600 transition-colors"></div>
+                    <div class="wizard-step-indicator flex-1 h-1 rounded-full bg-gray-600 transition-colors"></div>
+                    <div class="wizard-step-indicator flex-1 h-1 rounded-full bg-gray-600 transition-colors"></div>
+                    <div class="wizard-step-indicator flex-1 h-1 rounded-full bg-gray-600 transition-colors"></div>
+                </div>
+            </div>
+            <!-- Wizard Content -->
+            <div id="wizard-content" class="px-6 py-4 overflow-y-auto overflow-x-hidden flex-1">
+                <!-- Content rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo & Title -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <img src="/Logo-250X178.webp" alt="ROSE Link Logo" class="h-10 sm:h-12 w-auto">
+                    <div>
+                        <h1 class="text-lg sm:text-2xl font-bold text-rose-500" data-i18n="title">ROSE Link</h1>
+                        <p class="text-xs sm:text-sm text-gray-400 hidden sm:block" data-i18n="subtitle">Home VPN Router</p>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Language Switcher -->
+                    <div class="flex items-center bg-gray-700 rounded-lg p-0.5 sm:p-1" role="group" aria-label="Language selection">
+                        <button onclick="setLanguage('en')" id="lang-en"
+                            class="px-2 py-1 rounded text-xs font-medium transition-smooth hover:bg-gray-600 focus-ring touch-manipulation"
+                            aria-label="English">EN</button>
+                        <button onclick="setLanguage('fr')" id="lang-fr"
+                            class="px-2 py-1 rounded text-xs font-medium transition-smooth hover:bg-gray-600 focus-ring touch-manipulation"
+                            aria-label="Francais">FR</button>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div id="status-badge" class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-700 rounded-lg" role="status">
+                        <div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full pulse-slow" aria-hidden="true"></div>
+                        <span class="text-xs sm:text-sm" data-i18n="online">Online</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <!-- Status Cards -->
+        <div id="status-cards" hx-get="/api/status" hx-trigger="load, every 5s" hx-swap="innerHTML"
+            class="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8" role="region" aria-label="System status">
+            <!-- Loading placeholders -->
+            <div class="bg-gray-800 rounded-lg p-3 sm:p-6 border border-gray-700 animate-pulse">
+                <div class="h-3 sm:h-4 bg-gray-700 rounded w-1/2 mb-2 sm:mb-4"></div>
+                <div class="h-6 sm:h-8 bg-gray-700 rounded"></div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-3 sm:p-6 border border-gray-700 animate-pulse">
+                <div class="h-3 sm:h-4 bg-gray-700 rounded w-1/2 mb-2 sm:mb-4"></div>
+                <div class="h-6 sm:h-8 bg-gray-700 rounded"></div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-3 sm:p-6 border border-gray-700 animate-pulse">
+                <div class="h-3 sm:h-4 bg-gray-700 rounded w-1/2 mb-2 sm:mb-4"></div>
+                <div class="h-6 sm:h-8 bg-gray-700 rounded"></div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <nav class="mb-4 sm:mb-6" role="tablist" aria-label="Main navigation">
+            <div class="flex gap-1 sm:gap-2 border-b border-gray-700 overflow-x-auto scrollbar-hide">
+                <button onclick="showTab('wifi')" id="tab-wifi" role="tab" aria-selected="true" aria-controls="content-wifi"
+                    class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base border-b-2 border-rose-500 text-rose-500 whitespace-nowrap transition-smooth focus-ring touch-manipulation">
+                    <span class="hidden sm:inline"><i data-lucide="wifi" class="icon-sm"></i> </span><span data-i18n="tab_wifi">WiFi</span>
+                </button>
+                <button onclick="showTab('vpn')" id="tab-vpn" role="tab" aria-selected="false" aria-controls="content-vpn"
+                    class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
+                    <span class="hidden sm:inline"><i data-lucide="shield" class="icon-sm"></i> </span><span data-i18n="tab_vpn">VPN</span>
+                </button>
+                <button onclick="showTab('hotspot')" id="tab-hotspot" role="tab" aria-selected="false" aria-controls="content-hotspot"
+                    class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
+                    <span class="hidden sm:inline"><i data-lucide="radio-tower" class="icon-sm"></i> </span><span data-i18n="tab_hotspot">Hotspot</span>
+                </button>
+                <button onclick="showTab('adguard')" id="tab-adguard" role="tab" aria-selected="false" aria-controls="content-adguard"
+                    class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
+                    <span class="hidden sm:inline"><i data-lucide="shield-ban" class="icon-sm"></i> </span><span data-i18n="tab_adguard">Ad Blocker</span>
+                </button>
+                <button onclick="showTab('system')" id="tab-system" role="tab" aria-selected="false" aria-controls="content-system"
+                    class="tab-btn flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-400 hover:text-gray-200 border-b-2 border-transparent whitespace-nowrap transition-smooth focus-ring touch-manipulation">
+                    <span class="hidden sm:inline"><i data-lucide="settings" class="icon-sm"></i> </span><span data-i18n="tab_system">System</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Tab Content -->
+        <div id="tab-content">
+            <!-- WiFi WAN Tab -->
+            <section id="content-wifi" class="tab-content" role="tabpanel" aria-labelledby="tab-wifi">
+                <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                        <span aria-hidden="true" class="text-blue-400"><i data-lucide="wifi" class="icon-md"></i></span>
+                        <span data-i18n="wifi_wan_title">WiFi Connection (WAN)</span>
+                    </h2>
+
+                    <!-- Current WiFi Status -->
+                    <div id="wifi-current-status" class="mb-4" hx-get="/api/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                        <div class="animate-pulse text-gray-400 text-sm" data-i18n="loading">Loading...</div>
+                    </div>
+
+                    <button id="wifi-scan-btn"
+                        hx-post="/api/wifi/scan"
+                        hx-target="#wifi-networks"
+                        hx-indicator="#wifi-scan-spinner"
+                        class="mb-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center gap-2">
+                        <span id="wifi-scan-spinner" class="htmx-indicator">
+                            <svg class="w-4 h-4 spin-slow" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                        <i data-lucide="search" class="icon-sm"></i>
+                        <span data-i18n="scan_networks">Scan</span>
+                    </button>
+
+                    <div id="wifi-networks" class="mt-4 space-y-2" role="list" aria-label="Available WiFi networks">
+                        <p class="text-gray-400 text-sm sm:text-base" data-i18n="click_scan">Click "Scan" to see available networks</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VPN Tab -->
+            <section id="content-vpn" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-vpn">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- VPN Status -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-green-400"><i data-lucide="shield-check" class="icon-md"></i></span>
+                            <span data-i18n="vpn_status_title">VPN Status</span>
+                        </h2>
+                        <div id="vpn-status-detail" hx-get="/api/vpn/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                            <div class="animate-pulse text-gray-400" data-i18n="loading">Loading...</div>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button id="vpn-btn-restart" hx-post="/api/vpn/restart" hx-target="#vpn-message"
+                                class="hidden flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="refresh-cw" class="icon-sm"></i> <span data-i18n="restart">Restart</span>
+                            </button>
+                            <button id="vpn-btn-stop" hx-post="/api/vpn/stop" hx-target="#vpn-message"
+                                class="hidden flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="square" class="icon-sm"></i> <span data-i18n="stop">Stop</span>
+                            </button>
+                            <button id="vpn-btn-start" hx-post="/api/vpn/start" hx-target="#vpn-message"
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="play" class="icon-sm"></i> <span data-i18n="start">Start</span>
+                            </button>
+                        </div>
+                        <div id="vpn-message" class="mt-2" role="alert" aria-live="polite"></div>
+                    </div>
+
+                    <!-- VPN Profiles -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-yellow-400"><i data-lucide="folder" class="icon-md"></i></span>
+                            <span data-i18n="vpn_profiles_title">VPN Profiles</span>
+                        </h2>
+
+                        <form hx-post="/api/vpn/import" hx-encoding="multipart/form-data" hx-target="#vpn-profiles" class="mb-4">
+                            <label class="block text-sm font-medium mb-2" data-i18n="import_profile">Import VPN profile</label>
+                            <input type="file" name="file" accept=".conf,.ovpn,.wg,.ini,.txt,.conf.txt,application/octet-stream" required
+                                class="block w-full text-sm text-gray-400 mb-2
+                                    file:mr-2 sm:file:mr-4 file:py-2 file:px-3 sm:file:px-4
+                                    file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                                    file:bg-rose-600 file:text-white hover:file:bg-rose-700
+                                    focus-ring touch-manipulation">
+                            <button type="submit"
+                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="upload" class="icon-sm"></i> <span data-i18n="import_activate">Import & Activate</span>
+                            </button>
+                        </form>
+
+                        <div id="vpn-profiles" hx-get="/api/vpn/profiles" hx-trigger="load, every 30s" hx-swap="innerHTML" role="list">
+                            <div class="animate-pulse text-gray-400" data-i18n="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hotspot Tab -->
+            <section id="content-hotspot" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-hotspot">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Hotspot Configuration -->
+                <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                        <span aria-hidden="true" class="text-purple-400"><i data-lucide="radio-tower" class="icon-md"></i></span>
+                        <span data-i18n="hotspot_config_title">Hotspot Configuration</span>
+                    </h2>
+
+                    <form id="hotspot-form" class="space-y-4">
+                        <div>
+                            <label for="hotspot-ssid" class="block text-sm font-medium mb-2" data-i18n="ssid_label">SSID (network name)</label>
+                            <input type="text" id="hotspot-ssid" name="ssid" value="ROSE-Link" required maxlength="32"
+                                autocomplete="off"
+                                class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-smooth">
+                        </div>
+
+                        <div>
+                            <label for="hotspot-password" class="block text-sm font-medium mb-2" data-i18n="password_label">Password (min. 8 characters)</label>
+                            <input type="password" id="hotspot-password" name="password" required minlength="8" maxlength="63"
+                                autocomplete="new-password"
+                                class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-smooth">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="hotspot-country" class="block text-sm font-medium mb-2" data-i18n="country_label">Country</label>
+                                <select id="hotspot-country" name="country"
+                                    class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 transition-smooth">
+                                    <option value="AT">Austria (AT)</option>
+                                    <option value="AU">Australia (AU)</option>
+                                    <option value="BE">Belgium (BE)</option>
+                                    <option value="BR">Brazil (BR)</option>
+                                    <option value="CA">Canada (CA)</option>
+                                    <option value="CH">Switzerland (CH)</option>
+                                    <option value="DE">Germany (DE)</option>
+                                    <option value="DK">Denmark (DK)</option>
+                                    <option value="DZ">Algeria (DZ)</option>
+                                    <option value="ES">Spain (ES)</option>
+                                    <option value="FI">Finland (FI)</option>
+                                    <option value="FR">France (FR)</option>
+                                    <option value="GB">United Kingdom (GB)</option>
+                                    <option value="GR">Greece (GR)</option>
+                                    <option value="IE">Ireland (IE)</option>
+                                    <option value="IT">Italy (IT)</option>
+                                    <option value="JP">Japan (JP)</option>
+                                    <option value="LU">Luxembourg (LU)</option>
+                                    <option value="MA">Morocco (MA)</option>
+                                    <option value="MX">Mexico (MX)</option>
+                                    <option value="NL">Netherlands (NL)</option>
+                                    <option value="NO">Norway (NO)</option>
+                                    <option value="NZ">New Zealand (NZ)</option>
+                                    <option value="PL">Poland (PL)</option>
+                                    <option value="PT">Portugal (PT)</option>
+                                    <option value="SE">Sweden (SE)</option>
+                                    <option value="TN">Tunisia (TN)</option>
+                                    <option value="TR">Turkey (TR)</option>
+                                    <option value="US">United States (US)</option>
+                                    <option value="ZA">South Africa (ZA)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="wifi-band" class="block text-sm font-medium mb-2" data-i18n="band_label">WiFi Band</label>
+                                <select id="wifi-band" name="band" onchange="updateChannels()"
+                                    class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 transition-smooth">
+                                    <option value="2.4GHz">2.4 GHz</option>
+                                    <option value="5GHz">5 GHz</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="wifi-channel" class="block text-sm font-medium mb-2" data-i18n="channel_label">Channel</label>
+                            <select id="wifi-channel" name="channel"
+                                class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 transition-smooth">
+                                <option value="1">1 (2.4GHz)</option>
+                                <option value="6" selected>6 (2.4GHz) - Recommended</option>
+                                <option value="11">11 (2.4GHz)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="wpa3" name="wpa3"
+                                class="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 bg-gray-700 border-gray-600 rounded focus:ring-rose-500 touch-manipulation">
+                            <label for="wpa3" class="text-sm" data-i18n="wpa3_label">Enable WPA3 (if supported)</label>
+                        </div>
+
+                        <button type="submit" id="hotspot-submit-btn"
+                            class="w-full px-4 py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                            <i data-lucide="check" class="icon-sm"></i> <span data-i18n="apply_config">Apply Configuration</span>
+                        </button>
+                    </form>
+
+                    <div id="hotspot-message" class="mt-4" role="alert" aria-live="polite"></div>
+                </div>
+
+                <!-- Connected Clients -->
+                <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                        <span aria-hidden="true" class="text-cyan-400"><i data-lucide="users" class="icon-md"></i></span>
+                        <span data-i18n="connected_clients_title">Connected Clients</span>
+                    </h2>
+                    <div id="connected-clients" hx-get="/api/hotspot/clients" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                        <div class="animate-pulse text-gray-400" data-i18n="loading">Loading...</div>
+                    </div>
+                </div>
+                </div>
+            </section>
+
+            <!-- AdGuard Ad Blocker Tab -->
+            <section id="content-adguard" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-adguard">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- AdGuard Status & Controls -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+                                <span aria-hidden="true" class="text-green-400"><i data-lucide="shield-ban" class="icon-md"></i></span>
+                                <span data-i18n="adguard_title">Ad Blocker</span>
+                            </h2>
+                            <div id="adguard-toggle" class="flex items-center gap-2">
+                                <!-- Toggle will be populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Status display -->
+                        <div id="adguard-status" hx-get="/api/adguard/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                            <div class="animate-pulse text-gray-400" data-i18n="loading">Loading...</div>
+                        </div>
+
+                        <!-- Control buttons - hidden by default until AdGuard status loads -->
+                        <div id="adguard-controls" class="hidden mt-4 flex flex-wrap gap-2">
+                            <button id="adguard-enable-btn" hx-post="/api/adguard/enable" hx-target="#adguard-message"
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="shield-check" class="icon-sm"></i> <span data-i18n="enable">Enable</span>
+                            </button>
+                            <button id="adguard-disable-btn" hx-post="/api/adguard/disable" hx-target="#adguard-message"
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="shield-off" class="icon-sm"></i> <span data-i18n="disable">Disable</span>
+                            </button>
+                            <button hx-post="/api/adguard/restart" hx-target="#adguard-message"
+                                class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium text-sm transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-1">
+                                <i data-lucide="refresh-cw" class="icon-sm"></i> <span data-i18n="restart">Restart</span>
+                            </button>
+                        </div>
+                        <div id="adguard-message" class="mt-2" role="alert" aria-live="polite"></div>
+
+                        <!-- Not Installed Warning -->
+                        <div id="adguard-not-installed" class="hidden mt-4 p-4 bg-yellow-900/30 border border-yellow-700 rounded-lg">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="alert-triangle" class="text-yellow-500 icon-md flex-shrink-0 mt-0.5"></i>
+                                <div>
+                                    <p class="font-medium text-yellow-400" data-i18n="adguard_not_installed">AdGuard Home is not installed</p>
+                                    <p class="text-sm text-gray-400 mt-1" data-i18n="adguard_install_hint">Run the following command to install:</p>
+                                    <code class="block mt-2 p-2 bg-gray-900 rounded text-sm text-green-400">sudo rose-adguard install</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Dashboard -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-blue-400"><i data-lucide="bar-chart-3" class="icon-md"></i></span>
+                            <span data-i18n="adguard_stats_title">Blocking Statistics</span>
+                        </h2>
+
+                        <!-- Stats Cards -->
+                        <div id="adguard-stats" hx-get="/api/adguard/stats" hx-trigger="load, every 10s" hx-swap="innerHTML">
+                            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                                <div class="bg-gray-700 rounded-lg p-3 text-center animate-pulse">
+                                    <div class="h-6 bg-gray-600 rounded mb-2"></div>
+                                    <div class="h-4 bg-gray-600 rounded w-2/3 mx-auto"></div>
+                                </div>
+                                <div class="bg-gray-700 rounded-lg p-3 text-center animate-pulse">
+                                    <div class="h-6 bg-gray-600 rounded mb-2"></div>
+                                    <div class="h-4 bg-gray-600 rounded w-2/3 mx-auto"></div>
+                                </div>
+                                <div class="bg-gray-700 rounded-lg p-3 text-center animate-pulse">
+                                    <div class="h-6 bg-gray-600 rounded mb-2"></div>
+                                    <div class="h-4 bg-gray-600 rounded w-2/3 mx-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reset Stats Button -->
+                        <div class="mt-4">
+                            <button hx-post="/api/adguard/stats/reset" hx-target="#adguard-stats-message"
+                                data-confirm-title="Reset Statistics"
+                                data-confirm-message="Are you sure you want to reset all AdGuard statistics? This action cannot be undone."
+                                data-confirm-text="Reset"
+                                data-confirm-variant="danger"
+                                data-confirm-icon="trash-2"
+                                class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm transition-smooth focus-ring touch-manipulation flex items-center gap-1">
+                                <i data-lucide="trash-2" class="icon-sm"></i> <span data-i18n="reset_stats">Reset Statistics</span>
+                            </button>
+                            <div id="adguard-stats-message" class="mt-2" role="alert" aria-live="polite"></div>
+                        </div>
+                    </div>
+
+                    <!-- Top Blocked Domains -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-red-400"><i data-lucide="ban" class="icon-md"></i></span>
+                            <span data-i18n="top_blocked_title">Top Blocked Domains</span>
+                        </h2>
+                        <div id="adguard-top-blocked" class="space-y-2">
+                            <!-- Populated by adguard-stats response -->
+                            <p class="text-gray-400 text-sm" data-i18n="stats_loading">Statistics will appear here...</p>
+                        </div>
+                    </div>
+
+                    <!-- Top Clients -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-cyan-400"><i data-lucide="users" class="icon-md"></i></span>
+                            <span data-i18n="top_clients_title">Top Clients</span>
+                        </h2>
+                        <div id="adguard-top-clients" class="space-y-2">
+                            <!-- Populated by adguard-stats response -->
+                            <p class="text-gray-400 text-sm" data-i18n="stats_loading">Statistics will appear here...</p>
+                        </div>
+                    </div>
+
+                    <!-- Query Log (full width) -->
+                    <div class="lg:col-span-2 bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+                                <span aria-hidden="true" class="text-purple-400"><i data-lucide="scroll-text" class="icon-md"></i></span>
+                                <span data-i18n="query_log_title">Recent DNS Queries</span>
+                            </h2>
+                            <button hx-get="/api/adguard/querylog?limit=50" hx-target="#adguard-querylog" hx-swap="innerHTML"
+                                class="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm transition-smooth focus-ring touch-manipulation flex items-center gap-1">
+                                <i data-lucide="refresh-cw" class="icon-sm"></i> <span data-i18n="refresh">Refresh</span>
+                            </button>
+                        </div>
+                        <div id="adguard-querylog" class="max-h-64 overflow-y-auto space-y-1 text-sm">
+                            <p class="text-gray-400" data-i18n="click_refresh">Click refresh to load query log</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Tab -->
+            <section id="content-system" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-system">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- System Info -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-blue-400"><i data-lucide="bar-chart-3" class="icon-md"></i></span>
+                            <span data-i18n="system_info_title">System Information</span>
+                        </h2>
+                        <div id="system-info" hx-get="/api/system/info" hx-trigger="load, every 30s" hx-swap="innerHTML">
+                            <div class="animate-pulse text-gray-400" data-i18n="loading">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- VPN Settings -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-orange-400"><i data-lucide="shield-alert" class="icon-md"></i></span>
+                            <span data-i18n="vpn_config_title">VPN Watchdog</span>
+                        </h2>
+
+                        <form id="vpn-settings-form" class="space-y-4">
+                            <div>
+                                <label for="vpn-ping-host" class="block text-sm font-medium mb-2" data-i18n="ping_host_label">Ping host to verify VPN</label>
+                                <input type="text" id="vpn-ping-host" name="ping_host" value="8.8.8.8"
+                                    class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-smooth"
+                                    placeholder="192.168.1.1">
+                                <p class="text-xs text-gray-400 mt-1" data-i18n="ping_host_hint">IP or hostname to check VPN connectivity</p>
+                            </div>
+
+                            <div>
+                                <label for="vpn-check-interval" class="block text-sm font-medium mb-2" data-i18n="check_interval_label">Check interval (seconds)</label>
+                                <input type="number" id="vpn-check-interval" name="check_interval" value="60" min="30" max="300"
+                                    class="w-full px-3 sm:px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-smooth">
+                            </div>
+
+                            <button type="submit" id="vpn-settings-submit-btn"
+                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="icon-sm"></i> <span data-i18n="save_vpn_settings">Save Settings</span>
+                            </button>
+                        </form>
+                        <div id="vpn-settings-message" class="mt-2" role="alert" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-gray-400"><i data-lucide="settings" class="icon-md"></i></span>
+                            <span data-i18n="system_actions_title">System Actions</span>
+                        </h2>
+
+                        <div class="space-y-2 sm:space-y-3">
+                            <button hx-post="/api/system/reboot"
+                                data-confirm-title="Reboot System"
+                                data-confirm-message="Are you sure you want to reboot the Raspberry Pi? All connections will be temporarily lost."
+                                data-confirm-text="Reboot"
+                                data-confirm-variant="danger"
+                                data-confirm-icon="rotate-cw"
+                                class="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="rotate-cw" class="icon-sm"></i> <span data-i18n="reboot_pi">Reboot Pi</span>
+                            </button>
+
+                            <button id="btn-restart-vpn" hx-post="/api/vpn/restart" hx-target="#system-action-message"
+                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="shield" class="icon-sm"></i> <span data-i18n="restart_vpn">Restart VPN</span>
+                            </button>
+
+                            <button id="btn-restart-hotspot" hx-post="/api/hotspot/restart" hx-target="#system-action-message"
+                                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="radio-tower" class="icon-sm"></i> <span data-i18n="restart_hotspot">Restart Hotspot</span>
+                            </button>
+
+                            <hr class="border-gray-700 my-2">
+
+                            <button id="run-wizard-btn"
+                                class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg font-medium transition-smooth focus-ring touch-manipulation flex items-center justify-center gap-2">
+                                <i data-lucide="wand-2" class="icon-sm"></i> <span data-i18n="run_setup_wizard">Run Setup Wizard</span>
+                            </button>
+                        </div>
+                        <div id="system-action-message" class="mt-2" role="alert" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Quick Guide -->
+                    <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
+                            <span aria-hidden="true" class="text-rose-400"><i data-lucide="book-open" class="icon-md"></i></span>
+                            <span data-i18n="guide_title">Quick Guide</span>
+                        </h2>
+
+                        <ul class="list-disc list-inside text-sm text-gray-400 space-y-1 sm:space-y-2">
+                            <li data-i18n="guide_1">Connect to ROSE Link WiFi hotspot</li>
+                            <li data-i18n="guide_2">Configure WAN (Ethernet priority, WiFi fallback)</li>
+                            <li data-i18n="guide_3">Import WireGuard profile from your VPN router</li>
+                            <li data-i18n="guide_4">Configure ping host for VPN watchdog</li>
+                            <li data-i18n="guide_5">All traffic routes through VPN tunnel</li>
+                            <li data-i18n="guide_6">Kill-switch active: auto-block if VPN drops</li>
+                        </ul>
+
+                        <div class="mt-4 p-3 bg-gray-700 rounded-lg">
+                            <p class="text-sm"><strong><span data-i18n="version">Version</span>:</strong> ROSE Link <span data-version>loading...</span></p>
+                            <p class="text-xs sm:text-sm text-gray-400"><span data-i18n="compatible">Pi 3, 4, 5, Zero 2W</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 mt-8 sm:mt-12">
+        <div class="container mx-auto px-4 py-4 sm:py-6 text-center text-xs sm:text-sm text-gray-400">
+            <p><img src="/icon.webp" alt="ROSE Link" class="inline-block h-5 w-5 align-text-bottom"> <strong>ROSE Link</strong> - <span data-i18n="footer_title">Home VPN Router on Raspberry Pi</span></p>
+            <p class="mt-1" data-i18n="footer_subtitle">Secure remote network access from anywhere</p>
+        </div>
+    </footer>
+
+    <!-- Main Application Script (ES Modules) -->
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Splash Screen & Service Worker -->
+    <script>
+        // Hide splash screen after page loads
+        window.addEventListener('load', () => {
+            const splash = document.getElementById('splash-screen');
+            if (splash) {
+                setTimeout(() => {
+                    splash.style.opacity = '0';
+                    setTimeout(() => {
+                        splash.style.display = 'none';
+                    }, 500);
+                }, 800);
+            }
+        });
+
+        // Register Service Worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

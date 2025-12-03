@@ -1,0 +1,76 @@
+# ROSE Link Backend - Ruff Configuration
+# https://docs.astral.sh/ruff/
+
+# Target Python version
+target-version = "py39"
+
+# Line length
+line-length = 100
+
+# Exclude directories
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+]
+
+[lint]
+# Enable rules
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # function call in default argument (needed for FastAPI Depends)
+    "B904",   # raise without from (not always appropriate)
+    "ARG001", # unused function argument (common in route handlers)
+    "ARG002", # unused method argument (common in base classes)
+    "ARG003", # unused class method argument
+    "UP006",  # use type instead of Type - requires Python 3.9+
+    "UP015",  # unnecessary mode argument - stylistic
+    "UP024",  # replace aliased errors with OSError - backwards compat
+    "UP035",  # deprecated typing imports - backwards compat with older Python
+    "UP045",  # X | None type annotations - requires Python 3.10+
+    "SIM102", # use single if statement - not always clearer
+    "SIM103", # return condition directly - not always clearer
+    "SIM105", # use contextlib.suppress - not always clearer
+    "SIM108", # use ternary operator - not always clearer
+    "SIM114", # combine if branches - not always clearer
+    "SIM117", # use single with statement - not always clearer
+    "SIM210", # remove unnecessary bool conversion
+    "SIM300", # yoda condition - stylistic preference
+    "B007",   # loop control variable not used - sometimes intentional
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+[lint.per-file-ignores]
+# Tests can use assertions and have unused variables
+"tests/*" = ["ARG", "S101"]
+
+[lint.isort]
+known-first-party = ["api", "core", "services", "utils"]
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Unix line endings
+line-ending = "lf"

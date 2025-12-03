@@ -1,0 +1,178 @@
+#!/bin/bash
+#
+# ROSE Link Post-removal Script
+# Cleans up after package removal
+#
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+USER="rose"
+INSTALL_DIR="/opt/rose-link"
+
+info() {
+    echo -e "${CYAN}→${NC} $1"
+}
+
+success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+case "$1" in
+    remove)
+        echo ""
+        echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${YELLOW}║              ROSE Link Cleanup                                 ║${NC}"
+        echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+
+        # Remove systemd services
+        info "Removing systemd service files..."
+        rm -f /etc/systemd/system/rose-backend.service 2>/dev/null || true
+        rm -f /etc/systemd/system/rose-watchdog.service 2>/dev/null || true
+        systemctl daemon-reload
+        success "Service files removed"
+
+        # Remove sudoers
+        info "Removing sudo configuration..."
+        rm -f /etc/sudoers.d/rose 2>/dev/null || true
+        success "Sudo configuration removed"
+
+        # Remove Nginx configuration
+        info "Removing Nginx configuration..."
+        rm -f /etc/nginx/sites-enabled/roselink 2>/dev/null || true
+        rm -f /etc/nginx/sites-available/roselink 2>/dev/null || true
+
+        # Restore default Nginx site
+        if [ -f /etc/nginx/sites-available/default ]; then
+            ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default 2>/dev/null || true
+        fi
+        systemctl restart nginx 2>/dev/null || true
+        success "Nginx configuration removed"
+
+        # Remove sysctl configuration
+        info "Removing sysctl configuration..."
+        rm -f /etc/sysctl.d/99-rose-link.conf 2>/dev/null || true
+        success "Sysctl configuration removed"
+
+        # Remove log directory
+        info "Removing log directory..."
+        rm -rf /var/log/rose-link 2>/dev/null || true
+        success "Log directory removed"
+
+        echo ""
+        echo -e "${YELLOW}Note: The following items are preserved:${NC}"
+        echo -e "  • /etc/wireguard/profiles (VPN profiles)"
+        echo -e "  • /etc/hostapd/hostapd.conf (hotspot configuration)"
+        echo -e "  • /etc/dnsmasq.conf (DHCP/DNS configuration)"
+        echo -e "  • /etc/nginx/ssl/roselink.* (SSL certificates)"
+        echo -e "  • User '$USER' (service account)"
+        echo ""
+        echo -e "Run 'rose-link-cleanup' for complete removal."
+        echo ""
+        ;;
+
+    purge)
+        echo ""
+        echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║              ROSE Link Complete Removal                        ║${NC}"
+        echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+
+        # Remove all configuration files
+        info "Removing all configuration files..."
+        rm -f /etc/hostapd/hostapd.conf 2>/dev/null || true
+        rm -f /etc/nginx/ssl/roselink.crt 2>/dev/null || true
+        rm -f /etc/nginx/ssl/roselink.key 2>/dev/null || true
+        rm -f /etc/sudoers.d/rose 2>/dev/null || true
+        rm -f /etc/systemd/system/rose-backend.service 2>/dev/null || true
+        rm -f /etc/systemd/system/rose-watchdog.service 2>/dev/null || true
+        rm -f /etc/sysctl.d/99-rose-link.conf 2>/dev/null || true
+        success "Configuration files removed"
+
+        # Restore dnsmasq configuration
+        info "Restoring dnsmasq configuration..."
+        if [ -f /etc/dnsmasq.conf.rose-backup ]; then
+            mv /etc/dnsmasq.conf.rose-backup /etc/dnsmasq.conf 2>/dev/null || true
+            success "Original dnsmasq.conf restored"
+        fi
+
+        # Clean dhcpcd configuration
+        info "Cleaning dhcpcd configuration..."
+        if grep -q "# ROSE Link AP Configuration" /etc/dhcpcd.conf 2>/dev/null; then
+            sed -i '/# ROSE Link AP Configuration/,/^$/d' /etc/dhcpcd.conf 2>/dev/null || true
+            success "dhcpcd.conf cleaned"
+        fi
+
+        # Clear iptables rules
+        info "Clearing iptables rules..."
+        iptables -t nat -F 2>/dev/null || true
+        iptables -F FORWARD 2>/dev/null || true
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+        success "Iptables rules cleared"
+
+        # Remove WireGuard profiles
+        info "Removing WireGuard profiles..."
+        rm -rf /etc/wireguard/profiles 2>/dev/null || true
+        rm -f /etc/wireguard/wg0.conf 2>/dev/null || true
+        success "WireGuard profiles removed"
+
+        # Remove installation directory
+        info "Removing installation directory..."
+        rm -rf "$INSTALL_DIR" 2>/dev/null || true
+        success "Installation directory removed"
+
+        # Remove log files
+        info "Removing log files..."
+        rm -rf /var/log/rose-link 2>/dev/null || true
+        rm -f /var/log/rose-link-*.log 2>/dev/null || true
+        success "Log files removed"
+
+        # Remove user
+        info "Removing service user..."
+        if id -u "$USER" &>/dev/null; then
+            userdel -r "$USER" 2>/dev/null || userdel "$USER" 2>/dev/null || true
+            success "User '$USER' removed"
+        fi
+
+        # Disable services that were installed
+        systemctl stop hostapd 2>/dev/null || true
+        systemctl stop dnsmasq 2>/dev/null || true
+        systemctl disable hostapd 2>/dev/null || true
+        systemctl disable dnsmasq 2>/dev/null || true
+
+        # Restore default hostapd config
+        if [ -f /etc/default/hostapd ]; then
+            sed -i 's|DAEMON_CONF="/etc/hostapd/hostapd.conf"|#DAEMON_CONF=""|' /etc/default/hostapd 2>/dev/null || true
+        fi
+
+        systemctl daemon-reload
+
+        echo ""
+        success "ROSE Link completely removed"
+        echo ""
+        echo -e "${YELLOW}Note: System packages (nginx, hostapd, etc.) were not removed.${NC}"
+        echo -e "Run 'apt autoremove' to remove unused packages."
+        echo ""
+        ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        # Nothing to do
+        ;;
+
+    *)
+        # Default: do nothing
+        ;;
+esac
+
+exit 0

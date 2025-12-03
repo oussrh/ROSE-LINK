@@ -1,0 +1,7 @@
+# ROSE Link - Static IP configuration for AP interface
+# Append this to /etc/dhcpcd.conf
+
+# Hotspot interface (wlan1)
+interface wlan1
+    static ip_address=192.168.50.1/24
+    nohook wpa_supplicant

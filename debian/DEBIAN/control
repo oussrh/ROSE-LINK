@@ -1,0 +1,70 @@
+Package: rose-link
+Version: 1.5.1-1
+Section: net
+Priority: optional
+Architecture: all
+Pre-Depends: dpkg (>= 1.17.5)
+Depends: python3 (>= 3.9),
+         python3-pip,
+         python3-venv,
+         python3-dev,
+         nginx (>= 1.18),
+         hostapd (>= 2.9),
+         dnsmasq (>= 2.80),
+         wireguard (>= 1.0) | wireguard-dkms,
+         wireguard-tools (>= 1.0),
+         openresolv | resolvconf,
+         iptables (>= 1.8),
+         iptables-persistent,
+         network-manager (>= 1.22),
+         iw (>= 5.0),
+         rfkill,
+         openssl (>= 1.1),
+         ca-certificates,
+         procps,
+         curl,
+         gnupg
+Recommends: avahi-daemon
+Suggests: htop, vnstat, iftop
+Conflicts: rose-link-pro
+Replaces: rose-link-pro
+Provides: rose-link-pro
+Installed-Size: 3072
+Maintainer: ROSE Link Team <contact@roselink.dev>
+Homepage: https://github.com/oussrh/ROSE-LINK
+Vcs-Git: https://github.com/oussrh/ROSE-LINK.git
+Vcs-Browser: https://github.com/oussrh/ROSE-LINK
+Description: ROSE Link - Home VPN Router for Raspberry Pi with Monitoring
+ ROSE Link transforms your Raspberry Pi (3, 4, 5, Zero 2W) into a secure
+ VPN router and WiFi access point for your home network.
+ .
+ Key Features:
+  * Connect to Internet via Ethernet (priority) or WiFi client (fallback)
+  * Establish WireGuard VPN tunnel to your Fritz!Box or VPN server
+  * Create a local WiFi hotspot for your devices (2.4GHz and 5GHz)
+  * Route all client traffic through the VPN tunnel
+  * Modern web interface for easy configuration
+  * Built-in Grafana + Prometheus monitoring dashboard
+ .
+ Monitoring Stack (Optional):
+  * Prometheus for metrics collection
+  * Node Exporter for system metrics
+  * Grafana for dashboard visualization
+  * Pre-configured alerts for VPN, WAN, CPU, Memory, Disk
+  * Enable with: rose-monitoring enable
+ .
+ Supported Hardware:
+  * Raspberry Pi 5 - Full support with WiFi 6 and 5GHz
+  * Raspberry Pi 4 - Full support with WiFi 5 and 5GHz
+  * Raspberry Pi 3 - Limited support (2.4GHz WiFi only)
+  * Raspberry Pi Zero 2 W - Basic support (light usage)
+ .
+ Security Features:
+  * Automatic kill-switch (blocks traffic if VPN disconnects)
+  * VPN watchdog with auto-reconnection
+  * WPA2/WPA3 WiFi encryption
+  * HTTPS web interface with TLS 1.2/1.3
+  * Minimal sudo permissions for service account
+ .
+ Compatible with Debian 11 (Bullseye), Debian 12 (Bookworm), and
+ Raspberry Pi OS based on these versions.
